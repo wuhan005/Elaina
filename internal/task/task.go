@@ -36,6 +36,7 @@ func NewTask(language string, code []byte) (*Task, error) {
 	for _, r := range langRunners {
 		if r.Name == language {
 			runner = &r
+			break
 		}
 	}
 	if runner == nil {
