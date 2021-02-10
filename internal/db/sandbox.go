@@ -13,5 +13,3 @@ type sandbox struct {
 	Placeholder string
 	Editable    bool
 }
-
-
