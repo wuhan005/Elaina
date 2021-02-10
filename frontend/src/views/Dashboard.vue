@@ -1,13 +1,13 @@
 <template>
-  <div class="home">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <h1>仪表盘</h1>
   </div>
 </template>
 
 <script>
 
 export default {
-  name: 'Home',
+  name: 'Dashboard',
   components: {}
 }
 </script>

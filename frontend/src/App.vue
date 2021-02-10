@@ -1,31 +1,33 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link>
+    <div class="container">
+      <at-menu mode="horizontal" :active-name="$route.name" style="width: 100%" @on-select="go">
+        <at-menu-item name="dashboard"><i class="icon icon-bar-chart-2"></i>仪表盘</at-menu-item>
+        <at-menu-item name="template"><i class="icon icon-copy"></i>运行模板</at-menu-item>
+      </at-menu>
+      <div class="container-fluid">
+        <router-view style="margin-top: 10px"/>
+      </div>
     </div>
-    <router-view/>
   </div>
 </template>
 
+<script>
+export default {
+  methods: {
+    go(route) {
+      this.$router.push({
+        name: route
+      })
+    }
+  }
+}
+</script>
+
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-}
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+  display: flex;
+  height: 100%;
+  justify-content: center;
 }
 </style>
