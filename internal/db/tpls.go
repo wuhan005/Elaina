@@ -4,7 +4,6 @@ import (
 	"github.com/jackc/pgtype"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	"github.com/thanhpk/randstr"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -74,7 +73,6 @@ func (db *tpls) Create(opts CreateTplOptions) error {
 
 	return db.DB.Create(&tpl{
 		Name:              opts.Name,
-		UID:               randstr.String(10),
 		Language:          languages,
 		Timeout:           opts.Timeout,
 		MaxCPUs:           opts.MaxCPUs,

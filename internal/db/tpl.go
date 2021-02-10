@@ -10,7 +10,6 @@ type tpl struct {
 	gorm.Model
 
 	Name     string           `json:"name"`
-	UID      string           `json:"uid"`
 	Language pgtype.TextArray `gorm:"type:text[]" json:"language"`
 
 	// Limit
