@@ -3,7 +3,7 @@ $('#run').click(() => {
     $('#result_data').text('Loading...');
 
     $.post('', editor.getValue(), (res) => {
-        let result = atob(res.data.result.body);
+        let result = Base64.decode(res.data.result.body);
         let exitCode = res.data.result.exit_code;
         let startAt = res.data.start_at;
         let endAt = res.data.end_at;

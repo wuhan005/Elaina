@@ -67,6 +67,8 @@ body {
     color: #fff;
     padding: 0 20px 0 20px;
     overflow-y: scroll;
+    word-break: normal;
+    white-space: pre-line;
 }
 
 .footer {
