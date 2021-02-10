@@ -18,7 +18,7 @@ func Init() error {
 		return err
 	}
 
-	err = db.AutoMigrate(&tpl{}, &sandbox{})
+	err = db.AutoMigrate(&tpl{}, &Sandbox{})
 	if err != nil {
 		return errors.Wrap(err, "auto migrate")
 	}

@@ -10,9 +10,9 @@ import (
 
 type TplStore interface {
 	// GetByID returns a template with the given id.
-	GetByID(id uint) (*tpl, error)
+	GetByID(id uint) (*Tpl, error)
 	// ListAll returns all the templates.
-	ListAll() ([]*tpl, error)
+	ListAll() ([]*Tpl, error)
 	// Create creates a new template with the given options.
 	Create(opts CreateTplOptions) error
 	// Update edits a new template with the given options.
@@ -29,14 +29,14 @@ type tpls struct {
 	*gorm.DB
 }
 
-func (db *tpls) GetByID(id uint) (*tpl, error) {
-	var template tpl
-	return &template, db.Model(&tpl{}).Where("id = ?", id).First(&template).Error
+func (db *tpls) GetByID(id uint) (*Tpl, error) {
+	var template Tpl
+	return &template, db.Model(&Tpl{}).Where("id = ?", id).First(&template).Error
 }
 
-func (db *tpls) ListAll() ([]*tpl, error) {
-	var templates []*tpl
-	err := db.Model(&tpl{}).Find(&templates).Error
+func (db *tpls) ListAll() ([]*Tpl, error) {
+	var templates []*Tpl
+	err := db.Model(&Tpl{}).Find(&templates).Error
 	return templates, err
 }
 
@@ -67,7 +67,7 @@ func (db *tpls) Create(opts CreateTplOptions) error {
 		return errors.Wrap(err, "marshal DNS JSONs")
 	}
 
-	return db.DB.Create(&tpl{
+	return db.DB.Create(&Tpl{
 		Name:              opts.Name,
 		Language:          languages,
 		Timeout:           opts.Timeout,
@@ -113,11 +113,11 @@ func (db *tpls) Update(opts UpdateTplOptions) error {
 		return errors.Wrap(err, "marshal DNS JSONs")
 	}
 
-	return db.DB.Model(&tpl{}).Where(&tpl{
+	return db.DB.Model(&Tpl{}).Where(&Tpl{
 		Model: gorm.Model{
 			ID: opts.ID,
 		},
-	}).Updates(&tpl{
+	}).Updates(&Tpl{
 		Name:              opts.Name,
 		Language:          languages,
 		Timeout:           opts.Timeout,
@@ -131,5 +131,5 @@ func (db *tpls) Update(opts UpdateTplOptions) error {
 }
 
 func (db *tpls) Delete(id uint) error {
-	return db.DB.Delete(&tpl{}, "id = ?", id).Error
+	return db.DB.Delete(&Tpl{}, "id = ?", id).Error
 }

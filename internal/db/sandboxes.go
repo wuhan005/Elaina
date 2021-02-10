@@ -9,9 +9,11 @@ import (
 
 type SandboxStore interface {
 	// GetByID returns a sandbox with the given id.
-	GetByID(id uint) (*sandbox, error)
+	GetByID(id uint) (*Sandbox, error)
+	// GetByUID returns a sandbox with the given uid.
+	GetByUID(uid string) (*Sandbox, error)
 	// ListAll returns all the sandboxes.
-	ListAll() ([]*sandbox, error)
+	ListAll() ([]*Sandbox, error)
 	// Create creates a new sandbox with the given options.
 	Create(opts CreateSandboxOptions) error
 	// Update edits a new sandbox with the given options.
@@ -28,14 +30,19 @@ type sandboxes struct {
 	*gorm.DB
 }
 
-func (db *sandboxes) GetByID(id uint) (*sandbox, error) {
-	var sb sandbox
-	return &sb, db.Preload("Template").Model(&sandbox{}).Where("id = ?", id).First(&sb).Error
+func (db *sandboxes) GetByID(id uint) (*Sandbox, error) {
+	var sb Sandbox
+	return &sb, db.Preload("Template").Model(&Sandbox{}).Where("id = ?", id).First(&sb).Error
 }
 
-func (db *sandboxes) ListAll() ([]*sandbox, error) {
-	var sbs []*sandbox
-	return sbs, db.Preload("Template").Model(&sandbox{}).Find(&sbs).Error
+func (db *sandboxes) GetByUID(uid string) (*Sandbox, error) {
+	var sb Sandbox
+	return &sb, db.Preload("Template").Model(&Sandbox{}).Where("uid = ?", uid).First(&sb).Error
+}
+
+func (db *sandboxes) ListAll() ([]*Sandbox, error) {
+	var sbs []*Sandbox
+	return sbs, db.Preload("Template").Model(&Sandbox{}).Find(&sbs).Error
 }
 
 type CreateSandboxOptions struct {
@@ -45,7 +52,7 @@ type CreateSandboxOptions struct {
 }
 
 func (db *sandboxes) Create(opts CreateSandboxOptions) error {
-	return db.DB.Create(&sandbox{
+	return db.DB.Create(&Sandbox{
 		UID:         randstr.String(10),
 		TemplateID:  opts.TemplateID,
 		Placeholder: opts.Placeholder,
@@ -66,11 +73,11 @@ func (db *sandboxes) Update(opts UpdateSandboxOptions) error {
 		return errors.New("sandbox not existed")
 	}
 
-	return db.DB.Model(&sandbox{}).Where(&sandbox{
+	return db.DB.Model(&Sandbox{}).Where(&Sandbox{
 		Model: gorm.Model{
 			ID: opts.ID,
 		},
-	}).Updates(&sandbox{
+	}).Updates(&Sandbox{
 		TemplateID:  opts.TemplateID,
 		Placeholder: opts.Placeholder,
 		Editable:    opts.Editable,

@@ -19,9 +19,13 @@ func New() *gin.Engine {
 		AllowOrigins: []string{"*"},
 	}))
 
+	r.LoadHTMLGlob("templates/*")
+
 	run := r.Group("/r")
+	run.Use(task.SandboxMiddleware)
 	{
-		run.GET("/", task.RunTaskHandler)
+		run.GET("/:uid", task.EditorHandler)
+		run.POST("/:uid", __(task.RunTaskHandler))
 	}
 
 	api := r.Group("/api")
@@ -41,7 +45,7 @@ func New() *gin.Engine {
 		manager.DELETE("/sandbox", __(sandbox.DeleteTemplateHandler))
 	}
 
-	r.StaticFile("/static", "./public")
+	r.Static("/static", "./public")
 	return r
 }
 

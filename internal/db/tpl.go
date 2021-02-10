@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type tpl struct {
+type Tpl struct {
 	gorm.Model
 
 	Name     string           `json:"name"`

@@ -26,8 +26,8 @@ type Task struct {
 }
 
 type Output struct {
-	ExitCode int64
-	Body     []byte
+	ExitCode int64  `json:"exit_code"`
+	Body     []byte `json:"body"`
 }
 
 func NewTask(language string, code []byte) (*Task, error) {
