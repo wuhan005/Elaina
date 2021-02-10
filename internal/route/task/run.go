@@ -1,6 +1,8 @@
 package task
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/wuhan005/gadget"
 
@@ -85,6 +87,8 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 		selectLang = lang[0]
 	}
 
+	startAt := time.Now().UnixNano()
+
 	t, err := task.NewTask(selectLang, sandbox.Template, code)
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to create task: %v", err)
@@ -93,7 +97,12 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to run task: %v", err)
 	}
+
+	endAt := time.Now().UnixNano()
+
 	return gadget.MakeSuccessJSON(gin.H{
-		"result": output,
+		"result":   output,
+		"start_at": startAt,
+		"end_at":   endAt,
 	})
 }

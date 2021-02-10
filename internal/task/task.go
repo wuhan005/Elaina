@@ -132,7 +132,11 @@ func (t *Task) Run() (*Output, error) {
 
 	okBody, errChan := client.ContainerWait(t.ctx, resp.ID, "")
 
-	timeout := time.NewTimer(50 * time.Second)
+	if t.template.Timeout == 0 {
+		t.template.Timeout = 3600
+	}
+
+	timeout := time.NewTimer(time.Duration(t.template.Timeout) * time.Second)
 	var waitBody container.ContainerWaitOKBody
 	var errExec error
 	select {
