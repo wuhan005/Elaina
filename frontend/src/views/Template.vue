@@ -15,6 +15,7 @@
         <at-checkbox-group v-model="newTemplateForm.language">
           <at-checkbox label="php">PHP</at-checkbox>
           <at-checkbox label="python">Python</at-checkbox>
+          <at-checkbox label="go">Go</at-checkbox>
         </at-checkbox-group>
         <br><br>
         <span>超时时间</span>
@@ -23,8 +24,8 @@
         <span>最大 CPU 数</span>
         <at-input-number v-model="newTemplateForm.max_cpus" :min="0" :max="10"></at-input-number>
         <br><br>
-        <span>最大内存</span>
-        <at-input-number v-model="newTemplateForm.max_memory" :min="0" :max="4096"></at-input-number>
+        <span>最大内存 (MB)</span>
+        <at-input-number v-model="newTemplateForm.max_memory" :min="6" :max="2048"></at-input-number>
         <br><br>
         <span>开放外网</span><br>
         <at-switch v-model="newTemplateForm.internet_access"></at-switch>

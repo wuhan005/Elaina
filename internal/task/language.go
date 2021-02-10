@@ -20,4 +20,10 @@ var langRunners = []runner{
 		Image: "elaina-python:latest",
 		Cmd:   []string{"sh", "-c", "python3 /runner/code.py"},
 	},
+	{
+		Name:  "go",
+		Ext:   ".go",
+		Image: "elaina-go:latest",
+		Cmd:   []string{"sh", "-c", "go run /runner/code.go"},
+	},
 }
