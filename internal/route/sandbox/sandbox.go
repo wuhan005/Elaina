@@ -61,9 +61,9 @@ func CreateSandboxHandler(c *gin.Context) (int, interface{}) {
 	}
 
 	err = db.Sandboxes.Create(db.CreateSandboxOptions{
-		TemplateID:  0,
-		Placeholder: "",
-		Editable:    false,
+		TemplateID:  form.TemplateID,
+		Placeholder: form.Placeholder,
+		Editable:    form.Editable,
 	})
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to create sandbox: %v", err)
