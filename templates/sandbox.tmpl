@@ -1,0 +1,57 @@
+<html>
+<head>
+    <title>{{ .Sandbox.Name }} - Elaina</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/codemirror.min.css"/>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/theme/material-palenight.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/static/css/sandbox.css"/>
+</head>
+<body>
+<div id="app">
+    <div class="header row">
+        <div class="col col-auto align-self-center">
+            <div class="title">{{ .Sandbox.Name }}</div>
+        </div>
+        <div class="col col-auto align-self-center">
+            <div class="lang"><span class="label">{{ .Language }}</span></div>
+        </div>
+        {{ if ne (len .Languages) 1 }}
+        <div class="col align-self-center align-items-end">
+            <div class="btn-group" role="group" style="float: right">
+                {{ range $index, $lang := .Languages }}
+                <button type="button" class="btn btn-secondary">{{ $lang }}</button>
+                {{ end }}
+            </div>
+        </div>
+        {{ end }}
+        <div class="col align-self-center align-items-end">
+            <button id="run" type="button" class="btn btn-primary" style="float: right">运行</button>
+        </div>
+    </div>
+
+    <textarea id="code" class="editor">{{ .Sandbox.Placeholder }}</textarea>
+
+    <div class="result">
+        <span way-data="result"></span>
+    </div>
+
+    <div class="footer">Powered by Elaina.</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/addon/mode/loadmode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/mode/meta.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/mode/php/php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="/static/js/way.js"></script>
+<script>
+    var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+        lineNumbers: true,
+        mode: "python",
+        theme: 'material-palenight'
+    });
+</script>
+<script src="/static/js/sandbox.js"></script>
+</body>
+</html>
