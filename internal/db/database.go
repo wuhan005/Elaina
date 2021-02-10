@@ -18,12 +18,13 @@ func Init() error {
 		return err
 	}
 
-	err = db.AutoMigrate(&tpl{})
+	err = db.AutoMigrate(&tpl{}, &sandbox{})
 	if err != nil {
 		return errors.Wrap(err, "auto migrate")
 	}
 
 	Tpls = &tpls{DB: db}
+	Sandboxes = &sandboxes{DB: db}
 
 	return nil
 }

@@ -31,11 +31,7 @@ type tpls struct {
 
 func (db *tpls) GetByID(id uint) (*tpl, error) {
 	var template tpl
-	return &template, db.Model(&tpl{}).Where(&tpl{
-		Model: gorm.Model{
-			ID: id,
-		},
-	}).First(&template).Error
+	return &template, db.Model(&tpl{}).Where("id = ?", id).First(&template).Error
 }
 
 func (db *tpls) ListAll() ([]*tpl, error) {
