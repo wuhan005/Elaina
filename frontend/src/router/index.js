@@ -14,6 +14,11 @@ const routes = [
         name: 'template',
         component: () => import('@/views/Template.vue')
     },
+    {
+        path: '/sandbox',
+        name: 'sandbox',
+        component: () => import('@/views/Sandbox.vue')
+    },
 ]
 
 const router = new VueRouter({
