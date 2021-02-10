@@ -4,6 +4,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	"github.com/wuhan005/Elaina/internal/route/sandbox"
 	"github.com/wuhan005/Elaina/internal/route/task"
 	"github.com/wuhan005/Elaina/internal/route/template"
 )
@@ -31,6 +32,13 @@ func New() *gin.Engine {
 		manager.POST("/template", __(template.CreateTemplateHandler))
 		manager.PUT("/template", __(template.UpdateTemplateHandler))
 		manager.DELETE("/template", __(template.DeleteTemplateHandler))
+	}
+	{
+		manager.GET("/sandboxes", __(sandbox.ListSandboxesHandler))
+		manager.GET("/sandbox", __(sandbox.GetSandboxHandler))
+		manager.POST("/sandbox", __(sandbox.CreateSandboxHandler))
+		manager.PUT("/sandbox", __(sandbox.UpdateTemplateHandler))
+		manager.DELETE("/sandbox", __(sandbox.DeleteTemplateHandler))
 	}
 
 	r.StaticFile("/static", "./public")
