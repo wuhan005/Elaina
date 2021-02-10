@@ -1,6 +1,7 @@
 package route
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/wuhan005/Elaina/internal/route/task"
@@ -11,12 +12,19 @@ import (
 func New() *gin.Engine {
 	r := gin.Default()
 
+	r.Use(cors.New(cors.Config{
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"},
+		AllowHeaders: []string{"Authorization", "Content-type", "User-Agent"},
+		AllowOrigins: []string{"*"},
+	}))
+
 	run := r.Group("/r")
 	{
 		run.GET("/", task.RunTaskHandler)
 	}
 
-	manager := r.Group("/m")
+	api := r.Group("/api")
+	manager := api.Group("/m")
 	{
 		manager.GET("/templates", __(template.ListTemplatesHandler))
 		manager.GET("/template", __(template.GetTemplateHandler))
