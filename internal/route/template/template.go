@@ -38,8 +38,8 @@ func CreateTemplateHandler(c *gin.Context) (int, interface{}) {
 		Name              string            `json:"name" valid:"required" label:"模板名称"`
 		Language          []string          `json:"language" valid:"required" label:"编程语言"`
 		Timeout           int               `json:"timeout" valid:"required;min:0;max:60" label:"超时时间"`
-		MaxCPUs           int               `json:"max_cpus" valid:"required;min:0;max:10" label:"最大 CPU 数"`
-		MaxMemory         int64             `json:"max_memory" valid:"required;min:0;max:4096" label:"最大内存"`
+		MaxCPUs           int64             `json:"max_cpus" valid:"required;min:0;max:10" label:"最大 CPU 数"`
+		MaxMemory         int64             `json:"max_memory" valid:"required;min:6;max:2048" label:"最大内存"` // MB
 		InternetAccess    bool              `json:"internet_access"`
 		DNS               map[string]string `json:"dns"`
 		MaxContainer      int               `json:"max_container" valid:"required;min:0;max:1000" label:"最大容器数"`
@@ -80,8 +80,8 @@ func UpdateTemplateHandler(c *gin.Context) (int, interface{}) {
 		Name              string            `json:"name" valid:"required;username" label:"模板名称"`
 		Language          []string          `json:"language" valid:"required" label:"编程语言"`
 		Timeout           int               `json:"timeout" valid:"required;min:0;max:60" label:"超时时间"`
-		MaxCPUs           int               `json:"max_cpus" valid:"required;min:0;max:10" label:"最大 CPU 数"`
-		MaxMemory         int64             `json:"max_memory" valid:"required;min:0;max:4096" label:"最大内存"`
+		MaxCPUs           int64             `json:"max_cpus" valid:"required;min:0;max:10" label:"最大 CPU 数"`
+		MaxMemory         int64             `json:"max_memory" valid:"required;min:6;max:2048" label:"最大内存"` // MB
 		InternetAccess    bool              `json:"internet_access"`
 		DNS               map[string]string `json:"dns"`
 		MaxContainer      int               `json:"max_container" valid:"required;min:0;max:1000" label:"最大容器数"`

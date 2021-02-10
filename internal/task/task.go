@@ -15,6 +15,8 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/satori/go.uuid"
+
+	"github.com/wuhan005/Elaina/internal/db"
 )
 
 type Task struct {
@@ -23,6 +25,7 @@ type Task struct {
 	uuid         string
 	runner       *runner
 	sourceVolume string
+	template     *db.Tpl
 }
 
 type Output struct {
@@ -30,7 +33,7 @@ type Output struct {
 	Body     []byte `json:"body"`
 }
 
-func NewTask(language string, code []byte) (*Task, error) {
+func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 	// Check the language.
 	var runner *runner
 	for _, r := range langRunners {
@@ -63,6 +66,7 @@ func NewTask(language string, code []byte) (*Task, error) {
 		uuid:         id,
 		runner:       runner,
 		sourceVolume: volumePath,
+		template:     template,
 	}, nil
 }
 
@@ -73,21 +77,33 @@ func (t *Task) Run() (*Output, error) {
 		return nil, err
 	}
 
-	resp, err := client.ContainerCreate(t.ctx, &container.Config{
-		Image: t.runner.Image,
-		Cmd:   t.runner.Cmd,
-		Tty:   false,
-	}, &container.HostConfig{
-		NetworkMode: "none",
-		Mounts: []mount.Mount{
-			{
-				Type:   mount.TypeBind,
-				Source: t.sourceVolume,
-				Target: "/runner",
-			},
+	var networkMode container.NetworkMode
+	if t.template.InternetAccess {
+		networkMode = "bridge"
+	} else {
+		networkMode = "none"
+	}
+
+	resp, err := client.ContainerCreate(t.ctx,
+		&container.Config{
+			Image: t.runner.Image,
+			Cmd:   t.runner.Cmd,
+			Tty:   false,
 		},
-		// TODO: Resources
-	}, nil, nil, t.uuid)
+		&container.HostConfig{
+			NetworkMode: networkMode,
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: t.sourceVolume,
+					Target: "/runner",
+				},
+			},
+			Resources: container.Resources{
+				NanoCPUs: t.template.MaxCPUs * 1000000000,    // 0.0001 * CPU of cpu
+				Memory:   t.template.MaxMemory * 1024 * 1024, // Minimum memory limit allowed is 6MB.
+			},
+		}, nil, nil, t.uuid)
 	if err != nil {
 		return nil, err
 	}

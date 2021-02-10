@@ -44,7 +44,7 @@ type CreateTplOptions struct {
 	Name              string
 	Language          []string
 	Timeout           int
-	MaxCPUs           int
+	MaxCPUs           int64
 	MaxMemory         int64
 	InternetAccess    bool
 	DNS               map[string]string
@@ -85,7 +85,7 @@ type UpdateTplOptions struct {
 	Name              string
 	Language          []string
 	Timeout           int
-	MaxCPUs           int
+	MaxCPUs           int64
 	MaxMemory         int64
 	InternetAccess    bool
 	DNS               map[string]string

@@ -85,7 +85,7 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 		selectLang = lang[0]
 	}
 
-	t, err := task.NewTask(selectLang, code)
+	t, err := task.NewTask(selectLang, sandbox.Template, code)
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to create task: %v", err)
 	}

@@ -14,7 +14,7 @@ type Tpl struct {
 
 	// Limit
 	Timeout           int            `json:"timeout"`
-	MaxCPUs           int            `json:"max_cpus"`
+	MaxCPUs           int64          `json:"max_cpus"`
 	MaxMemory         int64          `json:"max_memory"`
 	InternetAccess    bool           `json:"internet_access"`
 	DNS               datatypes.JSON `gorm:"type:jsonb" json:"dns"`
