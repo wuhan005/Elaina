@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wuhan005/gadget"
 	"github.com/wuhan005/govalid"
+	"gorm.io/gorm"
 
 	"github.com/wuhan005/Elaina/internal/db"
 )
@@ -100,7 +101,10 @@ func UpdateTemplateHandler(c *gin.Context) (int, interface{}) {
 
 	_, err = db.Tpls.GetByID(form.ID)
 	if err != nil {
-		return gadget.MakeErrJSON(40400, "Template not found.")
+		if err == gorm.ErrRecordNotFound {
+			return gadget.MakeErrJSON(40400, "Template not found!")
+		}
+		return gadget.MakeErrJSON(50000, "Failed to get template data: %v", err)
 	}
 
 	err = db.Tpls.Update(db.UpdateTplOptions{
@@ -130,7 +134,10 @@ func DeleteTemplateHandler(c *gin.Context) (int, interface{}) {
 
 	_, err = db.Tpls.GetByID(uint(id))
 	if err != nil {
-		return gadget.MakeErrJSON(40400, "Template not found.")
+		if err == gorm.ErrRecordNotFound {
+			return gadget.MakeErrJSON(40400, "Template not found!")
+		}
+		return gadget.MakeErrJSON(50000, "Failed to get template data: %v", err)
 	}
 
 	err = db.Tpls.Delete(uint(id))
