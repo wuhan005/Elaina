@@ -1,6 +1,13 @@
 $('#run').click(() => {
-    way.set('result', 'Loading...');
+    $('#result_bar').css('color', 'white');
+    $('#result_data').text('Loading...');
+    
     $.post('', editor.getValue(), (res) => {
-        way.set('result', atob(res.data.result.body));
+        let result = atob(res.data.result.body);
+        let exitCode = res.data.result.exit_code;
+        if (exitCode !== 0) {
+            $('#result_bar').css('color', 'red');
+        }
+        $('#result_data').text(result);
     })
 })

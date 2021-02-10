@@ -32,8 +32,8 @@
 
     <textarea id="code" class="editor">{{ .Sandbox.Placeholder }}</textarea>
 
-    <div class="result">
-        <span way-data="result"></span>
+    <div id="result_bar" class="result">
+        <span id="result_data"></span>
     </div>
 
     <div class="footer">Powered by Elaina.</div>
@@ -47,7 +47,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/mode/php/php.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="/static/js/way.js"></script>
 <script>
     var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         lineNumbers: true,
