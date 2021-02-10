@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/jackc/pgtype"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/thanhpk/randstr"
 	"gorm.io/datatypes"
@@ -62,8 +63,12 @@ func (db *tpls) Create(opts CreateTplOptions) error {
 		return errors.Wrap(err, "set language")
 	}
 
+	dnsValue, err := jsoniter.Marshal(opts.DNS)
+	if err != nil {
+		return errors.Wrap(err, "marshal dns")
+	}
 	dns := datatypes.JSON{}
-	if err := dns.Scan(opts.DNS); err != nil {
+	if err := dns.Scan(dnsValue); err != nil {
 		return errors.Wrap(err, "marshal DNS JSONs")
 	}
 
@@ -105,8 +110,12 @@ func (db *tpls) Update(opts UpdateTplOptions) error {
 		return errors.Wrap(err, "set language")
 	}
 
+	dnsValue, err := jsoniter.Marshal(opts.DNS)
+	if err != nil {
+		return errors.Wrap(err, "marshal dns")
+	}
 	dns := datatypes.JSON{}
-	if err := dns.Scan(opts.DNS); err != nil {
+	if err := dns.Scan(dnsValue); err != nil {
 		return errors.Wrap(err, "marshal DNS JSONs")
 	}
 

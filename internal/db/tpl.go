@@ -9,16 +9,16 @@ import (
 type tpl struct {
 	gorm.Model
 
-	Name     string
-	UID      string
-	Language pgtype.TextArray `gorm:"type:text[]"`
+	Name     string           `json:"name"`
+	UID      string           `json:"uid"`
+	Language pgtype.TextArray `gorm:"type:text[]" json:"language"`
 
 	// Limit
-	Timeout           int
-	MaxCPUs           int
-	MaxMemory         int64
-	InternetAccess    bool
-	DNS               datatypes.JSON `gorm:"type:jsonb"`
-	MaxContainer      int
-	MaxContainerPerIP int
+	Timeout           int            `json:"timeout"`
+	MaxCPUs           int            `json:"max_cpus"`
+	MaxMemory         int64          `json:"max_memory"`
+	InternetAccess    bool           `json:"internet_access"`
+	DNS               datatypes.JSON `gorm:"type:jsonb" json:"dns"`
+	MaxContainer      int            `json:"max_container"`
+	MaxContainerPerIP int            `json:"max_container_per_ip"`
 }
