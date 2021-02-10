@@ -34,7 +34,7 @@ func GetTemplateHandler(c *gin.Context) (int, interface{}) {
 
 func CreateTemplateHandler(c *gin.Context) (int, interface{}) {
 	var form struct {
-		Name              string            `json:"name" valid:"required;username" label:"模板名称"`
+		Name              string            `json:"name" valid:"required" label:"模板名称"`
 		Language          []string          `json:"language" valid:"required" label:"编程语言"`
 		Timeout           int               `json:"timeout" valid:"required;min:0;max:60" label:"超时时间"`
 		MaxCPUs           int               `json:"max_cpus" valid:"required;min:0;max:10" label:"最大 CPU 数"`
