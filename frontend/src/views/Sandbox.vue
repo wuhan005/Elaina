@@ -8,7 +8,7 @@
         <b-table :data="list" :loading="isLoading" striped hoverable>
           <b-table-column label="UID" v-slot="props">{{ props.row.uid }}</b-table-column>
           <b-table-column label="沙箱名称" v-slot="props">{{ props.row.name }}</b-table-column>
-          <b-table-column label="所属模板" v-slot="props">{{ props.row.template_id }}</b-table-column>
+          <b-table-column label="所属模板" v-slot="props">{{ props.row.template.name }}</b-table-column>
           <b-table-column label="初始内容" v-slot="props">{{ props.row.placeholder }}</b-table-column>
           <b-table-column label="是否可编辑" v-slot="props">{{ props.row.editable }}</b-table-column>
           <b-table-column v-slot="props">

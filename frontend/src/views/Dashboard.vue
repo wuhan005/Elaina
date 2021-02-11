@@ -1,6 +1,11 @@
 <template>
   <div>
-    <h1>仪表盘</h1>
+    <section class="hero">
+      <div class="hero-body">
+        <p class="title">仪表盘</p>
+        <p class="subtitle"></p>
+      </div>
+    </section>
   </div>
 </template>
 
