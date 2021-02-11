@@ -14,9 +14,9 @@
               </b-tag>
             </b-taglist>
           </b-table-column>
-          <b-table-column label="超时时间" v-slot="props">{{ props.row.timeout }}</b-table-column>
+          <b-table-column label="超时时间 (s)" v-slot="props">{{ props.row.timeout }}</b-table-column>
           <b-table-column label="最大 CPU 数" v-slot="props">{{ props.row.max_cpus }}</b-table-column>
-          <b-table-column label="最大内存" v-slot="props">{{ props.row.max_memory }}</b-table-column>
+          <b-table-column label="最大内存 (MB)" v-slot="props">{{ props.row.max_memory }}</b-table-column>
           <b-table-column label="开放外网" v-slot="props">{{ props.row.internet_access }}</b-table-column>
           <b-table-column label="最大容器数" v-slot="props">{{ props.row.max_container }}</b-table-column>
           <b-table-column label="单 IP 最大容器数" v-slot="props">{{ props.row.max_container_per_ip }}</b-table-column>
@@ -222,9 +222,9 @@ export default {
               .then(res => {
                 this.$buefy.toast.open({message: res, type: 'is-success'});
                 this.detailModalVisible = false;
+                this.fetchList()
               })
               .catch(err => this.$buefy.toast.open({message: err.response.data.msg, type: 'is-danger'}))
-          this.fetchList()
         }
       })
     }
