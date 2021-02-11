@@ -46,6 +46,7 @@ func (db *sandboxes) ListAll() ([]*Sandbox, error) {
 }
 
 type CreateSandboxOptions struct {
+	Name        string
 	TemplateID  uint
 	Placeholder string
 	Editable    bool
@@ -54,6 +55,7 @@ type CreateSandboxOptions struct {
 func (db *sandboxes) Create(opts CreateSandboxOptions) error {
 	return db.DB.Create(&Sandbox{
 		UID:         randstr.String(10),
+		Name:        opts.Name,
 		TemplateID:  opts.TemplateID,
 		Placeholder: opts.Placeholder,
 		Editable:    opts.Editable,
@@ -62,6 +64,7 @@ func (db *sandboxes) Create(opts CreateSandboxOptions) error {
 
 type UpdateSandboxOptions struct {
 	ID          uint
+	Name        string
 	TemplateID  uint
 	Placeholder string
 	Editable    bool
@@ -73,11 +76,8 @@ func (db *sandboxes) Update(opts UpdateSandboxOptions) error {
 		return errors.New("sandbox not existed")
 	}
 
-	return db.DB.Model(&Sandbox{}).Where(&Sandbox{
-		Model: gorm.Model{
-			ID: opts.ID,
-		},
-	}).Updates(&Sandbox{
+	return db.DB.Model(&Sandbox{}).Where("id = ?", opts.ID).Updates(&Sandbox{
+		Name:        opts.Name,
 		TemplateID:  opts.TemplateID,
 		Placeholder: opts.Placeholder,
 		Editable:    opts.Editable,
@@ -85,5 +85,5 @@ func (db *sandboxes) Update(opts UpdateSandboxOptions) error {
 }
 
 func (db *sandboxes) Delete(id uint) error {
-	return db.DB.Delete(&sandboxes{}, "id = ?", id).Error
+	return db.DB.Delete(&Sandbox{}, "id = ?", id).Error
 }

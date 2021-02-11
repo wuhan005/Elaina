@@ -35,6 +35,7 @@ func GetSandboxHandler(c *gin.Context) (int, interface{}) {
 
 func CreateSandboxHandler(c *gin.Context) (int, interface{}) {
 	var form struct {
+		Name        string `json:"name" valid:"required" label:"模板名称"`
 		TemplateID  uint   `json:"template_id" valid:"required" label:"模板 ID"`
 		Placeholder string `json:"placeholder"`
 		Editable    bool   `json:"editable"`
@@ -61,6 +62,7 @@ func CreateSandboxHandler(c *gin.Context) (int, interface{}) {
 	}
 
 	err = db.Sandboxes.Create(db.CreateSandboxOptions{
+		Name:        form.Name,
 		TemplateID:  form.TemplateID,
 		Placeholder: form.Placeholder,
 		Editable:    form.Editable,
@@ -71,9 +73,10 @@ func CreateSandboxHandler(c *gin.Context) (int, interface{}) {
 	return gadget.MakeSuccessJSON("Create sandbox succeed!")
 }
 
-func UpdateTemplateHandler(c *gin.Context) (int, interface{}) {
+func UpdateSandboxHandler(c *gin.Context) (int, interface{}) {
 	var form struct {
 		ID          uint   `json:"id" valid:"required" label:"模板 ID"`
+		Name        string `json:"name" valid:"required" label:"模板名称"`
 		TemplateID  uint   `json:"template_id" valid:"required" label:"模板 ID"`
 		Placeholder string `json:"placeholder"`
 		Editable    bool   `json:"editable"`
@@ -110,6 +113,7 @@ func UpdateTemplateHandler(c *gin.Context) (int, interface{}) {
 
 	err = db.Sandboxes.Update(db.UpdateSandboxOptions{
 		ID:          form.ID,
+		Name:        form.Name,
 		TemplateID:  form.TemplateID,
 		Placeholder: form.Placeholder,
 		Editable:    form.Editable,
@@ -120,7 +124,7 @@ func UpdateTemplateHandler(c *gin.Context) (int, interface{}) {
 	return gadget.MakeSuccessJSON("Update sandbox succeed!")
 }
 
-func DeleteTemplateHandler(c *gin.Context) (int, interface{}) {
+func DeleteSandboxHandler(c *gin.Context) (int, interface{}) {
 	idStr := c.Query("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {

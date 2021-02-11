@@ -41,8 +41,8 @@ func New() *gin.Engine {
 		manager.GET("/sandboxes", __(sandbox.ListSandboxesHandler))
 		manager.GET("/sandbox", __(sandbox.GetSandboxHandler))
 		manager.POST("/sandbox", __(sandbox.CreateSandboxHandler))
-		manager.PUT("/sandbox", __(sandbox.UpdateTemplateHandler))
-		manager.DELETE("/sandbox", __(sandbox.DeleteTemplateHandler))
+		manager.PUT("/sandbox", __(sandbox.UpdateSandboxHandler))
+		manager.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
 
 	r.Static("/static", "./public")
