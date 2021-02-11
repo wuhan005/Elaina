@@ -1,0 +1,25 @@
+<html>
+<head>
+    <title>Elaina demo</title>
+</head>
+<body>
+
+<div id="elaina_element"></div>
+
+<script src="elaina.js"></script>
+<script>
+    new Elaina({
+        host: 'http://localhost:8080',
+        uid: '',
+        el: 'elaina_element',
+        height: '400px',
+        language: {
+            go: '// Here is go code.',
+            php: '<\?php echo("Elaina");',
+            javascript: 'console.log("Elaina");',
+            python: 'print("Elaina")',
+        }
+    })
+</script>
+</body>
+</html>

@@ -58,10 +58,8 @@ func EditorHandler(c *gin.Context) {
 }
 
 func RunTaskHandler(c *gin.Context) (int, interface{}) {
-	code, err := c.GetRawData()
-	if err != nil {
-		return gadget.MakeErrJSON(50000, "Failed to parse input.")
-	}
+	selectLang := c.PostForm("lang")
+	code := c.PostForm("code")
 
 	sandboxIf := c.MustGet("sandbox")
 	sandbox, ok := sandboxIf.(*db.Sandbox)
@@ -69,12 +67,8 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 		return gadget.MakeErrJSON(50000, "Failed to get sandbox data.")
 	}
 
-	var selectLang string
 	var lang []string
 	for _, l := range sandbox.Template.Language.Elements {
-		if l.String == c.Query("l") {
-			selectLang = l.String
-		}
 		lang = append(lang, l.String)
 	}
 
@@ -89,7 +83,7 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 
 	startAt := time.Now().UnixNano()
 
-	t, err := task.NewTask(selectLang, sandbox.Template, code)
+	t, err := task.NewTask(selectLang, sandbox.Template, []byte(code))
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to create task: %v", err)
 	}
