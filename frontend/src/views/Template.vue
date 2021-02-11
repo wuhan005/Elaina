@@ -16,6 +16,7 @@
           <at-checkbox label="php">PHP</at-checkbox>
           <at-checkbox label="python">Python</at-checkbox>
           <at-checkbox label="go">Go</at-checkbox>
+          <at-checkbox label="javascript">JavaScript</at-checkbox>
         </at-checkbox-group>
         <br><br>
         <span>超时时间</span>
