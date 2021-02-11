@@ -1,29 +1,30 @@
 <template>
   <div id="app">
     <div class="container">
-      <at-menu mode="horizontal" :active-name="$route.name" style="width: 100%" @on-select="go">
-        <at-menu-item name="dashboard"><i class="icon icon-bar-chart-2"></i>仪表盘</at-menu-item>
-        <at-menu-item name="template"><i class="icon icon-copy"></i>运行模板</at-menu-item>
-        <at-menu-item name="sandbox"><i class="icon icon-box"></i>沙箱</at-menu-item>
-      </at-menu>
+      <b-navbar>
+        <template #brand>
+          <b-navbar-item tag="router-link" :to="{ path: '/' }">
+            <span>Elaina</span>
+          </b-navbar-item>
+        </template>
+        <template #start>
+          <b-navbar-item tag="router-link" :to="{ path: '/' }">
+            仪表盘
+          </b-navbar-item>
+          <b-navbar-item tag="router-link" :to="{ path: '/template' }">
+            运行模板
+          </b-navbar-item>
+          <b-navbar-item tag="router-link" :to="{ path: '/sandbox' }">
+            沙箱
+          </b-navbar-item>
+        </template>
+      </b-navbar>
       <div class="container-fluid">
-        <router-view style="margin-top: 10px"/>
+        <router-view/>
       </div>
     </div>
   </div>
 </template>
-
-<script>
-export default {
-  methods: {
-    go(route) {
-      this.$router.push({
-        name: route
-      })
-    }
-  }
-}
-</script>
 
 <style>
 #app {

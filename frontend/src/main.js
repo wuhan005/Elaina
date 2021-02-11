@@ -2,13 +2,13 @@ import Vue from 'vue'
 import App from './App.vue'
 import './registerServiceWorker'
 import router from './router'
-import AtComponents from 'at-ui'
-import 'at-ui-style'
 import utils from './utils'
+import Buefy from 'buefy'
+import 'buefy/dist/buefy.css'
 
 Vue.config.productionTip = false
 Vue.prototype.utils = utils
-Vue.use(AtComponents)
+Vue.use(Buefy)
 
 new Vue({
     router,
