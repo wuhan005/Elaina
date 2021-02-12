@@ -45,7 +45,7 @@ func New() *gin.Engine {
 		managerApi.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
 	// /fe will be crated by CI.
-	r.Static("/m", "/fe")
+	r.Static("/m", "./fe")
 
 	r.Static("/static", "./public")
 	return r
