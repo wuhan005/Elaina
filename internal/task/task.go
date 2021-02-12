@@ -170,7 +170,3 @@ func (t *Task) Run() (*Output, error) {
 		Body:     output,
 	}, nil
 }
-
-func getContainers() {
-
-}
