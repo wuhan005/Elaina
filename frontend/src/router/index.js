@@ -19,12 +19,35 @@ const routes = [
         name: 'sandbox',
         component: () => import('@/views/Sandbox.vue')
     },
+    {
+        path: '/login',
+        name: 'login',
+        component: () => import('@/views/Login.vue')
+    },
 ]
 
-const router = new VueRouter({
+let router = new VueRouter({
     mode: 'hash',
     base: process.env.BASE_URL,
     routes
+})
+
+router.beforeEach((to, from, next) => {
+    // Router guard
+    if (!localStorage.getItem('login') && to.name !== 'login') {
+        next({
+            name: 'login'
+        })
+        return
+    }
+    // Login again
+    if (localStorage.getItem('login') && to.name === 'login') {
+        next({
+            name: 'dashboard'
+        })
+        return
+    }
+    next()
 })
 
 export default router

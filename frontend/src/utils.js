@@ -5,16 +5,14 @@ if (process.env.NODE_ENV === 'development') {
     baseURL = 'http://localhost:8080/api'
 }
 
+axios.defaults.withCredentials = true;
+
 export default {
     baseURL: baseURL,
 
     GET: (uri, auth = true, bURL = baseURL) => {
         return new Promise((resolve, reject) => {
-            axios.get(bURL + uri, {
-                headers: {
-                    'Authorization': auth ? localStorage.getItem('token') : ''
-                }
-            }).then(res => {
+            axios.get(bURL + uri, {}).then(res => {
                 resolve(res.data.data);
             }).catch(err => {
                 reject(err);
@@ -24,11 +22,7 @@ export default {
 
     POST: (uri, payload = {}, auth = true, bURL = baseURL) => {
         return new Promise((resolve, reject) => {
-            axios.post(bURL + uri, payload, {
-                headers: {
-                    'Authorization': auth ? localStorage.getItem('token') : ''
-                }
-            }).then(res => {
+            axios.post(bURL + uri, payload, {}).then(res => {
                 resolve(res.data.data);
             }).catch(err => {
                 reject(err);
@@ -38,11 +32,7 @@ export default {
 
     DELETE: (uri, auth = true, bURL = baseURL) => {
         return new Promise((resolve, reject) => {
-            axios.delete(bURL + uri, {
-                headers: {
-                    'Authorization': auth ? localStorage.getItem('token') : ''
-                }
-            }).then(res => {
+            axios.delete(bURL + uri, {}).then(res => {
                 resolve(res.data.data);
             }).catch(err => {
                 reject(err);
@@ -52,11 +42,7 @@ export default {
 
     PUT: (uri, payload = {}, auth = true, bURL = baseURL) => {
         return new Promise((resolve, reject) => {
-            axios.put(bURL + uri, payload, {
-                headers: {
-                    'Authorization': auth ? localStorage.getItem('token') : ''
-                }
-            }).then(res => {
+            axios.put(bURL + uri, payload, {}).then(res => {
                 resolve(res.data.data);
             }).catch(err => {
                 reject(err);

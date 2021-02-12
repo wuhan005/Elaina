@@ -1,9 +1,15 @@
 package route
 
 import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"os"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/gin"
+	"github.com/thanhpk/randstr"
+
+	"github.com/wuhan005/Elaina/internal/auth"
 	"github.com/wuhan005/Elaina/internal/route/sandbox"
 	"github.com/wuhan005/Elaina/internal/route/task"
 	"github.com/wuhan005/Elaina/internal/route/template"
@@ -14,10 +20,15 @@ func New() *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"},
-		AllowHeaders: []string{"Authorization", "Content-type", "User-Agent"},
-		AllowOrigins: []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"},
+		AllowHeaders:     []string{"Content-type", "User-Agent"},
+		AllowCredentials: true,
+		AllowOrigins:     []string{os.Getenv("APP_URL")},
 	}))
+
+	// Session
+	store := cookie.NewStore([]byte(randstr.String(50)))
+	r.Use(sessions.Sessions("elaina", store))
 
 	r.LoadHTMLGlob("templates/*")
 
@@ -30,6 +41,10 @@ func New() *gin.Engine {
 
 	api := r.Group("/api")
 	managerApi := api.Group("/m")
+	managerApi.Use(auth.LoginMiddleware)
+	{
+		managerApi.POST("/login", __(auth.LoginHandler))
+	}
 	{
 		managerApi.GET("/templates", __(template.ListTemplatesHandler))
 		managerApi.GET("/template", __(template.GetTemplateHandler))
@@ -44,7 +59,7 @@ func New() *gin.Engine {
 		managerApi.PUT("/sandbox", __(sandbox.UpdateSandboxHandler))
 		managerApi.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
-	// /fe will be crated by CI.
+	// /fe will be created by CI.
 	r.Static("/m", "./fe")
 
 	r.Static("/static", "./public")
