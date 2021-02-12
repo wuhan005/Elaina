@@ -38,5 +38,5 @@ jobs:
 
       - name: Docker build & push
         run: |
-          docker build --file Dockerfile -t docker.pkg.github.com/wuhan005/elaina:latest .
-          docker push docker.pkg.github.com/wuhan005/elaina:latest
+          docker build --file Dockerfile -t docker.pkg.github.com/wuhan005/elaina/server:latest .
+          docker push docker.pkg.github.com/wuhan005/elaina/server:latest
