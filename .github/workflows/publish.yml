@@ -25,11 +25,14 @@ jobs:
         with:
           node-version: '12'
 
+      - name: Install Yarn
+        run: npm install -g yarn
+
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Build frontend
-        run: cd frontend && npm install && npm build
+        run: cd frontend && yarn install && yarn build
 
       - name: Get dependencies
         run: go mod tidy
