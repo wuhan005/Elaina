@@ -123,10 +123,10 @@
               <b-field label="自定义 DNS 解析">
               </b-field>
               <b-field label="最大容器数">
-                <b-numberinput v-model="updateTemplateForm.max_container" :min="6" :max="2048"></b-numberinput>
+                <b-numberinput v-model="updateTemplateForm.max_container" :min="0" :max="1000"></b-numberinput>
               </b-field>
               <b-field label="单 IP 最大容器数">
-                <b-numberinput v-model="updateTemplateForm.max_container_per_ip" :min="6" :max="2048"></b-numberinput>
+                <b-numberinput v-model="updateTemplateForm.max_container_per_ip" :min="0" :max="100"></b-numberinput>
               </b-field>
             </section>
             <footer class="modal-card-foot">
