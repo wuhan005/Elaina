@@ -1,0 +1,42 @@
+name: Go
+on:
+  push:
+    branches: [ master ]
+
+env:
+  GOPROXY: "https://proxy.golang.org"
+
+jobs:
+  build:
+    name: Build Docker image
+    strategy:
+      matrix:
+        go-version: [ 1.15.x ]
+        platform: [ ubuntu-latest ]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: go mod tidy
+
+      - name: Build binary
+        run: CGO_ENABLED=0 go build -v -trimpath
+
+      - name: Docker login
+        uses: docker/login-action@v1
+        with:
+          registry: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker build & push
+        run: |
+          docker build --file Dockerfile -t docker.pkg.github.com/wuhan005/elaina:latest .
+          docker push docker.pkg.github.com/wuhan005/elaina:latest
