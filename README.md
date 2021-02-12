@@ -24,7 +24,7 @@ docker build . -t elaina-<lang>:latest
 
 ### Step 3: Start the Elaina server
 
-Create folder `~/.elaina/volume` in your server.
+Create folder `/.elaina/volume` in your server.
 
 Put the [docker-compose.yml](https://github.com/wuhan005/Elaina/blob/master/docker-compose.yml) file in your working
 directory.
