@@ -24,7 +24,13 @@ func main() {
 		log.Fatal("APP_PASSWORD is not strong enough")
 	}
 
-	err := db.Init()
+	// Make runtime folder.
+	err := os.MkdirAll("./.elaina/volume", 0755)
+	if err != nil {
+		log.Fatal("Failed to mkdir ./.elaina/volume: %v", err)
+	}
+
+	err = db.Init()
 	if err != nil {
 		log.Fatal("Failed to connect to database: %v", err)
 	}
