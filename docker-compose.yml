@@ -1,7 +1,7 @@
 version: '3'
 services:
   elaina:
-    image: docker.pkg.github.com/wuhan005/elaina/elaina-server:latest
+    image: wuhan005/elaina:latest
     ports:
       - "8080:8080"
     depends_on:
