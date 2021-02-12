@@ -78,6 +78,7 @@ func (t *Task) Run() (*Output, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.NegotiateAPIVersion(t.ctx)
 
 	var networkMode container.NetworkMode
 	if t.template.InternetAccess {
