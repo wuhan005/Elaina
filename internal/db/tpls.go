@@ -48,8 +48,8 @@ type CreateTplOptions struct {
 	MaxMemory         int64
 	InternetAccess    bool
 	DNS               map[string]string
-	MaxContainer      int
-	MaxContainerPerIP int
+	MaxContainer      int64
+	MaxContainerPerIP int64
 }
 
 func (db *tpls) Create(opts CreateTplOptions) error {
@@ -89,8 +89,8 @@ type UpdateTplOptions struct {
 	MaxMemory         int64
 	InternetAccess    bool
 	DNS               map[string]string
-	MaxContainer      int
-	MaxContainerPerIP int
+	MaxContainer      int64
+	MaxContainerPerIP int64
 }
 
 func (db *tpls) Update(opts UpdateTplOptions) error {

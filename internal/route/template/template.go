@@ -42,8 +42,8 @@ func CreateTemplateHandler(c *gin.Context) (int, interface{}) {
 		MaxMemory         int64             `json:"max_memory" valid:"required;min:6;max:2048" label:"最大内存"` // MB
 		InternetAccess    bool              `json:"internet_access"`
 		DNS               map[string]string `json:"dns"`
-		MaxContainer      int               `json:"max_container" valid:"required;min:0;max:1000" label:"最大容器数"`
-		MaxContainerPerIP int               `json:"max_container_per_ip" valid:"required;min:0;max:100" label:"单 IP 最大容器数"`
+		MaxContainer      int64             `json:"max_container" valid:"required;min:0;max:1000" label:"最大容器数"`
+		MaxContainerPerIP int64             `json:"max_container_per_ip" valid:"required;min:0;max:100" label:"单 IP 最大容器数"`
 	}
 	err := c.BindJSON(&form)
 	if err != nil {
@@ -84,8 +84,8 @@ func UpdateTemplateHandler(c *gin.Context) (int, interface{}) {
 		MaxMemory         int64             `json:"max_memory" valid:"required;min:6;max:2048" label:"最大内存"` // MB
 		InternetAccess    bool              `json:"internet_access"`
 		DNS               map[string]string `json:"dns"`
-		MaxContainer      int               `json:"max_container" valid:"required;min:0;max:1000" label:"最大容器数"`
-		MaxContainerPerIP int               `json:"max_container_per_ip" valid:"required;min:0;max:100" label:"单 IP 最大容器数"`
+		MaxContainer      int64             `json:"max_container" valid:"required;min:0;max:1000" label:"最大容器数"`
+		MaxContainerPerIP int64             `json:"max_container_per_ip" valid:"required;min:0;max:100" label:"单 IP 最大容器数"`
 	}
 	err := c.BindJSON(&form)
 	if err != nil {

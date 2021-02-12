@@ -18,6 +18,6 @@ type Tpl struct {
 	MaxMemory         int64          `json:"max_memory"`
 	InternetAccess    bool           `json:"internet_access"`
 	DNS               datatypes.JSON `gorm:"type:jsonb" json:"dns"`
-	MaxContainer      int            `json:"max_container"`
-	MaxContainerPerIP int            `json:"max_container_per_ip"`
+	MaxContainer      int64          `json:"max_container"`
+	MaxContainerPerIP int64          `json:"max_container_per_ip"`
 }

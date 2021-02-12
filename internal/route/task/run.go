@@ -1,12 +1,17 @@
 package task
 
 import (
+	"fmt"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wuhan005/gadget"
+	log "unknwon.dev/clog/v2"
 
 	"github.com/wuhan005/Elaina/internal/db"
+	"github.com/wuhan005/Elaina/internal/ratelimit"
 	"github.com/wuhan005/Elaina/internal/task"
 )
 
@@ -81,8 +86,24 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 		selectLang = lang[0]
 	}
 
-	startAt := time.Now().UnixNano()
+	// Rete limit
+	templateRateKey := fmt.Sprintf("tpl-%d", sandbox.TemplateID)
+	ip, _, _ := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr))
+	ipRateKey := fmt.Sprintf("ip-%s", ip)
+	log.Trace(ipRateKey)
+	err := ratelimit.Add(templateRateKey, sandbox.Template.MaxContainer)
+	if err != nil {
+		return gadget.MakeErrJSON(40300, "rate limit: max container limit.")
+	}
+	defer ratelimit.Done(templateRateKey)
 
+	err = ratelimit.Add(ipRateKey, sandbox.Template.MaxContainerPerIP)
+	if err != nil {
+		return gadget.MakeErrJSON(40300, "rate limit: ip limit.")
+	}
+	defer ratelimit.Done(ipRateKey)
+
+	startAt := time.Now().UnixNano()
 	t, err := task.NewTask(selectLang, sandbox.Template, []byte(code))
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to create task: %v", err)
