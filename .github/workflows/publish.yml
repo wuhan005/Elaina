@@ -48,4 +48,4 @@ jobs:
           registry: registry.hub.docker.com
           repository: registry.hub.docker.com/wuhan005/elaina
           tag_format: "%YYYY%_%MM%_%DD%_%H%%m%%s%"
-          auto_tag: trues
+          auto_tag: true
