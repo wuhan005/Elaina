@@ -8,6 +8,8 @@ services:
       - postgres
     links:
       - postgres:postgres
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       APP_URL: http://localhost:8080
       APP_PASSWORD: your_super_secret_here
