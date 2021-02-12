@@ -29,21 +29,23 @@ func New() *gin.Engine {
 	}
 
 	api := r.Group("/api")
-	manager := api.Group("/m")
+	managerApi := api.Group("/m")
 	{
-		manager.GET("/templates", __(template.ListTemplatesHandler))
-		manager.GET("/template", __(template.GetTemplateHandler))
-		manager.POST("/template", __(template.CreateTemplateHandler))
-		manager.PUT("/template", __(template.UpdateTemplateHandler))
-		manager.DELETE("/template", __(template.DeleteTemplateHandler))
+		managerApi.GET("/templates", __(template.ListTemplatesHandler))
+		managerApi.GET("/template", __(template.GetTemplateHandler))
+		managerApi.POST("/template", __(template.CreateTemplateHandler))
+		managerApi.PUT("/template", __(template.UpdateTemplateHandler))
+		managerApi.DELETE("/template", __(template.DeleteTemplateHandler))
 	}
 	{
-		manager.GET("/sandboxes", __(sandbox.ListSandboxesHandler))
-		manager.GET("/sandbox", __(sandbox.GetSandboxHandler))
-		manager.POST("/sandbox", __(sandbox.CreateSandboxHandler))
-		manager.PUT("/sandbox", __(sandbox.UpdateSandboxHandler))
-		manager.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
+		managerApi.GET("/sandboxes", __(sandbox.ListSandboxesHandler))
+		managerApi.GET("/sandbox", __(sandbox.GetSandboxHandler))
+		managerApi.POST("/sandbox", __(sandbox.CreateSandboxHandler))
+		managerApi.PUT("/sandbox", __(sandbox.UpdateSandboxHandler))
+		managerApi.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
+	// /fe will be crated by CI.
+	r.Static("/m", "/fe")
 
 	r.Static("/static", "./public")
 	return r

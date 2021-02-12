@@ -10,6 +10,7 @@ WORKDIR /etc/Elaina
 ADD Elaina /etc/Elaina
 ADD templates /etc/Elaina/templates
 ADD public /etc/Elaina/public
+ADD frontend/dist /etc/Elaina/fe
 
 RUN chmod 655 /etc/Elaina/Elaina
 

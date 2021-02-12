@@ -1,4 +1,4 @@
-name: Go
+name: Publish
 on:
   push:
     branches: [ master ]
@@ -20,8 +20,16 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - name: Install NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Build frontend
+        run: cd frontend && npm install && npm build
 
       - name: Get dependencies
         run: go mod tidy
@@ -38,5 +46,5 @@ jobs:
 
       - name: Docker build & push
         run: |
-          docker build --file Dockerfile -t docker.pkg.github.com/wuhan005/elaina/server:latest .
-          docker push docker.pkg.github.com/wuhan005/elaina/server:latest
+          docker build --file Dockerfile -t docker.pkg.github.com/wuhan005/elaina/elaina-server:latest .
+          docker push docker.pkg.github.com/wuhan005/elaina/elaina-server:latest
