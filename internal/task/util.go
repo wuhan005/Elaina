@@ -5,7 +5,7 @@ import (
 	"path"
 )
 
-const TmpVolumePath = "./.elaina/volume"
+const TmpVolumePath = "~/.elaina/volume"
 
 func GetAbsTmpVolume() string {
 	pwd, err := os.Getwd()
