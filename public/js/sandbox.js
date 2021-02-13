@@ -56,7 +56,7 @@ window.addEventListener('message', (evt) => {
         languagePlaceholder = evt.data.language
         let code = Base64.decode(evt.data.code ?? '');
         if (code !== '') {
-            $('#result_data').text(code);
+            editor.setValue(code);
         }
     }
 }, false);
