@@ -54,5 +54,9 @@ $('[lang]').click((evt) => {
 window.addEventListener('message', (evt) => {
     if (evt.data.type === 'elaina') {
         languagePlaceholder = evt.data.language
+        let code = Base64.decode(evt.data.code ?? '');
+        if (code !== '') {
+            $('#result_data').text(code);
+        }
     }
 }, false);
