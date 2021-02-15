@@ -3,6 +3,8 @@
 <img align="right" src="elaina.gif" width=40%/>
 Docker-based remote code runner.
 
+[简体中文](https://github.com/wuhan005/Elaina/blob/master/README_zh.md)
+
 ## Start
 
 ### Step 1: Install dependencies
