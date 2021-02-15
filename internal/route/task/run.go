@@ -2,13 +2,10 @@ package task
 
 import (
 	"fmt"
-	"net"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wuhan005/gadget"
-	log "unknwon.dev/clog/v2"
 
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/ratelimit"
@@ -88,9 +85,12 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 
 	// Rete limit
 	templateRateKey := fmt.Sprintf("tpl-%d", sandbox.TemplateID)
-	ip, _, _ := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr))
-	ipRateKey := fmt.Sprintf("ip-%s", ip)
-	log.Trace(ipRateKey)
+
+	// ⚠️ Using `X-Forwarded-For`, `X-Real-Ip`, `X-Appengine-Remote-Addr` as the IP address at first.
+	// If you deploy Elaina without a reverse proxy server, you should pay attention to it.
+	// The attackers can bypass the IP rate limit by changing the HTTP headers.
+	ipRateKey := fmt.Sprintf("ip-%s", c.ClientIP())
+
 	err := ratelimit.Add(templateRateKey, sandbox.Template.MaxContainer)
 	if err != nil {
 		return gadget.MakeErrJSON(40300, "rate limit: max container limit.")
