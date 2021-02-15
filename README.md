@@ -29,7 +29,12 @@ Create folder `/.elaina/volume` in your server.
 Put the [docker-compose.yml](https://github.com/wuhan005/Elaina/blob/master/docker-compose.yml) file in your working
 directory.
 
-**Edit `APP_URL` `APP_PASSWORD` in docker-compose.yml!!**
+**Edit `APP_URL` `APP_PASSWORD` `APP_CONTAINER_PATH` in docker-compose.yml!!**
+
+* `APP_URL` Your backend service host, used to set the allow origins header in HTTP CORS header.
+* `APP_PASSWORD` The password used to log in the manager panel.
+* `APP_CONTAINER_PATH` The path where the containers' volumes are placed, make sure the Docker has the correct
+  permission to access.
 
 The following command will create a PostgreSQL database as well as the Elaina server.
 
