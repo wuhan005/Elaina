@@ -19,7 +19,7 @@ import (
 	"github.com/wuhan005/Elaina/internal/db"
 )
 
-const tmpVolumePath = "/.elaina/volume"
+var tmpVolumePath = path.Join(os.Getenv("APP_CONTAINER_PATH"), ".elaina/volume")
 
 type Task struct {
 	ctx context.Context
