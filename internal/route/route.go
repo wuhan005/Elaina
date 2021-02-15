@@ -44,6 +44,8 @@ func New() *gin.Engine {
 	managerApi.Use(auth.LoginMiddleware)
 	{
 		managerApi.POST("/login", __(auth.LoginHandler))
+		managerApi.POST("/logout", __(auth.LogoutHandler))
+		managerApi.GET("/status", __(auth.CheckStatusHandlers))
 	}
 	{
 		managerApi.GET("/templates", __(template.ListTemplatesHandler))

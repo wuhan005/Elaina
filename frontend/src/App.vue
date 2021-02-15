@@ -17,6 +17,9 @@
           <b-navbar-item tag="router-link" :to="{ path: '/sandbox' }">
             沙箱
           </b-navbar-item>
+          <b-navbar-item @click="logout">
+            登出
+          </b-navbar-item>
         </template>
       </b-navbar>
       <div class="container-fluid">
@@ -25,6 +28,26 @@
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  mounted() {
+    this.utils.GET('/m/status').catch(err => {
+      if (localStorage.getItem('login') !== null) {
+        this.logout()
+      }
+    })
+  },
+
+  methods: {
+    logout() {
+      this.utils.POST('/m/logout')
+      localStorage.removeItem('login')
+      location.reload()
+    }
+  }
+}
+</script>
 
 <style>
 #app {

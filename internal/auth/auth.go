@@ -11,7 +11,7 @@ import (
 const loginFlag = "i love you"
 
 func LoginMiddleware(c *gin.Context) {
-	if c.Request.RequestURI == "/api/m/login" {
+	if c.Request.RequestURI == "/api/m/login" || c.Request.RequestURI == "/api/m/logout" {
 		c.Next()
 		return
 	}
@@ -48,4 +48,15 @@ func LoginHandler(c *gin.Context) (int, interface{}) {
 	}
 
 	return gadget.MakeSuccessJSON("Login succeed.")
+}
+
+func LogoutHandler(c *gin.Context) (int, interface{}) {
+	session := sessions.Default(c)
+	session.Clear()
+	_ = session.Save()
+	return gadget.MakeSuccessJSON("Logout succeed.")
+}
+
+func CheckStatusHandlers(c *gin.Context) (int, interface{}) {
+	return gadget.MakeSuccessJSON("")
 }
