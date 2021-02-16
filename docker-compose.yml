@@ -9,6 +9,7 @@ services:
     links:
       - postgres:postgres
     volumes:
+      - /home/<your_user>/.elaina/volume:/.elaina/volume
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       APP_URL: http://localhost:8080
