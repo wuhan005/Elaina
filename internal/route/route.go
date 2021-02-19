@@ -1,6 +1,8 @@
 package route
 
 import (
+	tmpl "html/template"
+	"net/http"
 	"os"
 
 	"github.com/gin-contrib/cors"
@@ -8,11 +10,15 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/thanhpk/randstr"
+	"github.com/wuhan005/gadget"
 
+	"github.com/wuhan005/Elaina/frontend"
 	"github.com/wuhan005/Elaina/internal/auth"
 	"github.com/wuhan005/Elaina/internal/route/sandbox"
 	"github.com/wuhan005/Elaina/internal/route/task"
 	"github.com/wuhan005/Elaina/internal/route/template"
+	"github.com/wuhan005/Elaina/public"
+	"github.com/wuhan005/Elaina/templates"
 )
 
 // New returns a new gin router.
@@ -30,7 +36,9 @@ func New() *gin.Engine {
 	store := cookie.NewStore([]byte(randstr.String(50)))
 	r.Use(sessions.Sessions("elaina", store))
 
-	r.LoadHTMLGlob("templates/*")
+	// Templates
+	tpl := tmpl.Must(tmpl.New("").ParseFS(templates.FS, "*"))
+	r.SetHTMLTemplate(tpl)
 
 	run := r.Group("/r")
 	run.Use(task.SandboxMiddleware)
@@ -62,9 +70,8 @@ func New() *gin.Engine {
 		managerApi.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
 	// /fe will be created by CI.
-	r.Static("/m", "./fe")
-
-	r.Static("/static", "./public")
+	r.StaticFS("/m", gadget.NewEmbed(frontend.FS, "dist"))
+	r.StaticFS("/static", http.FS(public.FS))
 	return r
 }
 
