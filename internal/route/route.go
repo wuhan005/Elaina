@@ -2,6 +2,7 @@ package route
 
 import (
 	tmpl "html/template"
+	"io/fs"
 	"net/http"
 	"os"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/thanhpk/randstr"
-	"github.com/wuhan005/gadget"
+	log "unknwon.dev/clog/v2"
 
 	"github.com/wuhan005/Elaina/frontend"
 	"github.com/wuhan005/Elaina/internal/auth"
@@ -69,8 +70,12 @@ func New() *gin.Engine {
 		managerApi.PUT("/sandbox", __(sandbox.UpdateSandboxHandler))
 		managerApi.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
-	// /fe will be created by CI.
-	r.StaticFS("/m", gadget.NewEmbed(frontend.FS, "dist"))
+	// /m will be created by CI.
+	fe, err := fs.Sub(frontend.FS, "dist")
+	if err != nil {
+		log.Fatal("Failed to sub path `dist`: %v", err)
+	}
+	r.StaticFS("/m", http.FS(fe))
 	r.StaticFS("/static", http.FS(public.FS))
 	return r
 }
