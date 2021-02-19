@@ -31,7 +31,7 @@ require (
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/thanhpk/randstr v1.0.4
 	github.com/ugorji/go v1.2.4 // indirect
-	github.com/wuhan005/gadget v0.0.0-20210219155656-8d6a66750c94
+	github.com/wuhan005/gadget v0.0.0-20210219162031-c01c8836e409
 	github.com/wuhan005/govalid v0.0.0-20200323121644-e230a0007b1f
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
