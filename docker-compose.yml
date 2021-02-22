@@ -1,6 +1,8 @@
 version: '3'
 services:
   elaina:
+    # image: registry.cn-beijing.aliyuncs.com/eggplant/elaina:latest
+    # image: registry.cn-hongkong.aliyuncs.com/eggplant/elaina:latest
     image: wuhan005/elaina:latest
     ports:
       - "8080:8080"
