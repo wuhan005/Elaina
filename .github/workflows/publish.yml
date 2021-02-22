@@ -50,12 +50,22 @@ jobs:
           tag_format: "%YYYY%_%MM%_%DD%_%H%%m%%s%"
           auto_tag: true
 
-      - name: Build & Publish to Aliyun Registry
+      - name: Build & Publish to Aliyun Hongkong Registry
         uses: wuhan005/publish-docker-action@master
         with:
           username: ${{ secrets.ALIYUN_USERNAME }}
           password: ${{ secrets.ALIYUN_PASSWORD }}
           registry: registry.cn-hongkong.aliyuncs.com
           repository: registry.cn-hongkong.aliyuncs.com/eggplant/elaina
+          tag_format: "%YYYY%_%MM%_%DD%_%H%%m%%s%"
+          auto_tag: true
+
+      - name: Build & Publish to Aliyun Beijing Registry
+        uses: wuhan005/publish-docker-action@master
+        with:
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+          registry: registry.cn-beijing.aliyuncs.com
+          repository: registry.cn-beijing.aliyuncs.com/eggplant/elaina
           tag_format: "%YYYY%_%MM%_%DD%_%H%%m%%s%"
           auto_tag: true
