@@ -1,4 +1,4 @@
-# Elaina ![Go](https://github.com/wuhan005/Elaina/workflows/Go/badge.svg)
+# Elaina ![Go](https://github.com/wuhan005/Elaina/workflows/Go/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/wuhan005/Elaina)](https://goreportcard.com/report/github.com/wuhan005/Elaina) ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/wuhan005/elaina) ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/wuhan005/elaina)
 
 <img align="right" src="elaina.gif" width=40%/>
 基于 Docker 的远程代码运行器。
