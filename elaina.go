@@ -32,6 +32,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create path /elaina/volume: %v", err)
 	}
+	log.Trace("Create /elaina/volume succeed!")
 
 	err = db.Init()
 	if err != nil {

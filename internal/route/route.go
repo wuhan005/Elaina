@@ -41,6 +41,8 @@ func New() *gin.Engine {
 	tpl := tmpl.Must(tmpl.New("").ParseFS(templates.FS, "*"))
 	r.SetHTMLTemplate(tpl)
 
+	r.GET("/", IndexHandler)
+
 	run := r.Group("/r")
 	run.Use(task.SandboxMiddleware)
 	{
@@ -70,6 +72,7 @@ func New() *gin.Engine {
 		managerApi.PUT("/sandbox", __(sandbox.UpdateSandboxHandler))
 		managerApi.DELETE("/sandbox", __(sandbox.DeleteSandboxHandler))
 	}
+
 	// /m will be created by CI.
 	fe, err := fs.Sub(frontend.FS, "dist")
 	if err != nil {
