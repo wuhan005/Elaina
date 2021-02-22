@@ -70,10 +70,10 @@
               <b-field label="">
               </b-field>
               <b-field label="Maximum Number of Containers">
-                <b-numberinput v-model="newTemplateForm.max_container" :min="6" :max="2048"></b-numberinput>
+                <b-numberinput v-model="newTemplateForm.max_container" :min="0" :max="2048"></b-numberinput>
               </b-field>
               <b-field label="Maximum Number of Containers per IP">
-                <b-numberinput v-model="newTemplateForm.max_container_per_ip" :min="6" :max="2048"></b-numberinput>
+                <b-numberinput v-model="newTemplateForm.max_container_per_ip" :min="0" :max="2048"></b-numberinput>
               </b-field>
             </section>
             <footer class="modal-card-foot">
