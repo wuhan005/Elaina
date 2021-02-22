@@ -19,8 +19,6 @@ import (
 	"github.com/wuhan005/Elaina/internal/db"
 )
 
-const innerPath = "/.elaina/volume"
-
 var hostVolumePath = path.Join(os.Getenv("APP_CONTAINER_PATH"), "volume")
 
 type Task struct {
@@ -53,7 +51,7 @@ func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 	id := uuid.NewV4().String()
 
 	// Make runner folder.
-	volumePath := path.Join(innerPath, id)
+	volumePath := path.Join("/.elaina/volume", id)
 	err := os.MkdirAll(volumePath, 0755)
 	if err != nil {
 		return nil, err
@@ -69,7 +67,7 @@ func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 		ctx:          context.Background(),
 		uuid:         id,
 		runner:       runner,
-		sourceVolume: hostVolumePath,
+		sourceVolume: path.Join(hostVolumePath, id),
 		template:     template,
 	}, nil
 }
