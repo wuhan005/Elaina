@@ -2,7 +2,7 @@
   <div>
     <section class="hero">
       <div class="hero-body">
-        <p class="title">仪表盘</p>
+        <p class="title">Dashboard</p>
         <p class="subtitle"></p>
       </div>
     </section>

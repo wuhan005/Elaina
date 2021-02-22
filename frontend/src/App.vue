@@ -9,16 +9,16 @@
         </template>
         <template #start>
           <b-navbar-item tag="router-link" :to="{ path: '/' }">
-            仪表盘
+            Dashboard
           </b-navbar-item>
           <b-navbar-item tag="router-link" :to="{ path: '/template' }">
-            运行模板
+            Template
           </b-navbar-item>
           <b-navbar-item tag="router-link" :to="{ path: '/sandbox' }">
-            沙箱
+            Sandbox
           </b-navbar-item>
           <b-navbar-item @click="logout">
-            登出
+            Logout
           </b-navbar-item>
         </template>
       </b-navbar>

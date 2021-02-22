@@ -2,30 +2,30 @@
   <div>
     <section class="hero">
       <div class="hero-body">
-        <p class="title">运行模板</p>
-        <p class="subtitle">运行模板定义了沙箱的基本资源限制、访问策略。</p>
-        <b-button type="is-primary is-light" @click="createModalVisible = true">添加模板</b-button>
+        <p class="title">Template</p>
+        <p class="subtitle">The template defines the resource limited and strategy of the sandbox.</p>
+        <b-button type="is-primary is-light" @click="createModalVisible = true">New Template</b-button>
         <b-table :data="list" :loading="isLoading" striped hoverable>
-          <b-table-column label="模板名称" v-slot="props">{{ props.row.name }}</b-table-column>
-          <b-table-column label="编程语言" v-slot="props">
+          <b-table-column label="Name" v-slot="props">{{ props.row.name }}</b-table-column>
+          <b-table-column label="Programming Languages" v-slot="props">
             <b-taglist>
               <b-tag v-for="(tag, index) in props.row.language.Elements" v-bind:key="index">
                 {{ tag }}
               </b-tag>
             </b-taglist>
           </b-table-column>
-          <b-table-column label="超时时间 (s)" v-slot="props">{{ props.row.timeout }}</b-table-column>
-          <b-table-column label="最大 CPU 数" v-slot="props">{{ props.row.max_cpus }}</b-table-column>
-          <b-table-column label="最大内存 (MB)" v-slot="props">{{ props.row.max_memory }}</b-table-column>
-          <b-table-column label="开放外网" v-slot="props">{{ props.row.internet_access }}</b-table-column>
-          <b-table-column label="最大容器数" v-slot="props">{{ props.row.max_container }}</b-table-column>
-          <b-table-column label="单 IP 最大容器数" v-slot="props">{{ props.row.max_container_per_ip }}</b-table-column>
+          <b-table-column label="Time Limit (s)" v-slot="props">{{ props.row.timeout }}</b-table-column>
+          <b-table-column label="Maximum CPUs" v-slot="props">{{ props.row.max_cpus }}</b-table-column>
+          <b-table-column label="Maximum Memory (MB)" v-slot="props">{{ props.row.max_memory }}</b-table-column>
+          <b-table-column label="Internet Access" v-slot="props">{{ props.row.internet_access }}</b-table-column>
+          <b-table-column label="Maximum Number of Containers" v-slot="props">{{ props.row.max_container }}</b-table-column>
+          <b-table-column label="Maximum Number of Containers per IP" v-slot="props">{{ props.row.max_container_per_ip }}</b-table-column>
           <b-table-column v-slot="props">
             <b-button type="is-light" @click="()=>{
               updateTemplateForm = JSON.parse(JSON.stringify(props.row));
               updateTemplateForm.language = updateTemplateForm.language.Elements;
               detailModalVisible = true;
-            }">操作
+            }">Edit
             </b-button>
           </b-table-column>
         </b-table>
@@ -35,19 +35,19 @@
     <!-- Create template modal-->
     <b-modal
         v-model="createModalVisible" has-modal-card trap-focus :destroy-on-hide="false" aria-role="dialog"
-        aria-label="添加模板" aria-modal>
+        aria-label="New Template" aria-modal>
       <template #default="props">
         <section>
           <div class="modal-card">
             <header class="modal-card-head">
-              <p class="modal-card-title">添加模板</p>
+              <p class="modal-card-title">New Template</p>
               <button type="button" class="delete" @click="$emit('close')"/>
             </header>
             <section class="modal-card-body">
-              <b-field label="模板名称">
+              <b-field label="Name">
                 <b-input v-model="newTemplateForm.name" required></b-input>
               </b-field>
-              <b-field label="编程语言">
+              <b-field label="Programming Languages">
                 <div class="block">
                   <b-checkbox v-model="newTemplateForm.language" native-value="php">PHP</b-checkbox>
                   <b-checkbox v-model="newTemplateForm.language" native-value="python">Python</b-checkbox>
@@ -55,30 +55,30 @@
                   <b-checkbox v-model="newTemplateForm.language" native-value="javascript">JavaScript</b-checkbox>
                 </div>
               </b-field>
-              <b-field label="超时时间 (s)">
+              <b-field label="Time Limit (s)">
                 <b-numberinput v-model="newTemplateForm.timeout" :min="0" :max="60"></b-numberinput>
               </b-field>
-              <b-field label="最大 CPU 数">
+              <b-field label="Maximum CPUs">
                 <b-numberinput v-model="newTemplateForm.max_cpus" :min="0" :max="10"></b-numberinput>
               </b-field>
-              <b-field label="最大内存 (MB)">
+              <b-field label="Maximum Memory (MB)">
                 <b-numberinput v-model="newTemplateForm.max_memory" :min="6" :max="2048"></b-numberinput>
               </b-field>
-              <b-field label="开放外网">
+              <b-field label="Internet Access">
                 <b-switch v-model="newTemplateForm.internet_access"></b-switch>
               </b-field>
-              <b-field label="自定义 DNS 解析">
+              <b-field label="">
               </b-field>
-              <b-field label="最大容器数">
+              <b-field label="Maximum Number of Containers">
                 <b-numberinput v-model="newTemplateForm.max_container" :min="6" :max="2048"></b-numberinput>
               </b-field>
-              <b-field label="单 IP 最大容器数">
+              <b-field label="Maximum Number of Containers per IP">
                 <b-numberinput v-model="newTemplateForm.max_container_per_ip" :min="6" :max="2048"></b-numberinput>
               </b-field>
             </section>
             <footer class="modal-card-foot">
-              <b-button label="关闭" @click="$emit('close')"/>
-              <b-button label="添加模板" type="is-primary" @click="newTemplate"/>
+              <b-button label="Close" @click="$emit('close')"/>
+              <b-button label="Submit" type="is-primary" @click="newTemplate"/>
             </footer>
           </div>
         </section>
@@ -88,19 +88,19 @@
     <!-- Detail template modal -->
     <b-modal
         v-model="detailModalVisible" has-modal-card trap-focus :destroy-on-hide="false" aria-role="dialog"
-        aria-label="操作模板" aria-modal>
+        aria-label="Edit" aria-modal>
       <template #default="props">
         <section>
           <div class="modal-card">
             <header class="modal-card-head">
-              <p class="modal-card-title">操作模板</p>
+              <p class="modal-card-title">Edit Template</p>
               <button type="button" class="delete" @click="$emit('close')"/>
             </header>
             <section class="modal-card-body">
-              <b-field label="模板名称">
+              <b-field label="Name">
                 <b-input v-model="updateTemplateForm.name" required></b-input>
               </b-field>
-              <b-field label="编程语言">
+              <b-field label="Programming Languages">
                 <div class="block">
                   <b-checkbox v-model="updateTemplateForm.language" native-value="php">PHP</b-checkbox>
                   <b-checkbox v-model="updateTemplateForm.language" native-value="python">Python</b-checkbox>
@@ -108,30 +108,30 @@
                   <b-checkbox v-model="updateTemplateForm.language" native-value="javascript">JavaScript</b-checkbox>
                 </div>
               </b-field>
-              <b-field label="超时时间 (s)">
+              <b-field label="Time Limit (s)">
                 <b-numberinput v-model="updateTemplateForm.timeout" :min="0" :max="60"></b-numberinput>
               </b-field>
-              <b-field label="最大 CPU 数">
+              <b-field label="Maximum CPUs">
                 <b-numberinput v-model="updateTemplateForm.max_cpus" :min="0" :max="10"></b-numberinput>
               </b-field>
-              <b-field label="最大内存 (MB)">
+              <b-field label="Maximum Memory (MB)">
                 <b-numberinput v-model="updateTemplateForm.max_memory" :min="6" :max="2048"></b-numberinput>
               </b-field>
-              <b-field label="开放外网">
+              <b-field label="Internet Access">
                 <b-switch v-model="updateTemplateForm.internet_access"></b-switch>
               </b-field>
-              <b-field label="自定义 DNS 解析">
+              <b-field label="">
               </b-field>
-              <b-field label="最大容器数">
+              <b-field label="Maximum Number of Containers">
                 <b-numberinput v-model="updateTemplateForm.max_container" :min="0" :max="1000"></b-numberinput>
               </b-field>
-              <b-field label="单 IP 最大容器数">
+              <b-field label="Maximum Number of Containers per IP">
                 <b-numberinput v-model="updateTemplateForm.max_container_per_ip" :min="0" :max="100"></b-numberinput>
               </b-field>
             </section>
             <footer class="modal-card-foot">
-              <b-button label="删除模板" type="is-danger" @click="deleteTemplate(updateTemplateForm)"/>
-              <b-button label="修改模板" type="is-primary" @click="updateTemplate"/>
+              <b-button label="Delete" type="is-danger" @click="deleteTemplate(updateTemplateForm)"/>
+              <b-button label="Edit" type="is-primary" @click="updateTemplate"/>
             </footer>
           </div>
         </section>
@@ -212,9 +212,9 @@ export default {
 
     deleteTemplate(template) {
       this.$buefy.dialog.confirm({
-        title: '删除模板',
-        message: `您确认要<b>删除</b> [ ${template.name} ] 吗？`,
-        confirmText: '确认删除',
+        title: 'Delete Template',
+        message: `Are you sure to <b>DELETE</b> [ ${template.name} ] ?`,
+        confirmText: 'Yes, delete it.',
         type: 'is-danger',
         hasIcon: true,
         onConfirm: () => {

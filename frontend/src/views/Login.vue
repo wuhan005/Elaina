@@ -2,22 +2,22 @@
   <div>
     <section class="hero">
       <div class="hero-body">
-        <p class="title">登录</p>
-        <p class="subtitle">请输入密码以登录 Elaina</p>
+        <p class="title">Login</p>
+        <p class="subtitle">Input your password to login</p>
       </div>
     </section>
 
     <form action="">
       <div class="modal-card">
         <section class="modal-card-body">
-          <b-field label="密码">
+          <b-field label="Password">
             <b-input type="password" v-model="password" password-reveal required>
             </b-input>
           </b-field>
 
         </section>
         <footer class="modal-card-foot">
-          <b-button label="登录" type="is-primary" @click="login"/>
+          <b-button label="Login" type="is-primary" @click="login"/>
         </footer>
       </div>
     </form>
