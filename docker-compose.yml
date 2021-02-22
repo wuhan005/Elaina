@@ -9,12 +9,12 @@ services:
     links:
       - postgres:postgres
     volumes:
-      - /home/<your_user>/.elaina/volume:/.elaina/volume
+      - /home/<your_user>/elaina:/elaina
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       APP_URL: http://localhost:8080
       APP_PASSWORD: your_super_secret_here
-      APP_CONTAINER_PATH: /home/<your_user>/.elaina
+      APP_CONTAINER_PATH: /home/<your_user>/elaina
       PGHOST: postgres
       PGPORT: 5432
       PGUSER: elaina
