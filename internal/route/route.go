@@ -80,6 +80,9 @@ func New() *gin.Engine {
 	}
 	r.StaticFS("/m", http.FS(fe))
 	r.StaticFS("/static", http.FS(public.FS))
+	r.NoRoute(func(c *gin.Context) {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+	})
 	return r
 }
 
