@@ -37,5 +37,5 @@ jobs:
           registry: registry.hub.docker.com
           repository: registry.hub.docker.com/elainaruntime/golang
           tag_format: "%YYYY%_%MM%_%DD%_%H%%m%%s%"
-          dockerfile: ./docker/images/golang/Dockerfile
+          file: ./docker/images/golang/Dockerfile
           auto_tag: true
