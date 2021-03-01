@@ -6,7 +6,7 @@ ADD daemon/daemon /daemon
 ENV GO111MODULE=on
 ENV GOPROXY="https://goproxy.io"
 
-RUN mkdir /runtime/runner
+RUN mkdir -p /runtime/runner
 WORKDIR /runtime/runner
 
 RUN go mod init elaina-runner
