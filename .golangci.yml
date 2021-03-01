@@ -29,3 +29,7 @@ linters:
     - gofmt
     - rowserrcheck
     - unconvert
+
+run:
+  skip-dirs:
+    - frontend
