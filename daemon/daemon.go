@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wuhan005/gadget"
@@ -34,7 +35,7 @@ func main() {
 			return
 		}
 
-		err = ioutil.WriteFile(input.FileName, []byte(input.Data), 0644)
+		err = ioutil.WriteFile(path.Join("/runtime/runner", input.FileName), []byte(input.Data), 0644)
 		if err != nil {
 			c.JSON(gadget.MakeErrJSON(400, err.Error()))
 			return
@@ -55,6 +56,7 @@ func main() {
 		stdErr := bytes.NewBuffer(nil)
 
 		cmd := exec.Command("/bin/sh", "-c", rawCommand)
+		cmd.Dir = "/runtime/runner"
 		cmd.Stdout = stdOut
 		cmd.Stderr = stdErr
 		err = cmd.Run()
@@ -66,7 +68,7 @@ func main() {
 		}))
 	})
 
-	err := r.RunUnix("./elaina-daemon.sock")
+	err := r.RunUnix("/runtime/elaina-daemon.sock")
 	if err != nil {
 		log.Fatal("Failed to start daemon: %v", err)
 	}
