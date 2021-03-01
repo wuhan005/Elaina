@@ -14,3 +14,4 @@ RUN chown -R elaina:elaina /go
 RUN chown -R elaina:elaina /runner
 
 USER elaina
+CMD ["/daemon"]
