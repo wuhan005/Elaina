@@ -11,7 +11,7 @@ WORKDIR /runtime/runner
 
 RUN go mod init elaina-runner
 RUN chown -R elaina:elaina /go
-RUN chown -R elaina:elaina /runtime/runner
+RUN chown -R elaina:elaina /runtime
 
 USER elaina
 CMD ["../../daemon"]
