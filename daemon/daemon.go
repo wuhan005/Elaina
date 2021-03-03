@@ -75,9 +75,7 @@ func main() {
 		}))
 	})
 
-	unixSocket := "./elaina-daemon.sock"
-	err := r.RunUnix(unixSocket)
-	defer os.Remove(unixSocket)
+	err := r.RunUnix("/runtime/elaina-daemon.sock")
 	if err != nil {
 		log.Fatal("Failed to start daemon: %v", err)
 	}
