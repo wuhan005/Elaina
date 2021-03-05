@@ -4,7 +4,7 @@ on:
     branches: [ master ]
     paths:
       - '.github/workflows/runtime-javascript.yml'
-      - 'docker/javascript/**'
+      - 'docker/images/javascript/**'
       - 'daemon/**'
 
 jobs:

@@ -4,7 +4,7 @@ on:
     branches: [ master ]
     paths:
       - '.github/workflows/runtime-php.yml'
-      - 'docker/php/**'
+      - 'docker/images/php/**'
       - 'daemon/**'
 
 jobs:
