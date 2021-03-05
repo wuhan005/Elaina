@@ -21,7 +21,7 @@ func main() {
 
 	r.GET("/ping", func(c *gin.Context) {
 		hostName, _ := os.Hostname()
-		c.JSON(gadget.MakeSuccessJSON(hostName))
+		c.JSON(http.StatusOK, gin.H{"host_name": hostName})
 	})
 
 	// Create file.
