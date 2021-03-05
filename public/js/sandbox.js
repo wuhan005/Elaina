@@ -19,14 +19,17 @@ $('#run').click(() => {
         let steps = res.data.result;
 
         steps.forEach((item, index) => {
+            if (item.body === null) {
+                item.body = '';
+            }
             item.body = Base64.decode(item.body)
-            if(!item.error && index === 0){
+            if (!item.error && index === 0) {
                 let build_details = $('<details style="color:gray;"></details>');
                 let build_summary = $('<summary></summary>').text('Build logs');
                 build_details.append(build_summary);
                 build_details.append($('<p></p>').text(item.body));
                 $('#result_data').append(build_details);
-            }else {
+            } else {
                 $('#result_data').append(item.body)
                 if (item.error) {
                     $('#result_bar').css('color', 'red');
