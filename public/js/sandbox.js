@@ -15,14 +15,24 @@ $('#run').click(() => {
     $('#result_data').text('Loading...');
 
     $.post('', {'lang': lang, 'code': editor.getValue()}, (res) => {
-        let result = Base64.decode(res.data.result.body);
-        let exitCode = res.data.result.exit_code;
-        if (exitCode !== 0) {
-            $('#result_bar').css('color', 'red');
-        }
+        $('#result_data').text('');
+        let steps = res.data.result;
 
-        // Set result.
-        $('#result_data').text(result);
+        steps.forEach((item, index) => {
+            item.body = Base64.decode(item.body)
+            if(!item.error && index === 0){
+                let build_details = $('<details style="color:gray;"></details>');
+                let build_summary = $('<summary></summary>').text('Build logs');
+                build_details.append(build_summary);
+                build_details.append($('<p></p>').text(item.body));
+                $('#result_data').append(build_details);
+            }else {
+                $('#result_data').append(item.body)
+                if (item.error) {
+                    $('#result_bar').css('color', 'red');
+                }
+            }
+        })
 
         let startAt = res.data.start_at;
         let endAt = res.data.end_at;

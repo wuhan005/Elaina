@@ -82,3 +82,36 @@ body {
     color: #ffffff50;
     background-color: #3f414b;
 }
+
+details summary {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Chrome/Safari/Opera */
+    -khtml-user-select: none; /* Konqueror */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
+   not supported by any browser */
+}
+
+details summary:focus {
+    outline: none;
+}
+
+details summary.single-line {
+    cursor: default;
+}
+
+details summary.single-line + p {
+    display: none;
+}
+
+/*Chrome*/
+details summary.single-line::-webkit-details-marker {
+    visibility: hidden;
+}
+
+/*Firefox*/
+details summary.single-line:first-of-type {
+    list-style: none inside url(data:image/gif;base64,R0lGODlhCgABAIAAAP///wAAACH5BAEAAAAALAAAAAAKAAEAAAIDhI8FADs=);
+}

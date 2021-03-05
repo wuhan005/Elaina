@@ -1,20 +1,24 @@
 package task
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"os"
 	"path"
-	"time"
-
-	"github.com/pkg/errors"
-	log "unknwon.dev/clog/v2"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
+	log "unknwon.dev/clog/v2"
 
 	"github.com/wuhan005/Elaina/internal/db"
 )
@@ -24,19 +28,27 @@ var hostVolumePath = path.Join(os.Getenv("APP_CONTAINER_PATH"), "volume")
 type Task struct {
 	ctx context.Context
 
-	uuid         string
-	runner       *runner
-	sourceVolume string
-	template     *db.Tpl
+	uuid     string
+	runner   *runner
+	template *db.Tpl
+
+	dockerClient *client.Client
+	containerID  string
+
+	sourceVolumePath string // Folder in Host: /home/<your_user>/elaina/volume/<uuid>/
+	elainaVolumePath string // Folder in Elaina: /elaina/volume/<uuid>/
+	fileName         string
 }
 
 type Output struct {
-	ExitCode int64  `json:"exit_code"`
-	Body     []byte `json:"body"`
+	Error bool   `json:"error"`
+	Body  []byte `json:"body"`
 }
 
 func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
-	// Check the language.
+	uid := uuid.NewV4().String()
+
+	// Set the programming language runner.
 	var runner *runner
 	for _, r := range langRunners {
 		if r.Name == language {
@@ -45,40 +57,57 @@ func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 		}
 	}
 	if runner == nil {
-		return nil, errors.Errorf("unexpected error: %v", language)
+		return nil, errors.Errorf("unexpected language: %v", language)
 	}
 
-	id := uuid.NewV4().String()
+	// Create a new docker client.
+	ctx := context.Background()
+	dockerClient, err := client.NewClientWithOpts()
+	if err != nil {
+		return nil, err
+	}
+	dockerClient.NegotiateAPIVersion(ctx)
 
+	sourceVolumePath := path.Join(hostVolumePath, uid)
 	// Make runner folder.
-	volumePath := path.Join("/elaina/volume", id)
-	err := os.MkdirAll(volumePath, 0755)
+	elainaVolumePath := path.Join("/elaina/volume", uid)
+	err = os.MkdirAll(elainaVolumePath, 0755)
 	if err != nil {
 		return nil, err
 	}
 
-	// Write the code file.
-	err = ioutil.WriteFile(path.Join(volumePath, "code"+runner.Ext), code, 0755)
+	// Make the `runner` folder and create code file, `code.<ext>`.
+	runnerPath := path.Join(elainaVolumePath, "runner")
+	err = os.MkdirAll(runnerPath, 0755)
+	if err != nil {
+		return nil, err
+	}
+	fileName := "code" + runner.Ext
+	filePath := path.Join(runnerPath, fileName)
+	err = ioutil.WriteFile(filePath, code, 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Task{
-		ctx:          context.Background(),
-		uuid:         id,
-		runner:       runner,
-		sourceVolume: path.Join(hostVolumePath, id),
-		template:     template,
+		ctx: ctx,
+
+		uuid:     uid,
+		runner:   runner,
+		template: template,
+
+		dockerClient: dockerClient,
+
+		sourceVolumePath: sourceVolumePath,
+		elainaVolumePath: elainaVolumePath,
+
+		fileName: fileName,
 	}, nil
 }
 
 // Run runs a task.
-func (t *Task) Run() (*Output, error) {
-	client, err := client.NewClientWithOpts()
-	if err != nil {
-		return nil, err
-	}
-	client.NegotiateAPIVersion(t.ctx)
+func (t *Task) Run() ([]*Output, error) {
+	output := make([]*Output, 0, 2)
 
 	var networkMode container.NetworkMode
 	if t.template.InternetAccess {
@@ -87,19 +116,18 @@ func (t *Task) Run() (*Output, error) {
 		networkMode = "none"
 	}
 
-	resp, err := client.ContainerCreate(t.ctx,
+	createContainerResp, err := t.dockerClient.ContainerCreate(t.ctx,
 		&container.Config{
 			Image: t.runner.Image,
-			Cmd:   t.runner.Cmd,
-			Tty:   false,
+			Tty:   true,
 		},
 		&container.HostConfig{
 			NetworkMode: networkMode,
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: t.sourceVolume,
-					Target: "/runner",
+					Source: t.sourceVolumePath,
+					Target: "/runtime",
 				},
 			},
 			Resources: container.Resources{
@@ -110,66 +138,114 @@ func (t *Task) Run() (*Output, error) {
 	if err != nil {
 		return nil, err
 	}
+	t.containerID = createContainerResp.ID
+
+	// Clean containers and folder after executed.
+	defer t.clean()
+
+	if err := t.dockerClient.ContainerStart(t.ctx, t.containerID, types.ContainerStartOptions{}); err != nil {
+		return nil, err
+	}
+
+	setupOutput, err := t.setupEnvironment()
+	if err != nil {
+		return output, err
+	}
+	output = append(output, setupOutput)
+	if setupOutput.Error {
+		return output, nil
+	}
+
+	// Execute code.
+	runOutput, err := t.exec(t.runner.RunCmd)
+	if err != nil {
+		return output, err
+	}
+	output = append(output, runOutput)
+
+	return output, nil
+}
+
+func (t *Task) setupEnvironment() (*Output, error) {
+	if len(t.runner.BuildCmd) != 0 {
+		return t.exec(t.runner.BuildCmd)
+	}
+	return &Output{}, nil
+}
+
+func (t *Task) exec(cmd string) (*Output, error) {
+	client := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", path.Join(t.elainaVolumePath, "elaina-daemon.sock"))
+			},
+		},
+	}
+
+	cmdJSON, err := json.Marshal(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *http.Response
+	for { // Retry, wait for daemon starts.
+		resp, err = client.Post("http://runtime/exec", "", bytes.NewReader(cmdJSON))
+		if err != nil {
+			if strings.HasSuffix(err.Error(), "connect: no such file or directory") ||
+				strings.HasSuffix(err.Error(), "connect: connection refused") {
+				continue
+			}
+			return nil, err
+		}
+		break
+	}
 
 	defer func() {
-		if err := client.ContainerStop(t.ctx, resp.ID, nil); err != nil {
-			log.Error("Failed to stop container: %v", err)
-		}
-
-		if err := client.ContainerRemove(t.ctx, resp.ID, types.ContainerRemoveOptions{
-			RemoveVolumes: true,
-			Force:         true,
-		}); err != nil {
-			log.Error("Failed to remove container: %v", err)
-		}
-
-		err = os.RemoveAll(t.sourceVolume)
-		if err != nil {
-			log.Error("Failed to remove volume folder: %v", err)
-		}
+		_ = resp.Body.Close()
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
 	}()
 
-	if err := client.ContainerStart(t.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
-
-	okBody, errChan := client.ContainerWait(t.ctx, resp.ID, "")
-
-	if t.template.Timeout == 0 {
-		t.template.Timeout = 3600
+	var cmdResp struct {
+		Stdout string `json:"stdout"`
+		Stderr string `json:"stderr"`
+		Error  bool   `json:"error"`
 	}
-
-	timeout := time.NewTimer(time.Duration(t.template.Timeout) * time.Second)
-	var waitBody container.ContainerWaitOKBody
-	var errExec error
-	select {
-	case waitBody = <-okBody:
-		break
-	case errC := <-errChan:
-		errExec = errC
-	case <-timeout.C:
-		errExec = errors.New("execute timeout")
-	}
-	if errExec != nil {
-		return nil, errExec
-	}
-
-	// Get the output.
-	logs, err := client.ContainerLogs(t.ctx, resp.ID, types.ContainerLogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-	})
+	err = json.Unmarshal(respBody, &cmdResp)
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := ioutil.ReadAll(logs)
-	if err != nil {
-		return nil, err
+	var body string
+	if cmdResp.Stderr != "" {
+		body = cmdResp.Stderr
+	} else {
+		body = cmdResp.Stdout
 	}
 
 	return &Output{
-		ExitCode: waitBody.StatusCode,
-		Body:     output,
+		Error: cmdResp.Error,
+		Body:  []byte(body),
 	}, nil
+}
+
+func (t *Task) clean() {
+	if err := t.dockerClient.ContainerStop(t.ctx, t.containerID, nil); err != nil {
+		log.Error("Failed to stop container: %v", err)
+	}
+
+	if err := t.dockerClient.ContainerRemove(t.ctx, t.containerID, types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	}); err != nil {
+		log.Error("Failed to remove container: %v", err)
+	}
+
+	err := os.RemoveAll(path.Join("/elaina/volume", t.uuid))
+	if err != nil {
+		log.Error("Failed to remove volume folder: %v", err)
+	}
 }
