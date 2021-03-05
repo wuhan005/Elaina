@@ -1,14 +1,11 @@
-name: Runtime-Golang
+name: Runtime-JavaScript
 on:
   push:
     branches: [ master ]
     paths:
-      - '.github/workflows/runtime-golang.yml'
-      - 'docker/golang/**'
+      - '.github/workflows/runtime-javascript.yml'
+      - 'docker/javascript/**'
       - 'daemon/**'
-
-env:
-  GOPROXY: "https://proxy.golang.org"
 
 jobs:
   build:
@@ -39,7 +36,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: registry.hub.docker.com
-          repository: registry.hub.docker.com/elainaruntime/golang
+          repository: registry.hub.docker.com/elainaruntime/javascript
           tag_format: "%YYYY%_%MM%_%DD%_%H%%m%%s%"
-          file: ./docker/images/golang/Dockerfile
+          file: ./docker/images/javascript/Dockerfile
           auto_tag: true
