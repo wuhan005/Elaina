@@ -71,7 +71,7 @@ func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 	sourceVolumePath := path.Join(hostVolumePath, uid)
 	// Make runner folder.
 	elainaVolumePath := path.Join("/elaina/volume", uid)
-	err = os.MkdirAll(elainaVolumePath, 0755)
+	err = os.MkdirAll(elainaVolumePath, 0777)
 	if err != nil {
 		return nil, err
 	}
