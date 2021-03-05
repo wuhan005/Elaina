@@ -47,7 +47,7 @@ func main() {
 			})
 			return
 		}
-		c.JSON(gadget.MakeSuccessJSON("success"))
+		c.JSON(http.StatusOK, gin.H{"error": false})
 	})
 
 	// Execute command.
@@ -68,11 +68,11 @@ func main() {
 		cmd.Stderr = stdErr
 		err = cmd.Run()
 
-		c.JSON(gadget.MakeSuccessJSON(gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"error":  err != nil,
 			"stdout": stdOut.String(),
 			"stderr": stdErr.String(),
-		}))
+		})
 	})
 
 	err := r.RunUnix("/runtime/elaina-daemon.sock")
