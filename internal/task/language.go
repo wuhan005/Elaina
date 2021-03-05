@@ -12,14 +12,14 @@ var langRunners = []runner{
 	{
 		Name:     "php",
 		Ext:      ".php",
-		Image:    "elaina-php:latest",
+		Image:    "elainaruntime/php:latest",
 		BuildCmd: "",
 		RunCmd:   "php code.php",
 	},
 	{
 		Name:     "python",
 		Ext:      ".py",
-		Image:    "elaina-python:latest",
+		Image:    "elainaruntime/python:latest",
 		BuildCmd: "",
 		RunCmd:   "python3 code.py",
 	},
@@ -33,7 +33,7 @@ var langRunners = []runner{
 	{
 		Name:     "javascript",
 		Ext:      ".js",
-		Image:    "elaina-javascript:latest",
+		Image:    "elainaruntime/javascript:latest",
 		BuildCmd: "",
 		RunCmd:   "node code.js",
 	},
