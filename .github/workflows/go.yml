@@ -25,4 +25,4 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.29
-          args: --timeout=30m --skip-files=fs.go
+          args: --timeout=30m --skip-files=frontend/fs.go
