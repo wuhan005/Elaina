@@ -14,4 +14,4 @@ RUN chown -R elaina:elaina /go
 RUN chown -R elaina:elaina /runtime
 
 USER elaina
-CMD ["../../daemon"]
+ENTRYPOINT ["../../daemon"]
