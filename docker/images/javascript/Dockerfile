@@ -6,7 +6,4 @@ ADD daemon/daemon /daemon
 RUN mkdir -p /runtime
 WORKDIR /runtime
 
-RUN chown -R elaina:elaina /runtime
-
-USER elaina
 ENTRYPOINT ["../../daemon"]

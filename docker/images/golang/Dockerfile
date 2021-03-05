@@ -9,7 +9,4 @@ ENV GOPROXY="https://goproxy.io"
 RUN mkdir -p /runtime
 WORKDIR /runtime
 
-RUN chown -R elaina:elaina /go
 ENTRYPOINT ["../../daemon"]
-RUN chown -R elaina:elaina /runtime
-USER elaina
