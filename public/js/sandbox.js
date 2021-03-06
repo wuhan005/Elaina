@@ -4,7 +4,12 @@ let languagePlaceholder = [];
 // Codemirror editor.
 var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
     lineNumbers: true,
-    mode: lang,
+    mode: ((lang) => {
+        if(lang === 'c'){
+            return 'text/x-csrc'
+        }
+        return lang
+    })(lang),
     theme: 'material-palenight'
 });
 

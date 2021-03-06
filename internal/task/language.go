@@ -37,4 +37,11 @@ var langRunners = []runner{
 		BuildCmd: "",
 		RunCmd:   "node code.js",
 	},
+	{
+		Name:     "c",
+		Ext:      ".c",
+		Image:    "elainaruntime/clang:latest",
+		BuildCmd: "gcc -v code.c -o code",
+		RunCmd:   "./code",
+	},
 }

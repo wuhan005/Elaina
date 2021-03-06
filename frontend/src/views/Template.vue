@@ -53,6 +53,7 @@
                   <b-checkbox v-model="newTemplateForm.language" native-value="python">Python</b-checkbox>
                   <b-checkbox v-model="newTemplateForm.language" native-value="go">Go</b-checkbox>
                   <b-checkbox v-model="newTemplateForm.language" native-value="javascript">JavaScript</b-checkbox>
+                  <b-checkbox v-model="newTemplateForm.language" native-value="c">C</b-checkbox>
                 </div>
               </b-field>
               <b-field label="Time Limit (s)">
