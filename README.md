@@ -12,16 +12,19 @@ Docker-based remote code runner.
 * [Docker](https://docs.docker.com/get-docker/) (v20.10.0 or higher)
 * [Docker Compose](https://docs.docker.com/compose/install/) (v1.27.4 or higher)
 
-### Step 2: Build internal docker images
+### Step 2: Pull internal docker images
 
 The [`docker/images/`](https://github.com/wuhan005/Elaina/tree/master/docker/images) folder provides the Dockerfile of
 the programming language runtime environment that Elaina supports.
 
-Use `docker build` command to build the images before you start running the Elaina. This operation only needs to be
-performed once.
+Use `docker pull` command to pull the images from DockerHub before you start running the Elaina. This operation only
+needs to be performed once.
 
 ```bash
-docker build . -t elaina-<lang>:latest
+docker pull elainaruntime/golang
+docker pull elainaruntime/php
+docker pull elainaruntime/python
+docker pull elainaruntime/javascript
 ```
 
 ### Step 3: Start the Elaina server

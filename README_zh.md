@@ -10,14 +10,17 @@
 * [Docker](https://docs.docker.com/get-docker/) (v20.10.0 或更高)
 * [Docker Compose](https://docs.docker.com/compose/install/) (v1.27.4 或更高)
 
-### 步骤 2: 构建内置 Docker 镜像
+### 步骤 2: 拉取内置 Docker 镜像
 
 [`docker/images/`](https://github.com/wuhan005/Elaina/tree/master/docker/images) 文件夹内提供的 Elaina 所支持的编程语言运行环境。
 
-在运行 Elaina 前，请使用 `docker build` 命令编译这些镜像。该操作只需执行一次即可。
+在运行 Elaina 前，请使用 `docker pull` 命令从 DockerHub 拉取这些镜像。该操作只需执行一次即可。
 
 ```bash
-docker build . -t elaina-<lang>:latest
+docker pull elainaruntime/golang
+docker pull elainaruntime/php
+docker pull elainaruntime/python
+docker pull elainaruntime/javascript
 ```
 
 ### 步骤 3: 启动 Elaina
