@@ -131,7 +131,7 @@ func (t *Task) Run() ([]*Output, error) {
 				},
 			},
 			Resources: container.Resources{
-				NanoCPUs: t.template.MaxCPUs * 1000000000,    // 0.0001 * CPU of cpu
+				NanoCPUs: t.template.MaxCPUs * 1000000000,    // 0.000000001 * CPU of cpu
 				Memory:   t.template.MaxMemory * 1024 * 1024, // Minimum memory limit allowed is 6MB.
 			},
 		}, nil, nil, t.uuid)
