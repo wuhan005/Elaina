@@ -26,9 +26,21 @@ docker pull elainaruntime/python
 docker pull elainaruntime/javascript
 ```
 
-### Step 3: Start the Elaina server
+### Step 3: Build and start the Elaina server
 
-1. Set the environment variables.
+#### Build Elaina
+
+```bash
+git clone git@github.com:wuhan005/Elaina.git
+
+# Build frontend
+cd frontend/ && yarn install && yarn build
+
+# Build backend
+go build .
+```
+
+#### Set environment variables.
 
 Postgres database configuration.
 
@@ -41,7 +53,7 @@ export PGDATABASE=<REDACTED>
 export PGSSLMODE=disable
 ```
 
-2. Run the Elaina server.
+#### Run the Elaina server.
 
 ```bash
 # Set the web manager panel password.

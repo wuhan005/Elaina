@@ -23,11 +23,23 @@ docker pull elainaruntime/python
 docker pull elainaruntime/javascript
 ```
 
-### Step 3: 启动 Elaina
+### Step 3: 编译并启动 Elaina
 
-1. 设置环境变量
+#### 编译 Elaina
 
-Postgres 数据库配置
+```bash
+git clone git@github.com:wuhan005/Elaina.git
+
+# 编译前端
+cd frontend/ && yarn install && yarn build
+
+# 编译后端
+go build .
+```
+
+#### 设置环境变量
+
+Postgres 数据库配置。
 
 ```bash
 export PGPORT=5432
@@ -38,10 +50,10 @@ export PGDATABASE=<REDACTED>
 export PGSSLMODE=disable
 ```
 
-2. 启动 Elaina 服务
+#### 运行 Elaina
 
 ```bash
-# 设置管理网页端密码
+# 设置 Web 管理面板的密码
 export APP_PASSWORD=<REDACTED>
 
 ./Elaina
