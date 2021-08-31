@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"encoding/binary"
 	"io"
 	"os"
 	"path"
@@ -206,7 +207,7 @@ func (t *Task) exec(ctx context.Context, cmd string) (*commandOutput, error) {
 
 	return &commandOutput{
 		ExitCode: inspectResp.ExitCode,
-		Body:     body,
+		Body:     parseDockerLog(body),
 	}, nil
 }
 
@@ -226,4 +227,24 @@ func (t *Task) clean() {
 	if err != nil {
 		log.Error("Failed to remove volume folder: %v", err)
 	}
+}
+
+// parseDockerLog parse the header of the docker logs.
+// More information at: https://github.com/moby/moby/issues/7375#issuecomment-51462963
+//
+// header := [8]byte{STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4}
+func parseDockerLog(logs []byte) []byte {
+	output := make([]byte, 0, len(logs))
+
+	for i := 0; i < len(logs); {
+		sizeBinary := logs[i+4 : i+8]
+		i += 8
+
+		size := int(binary.BigEndian.Uint32(sizeBinary))
+		data := logs[i : i+size]
+		output = append(output, data...)
+		i += size
+	}
+
+	return output
 }

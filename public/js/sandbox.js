@@ -5,7 +5,7 @@ let languagePlaceholder = [];
 var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
     lineNumbers: true,
     mode: ((lang) => {
-        if(lang === 'c'){
+        if (lang === 'c') {
             return 'text/x-csrc'
         }
         return lang
@@ -28,7 +28,7 @@ $('#run').click(() => {
                 item.body = '';
             }
             item.body = Base64.decode(item.body)
-            if (!item.error && index === 0) {
+            if (index === 0 && item.exit_code === 0) {
                 let build_details = $('<details style="color:gray;"></details>');
                 let build_summary = $('<summary></summary>').text('Build logs');
                 build_details.append(build_summary);
@@ -36,7 +36,7 @@ $('#run').click(() => {
                 $('#result_data').append(build_details);
             } else {
                 $('#result_data').append(item.body)
-                if (item.error) {
+                if (item.exit_code !== 0) {
                     $('#result_bar').css('color', 'red');
                 }
             }
