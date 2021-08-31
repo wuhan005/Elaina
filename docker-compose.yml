@@ -1,9 +1,0 @@
-version: '3'
-services:
-  postgres:
-    image: postgres
-    volumes:
-      - ./postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: elaina
-      POSTGRES_PASSWORD: elaina

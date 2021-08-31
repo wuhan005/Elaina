@@ -23,20 +23,28 @@ docker pull elainaruntime/python
 docker pull elainaruntime/javascript
 ```
 
-### 步骤 3: 启动 Elaina
+### Step 3: 启动 Elaina
 
-将 [docker-compose.yml](https://github.com/wuhan005/Elaina/blob/master/docker-compose.yml) 文件放置于您的运行目录。
+1. 设置环境变量
 
-**修改 docker-compose.yml 中的 `APP_URL` `APP_PASSWORD` `APP_CONTAINER_PATH` 参数**
-
-* `APP_URL` 您后端服务的主机地址，它将被用作设置后端 HTTP 中的 CORS 允许来源地址响应头。
-* `APP_PASSWORD` 该密码用于登录管理员面板。
-* `APP_CONTAINER_PATH` 该目录放置容器运行时在**宿主机**上产生的临时目录，请确保 Docker 拥有正确的权限来访问该文件夹。
-
-下面的命令将启动 PostgreSQL 数据库以及 Elaina 服务。
+Postgres 数据库配置
 
 ```bash
-docker-compose up -d
+export PGPORT=5432
+export PGHOST=<REDACTED>
+export PGUSER=<REDACTED>
+export PGPASSWORD=<REDACTED>
+export PGDATABASE=<REDACTED>
+export PGSSLMODE=disable
+```
+
+2. 启动 Elaina 服务
+
+```bash
+# 设置管理网页端密码
+export APP_PASSWORD=<REDACTED>
+
+./Elaina
 ```
 
 ### 步骤 4: 走你！

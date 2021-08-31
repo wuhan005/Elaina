@@ -10,7 +10,6 @@ Docker-based remote code runner.
 ### Step 1: Install dependencies
 
 * [Docker](https://docs.docker.com/get-docker/) (v20.10.0 or higher)
-* [Docker Compose](https://docs.docker.com/compose/install/) (v1.27.4 or higher)
 
 ### Step 2: Pull internal docker images
 
@@ -29,20 +28,26 @@ docker pull elainaruntime/javascript
 
 ### Step 3: Start the Elaina server
 
-Put the [docker-compose.yml](https://github.com/wuhan005/Elaina/blob/master/docker-compose.yml) file in your working
-directory.
+1. Set the environment variables.
 
-**Edit `APP_URL` `APP_PASSWORD` `APP_CONTAINER_PATH` in docker-compose.yml!!**
-
-* `APP_URL` Your backend service host, used to set the allow origins header in HTTP CORS header.
-* `APP_PASSWORD` The password used to log in the manager panel.
-* `APP_CONTAINER_PATH` The path where the containers' volumes are placed in your **host**, make sure the Docker has the
-  correct permission to access.
-
-The following command will create a PostgreSQL database as well as the Elaina server.
+Postgres database configuration.
 
 ```bash
-docker-compose up -d
+export PGPORT=5432
+export PGHOST=<REDACTED>
+export PGUSER=<REDACTED>
+export PGPASSWORD=<REDACTED>
+export PGDATABASE=<REDACTED>
+export PGSSLMODE=disable
+```
+
+2. Run the Elaina server.
+
+```bash
+# Set the web manager panel password.
+export APP_PASSWORD=<REDACTED>
+
+./Elaina
 ```
 
 ### Step 4: Have fun!
