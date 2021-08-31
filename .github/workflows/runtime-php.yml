@@ -16,19 +16,8 @@ jobs:
         platform: [ ubuntu-latest ]
     runs-on: ${{ matrix.platform }}
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v1
-        with:
-          go-version: ${{ matrix.go-version }}
-
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Get dependencies
-        run: go mod tidy
-
-      - name: Build binary
-        run: cd daemon && CGO_ENABLED=0 go build -v -trimpath
 
       - name: Build & Publish to Docker Registry
         uses: wuhan005/publish-docker-action@master
