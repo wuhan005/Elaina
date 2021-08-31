@@ -1,16 +1,11 @@
 package task
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"io"
-	"io/ioutil"
-	"net"
-	"net/http"
 	"os"
 	"path"
-	"strings"
+	"path/filepath"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -23,8 +18,6 @@ import (
 	"github.com/wuhan005/Elaina/internal/db"
 )
 
-var hostVolumePath = path.Join(os.Getenv("APP_CONTAINER_PATH"), "volume")
-
 type Task struct {
 	ctx context.Context
 
@@ -35,16 +28,18 @@ type Task struct {
 	dockerClient *client.Client
 	containerID  string
 
-	sourceVolumePath string // Folder in Host: /home/<your_user>/elaina/volume/<uuid>/
-	elainaVolumePath string // Folder in Elaina: /elaina/volume/<uuid>/
-	fileName         string
+	// sourceAbsVolumePath is the absolute path of the folder in host: <base path>/volume/<uuid>/
+	sourceAbsVolumePath string
+	fileName            string
 }
 
-type Output struct {
-	Error bool   `json:"error"`
-	Body  []byte `json:"body"`
+// commandOutput contains the body and the exit code of the command execution.
+type commandOutput struct {
+	ExitCode int    `json:"exit_code"`
+	Body     []byte `json:"body"`
 }
 
+// NewTask creates a new task based on the given code and ready for execution.
 func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 	uid := uuid.NewV4().String()
 
@@ -68,25 +63,23 @@ func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 	}
 	dockerClient.NegotiateAPIVersion(ctx)
 
-	sourceVolumePath := path.Join(hostVolumePath, uid)
-	// Make runner folder.
-	elainaVolumePath := path.Join("/elaina/volume", uid)
-	err = os.MkdirAll(elainaVolumePath, 0755)
+	volumeAbsPath, err := filepath.Abs("./volume")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get absolute host volume path")
+	}
+
+	sourceAbsVolumePath := path.Join(volumeAbsPath, uid)
+	err = os.MkdirAll(sourceAbsVolumePath, 0755)
+	if err != nil {
+		return nil, errors.Wrap(err, "make source volume path")
 	}
 
 	// Make the `runner` folder and create code file, `code.<ext>`.
-	runnerPath := path.Join(elainaVolumePath, "runner")
-	err = os.MkdirAll(runnerPath, 0755)
-	if err != nil {
-		return nil, err
-	}
 	fileName := "code" + runner.Ext
-	filePath := path.Join(runnerPath, fileName)
-	err = ioutil.WriteFile(filePath, code, 0755)
+	filePath := path.Join(sourceAbsVolumePath, fileName)
+	err = os.WriteFile(filePath, code, 0755)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "write file")
 	}
 
 	return &Task{
@@ -98,16 +91,15 @@ func NewTask(language string, template *db.Tpl, code []byte) (*Task, error) {
 
 		dockerClient: dockerClient,
 
-		sourceVolumePath: sourceVolumePath,
-		elainaVolumePath: elainaVolumePath,
+		sourceAbsVolumePath: sourceAbsVolumePath,
 
 		fileName: fileName,
 	}, nil
 }
 
 // Run runs a task.
-func (t *Task) Run() ([]*Output, error) {
-	output := make([]*Output, 0, 2)
+func (t *Task) Run() ([]*commandOutput, error) {
+	output := make([]*commandOutput, 0, 2) // One for build command, one for run command.
 
 	var networkMode container.NetworkMode
 	if t.template.InternetAccess {
@@ -118,15 +110,20 @@ func (t *Task) Run() ([]*Output, error) {
 
 	createContainerResp, err := t.dockerClient.ContainerCreate(t.ctx,
 		&container.Config{
-			Image: t.runner.Image,
-			Tty:   true,
+			Image:        t.runner.Image,
+			User:         "elaina",
+			WorkingDir:   "/runtime",
+			Tty:          false,
+			AttachStdout: true,
+			AttachStderr: true,
+			Env:          nil, // TODO
 		},
 		&container.HostConfig{
 			NetworkMode: networkMode,
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: t.sourceVolumePath,
+					Source: t.sourceAbsVolumePath,
 					Target: "/runtime",
 				},
 			},
@@ -147,94 +144,75 @@ func (t *Task) Run() ([]*Output, error) {
 		return nil, err
 	}
 
-	setupOutput, err := t.setupEnvironment()
+	// Build environment.
+	buildOutput, err := t.exec(t.ctx, t.runner.BuildCmd)
 	if err != nil {
-		return output, err
+		return output, errors.Wrap(err, "build")
 	}
-	output = append(output, setupOutput)
-	if setupOutput.Error {
+	output = append(output, buildOutput)
+
+	if buildOutput.ExitCode != 0 {
 		return output, nil
 	}
 
 	// Execute code.
-	runOutput, err := t.exec(t.runner.RunCmd)
+	runOutput, err := t.exec(t.ctx, t.runner.RunCmd)
 	if err != nil {
-		return output, err
+		return output, errors.Wrap(err, "exec")
 	}
 	output = append(output, runOutput)
 
 	return output, nil
 }
 
-func (t *Task) setupEnvironment() (*Output, error) {
-	if len(t.runner.BuildCmd) != 0 {
-		return t.exec(t.runner.BuildCmd)
-	}
-	return &Output{}, nil
-}
-
-func (t *Task) exec(cmd string) (*Output, error) {
-	client := http.Client{
-		Transport: &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", path.Join(t.elainaVolumePath, "elaina-daemon.sock"))
-			},
-		},
+func (t *Task) exec(ctx context.Context, cmd string) (*commandOutput, error) {
+	if cmd == "" {
+		return &commandOutput{}, nil
 	}
 
-	cmdJSON, err := json.Marshal(cmd)
+	execResp, err := t.dockerClient.ContainerExecCreate(ctx, t.containerID, types.ExecConfig{
+		User:         "elaina",
+		Tty:          false,
+		AttachStderr: true,
+		AttachStdout: true,
+		Env:          nil, // TODO add environment variables
+		WorkingDir:   "/runtime",
+		Cmd:          []string{"sh", "-c", cmd},
+	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "exec create")
 	}
 
-	var resp *http.Response
-	for { // Retry, wait for daemon starts.
-		resp, err = client.Post("http://runtime/exec", "", bytes.NewReader(cmdJSON))
-		if err != nil {
-			if strings.HasSuffix(err.Error(), "connect: no such file or directory") ||
-				strings.HasSuffix(err.Error(), "connect: connection refused") {
-				continue
-			}
-			return nil, err
-		}
-		break
-	}
-
-	defer func() {
-		_ = resp.Body.Close()
-		_, _ = io.Copy(ioutil.Discard, resp.Body)
-	}()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
+	attachResp, err := t.dockerClient.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{
+		Detach: false,
+		Tty:    false,
+	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "exec attach")
 	}
-	var cmdResp struct {
-		Stdout string `json:"stdout"`
-		Stderr string `json:"stderr"`
-		Error  bool   `json:"error"`
-	}
-	err = json.Unmarshal(respBody, &cmdResp)
+
+	defer func() { attachResp.Close() }()
+
+	body, err := io.ReadAll(attachResp.Reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "read response")
 	}
 
-	var body string
-	if cmdResp.Stderr != "" {
-		body = cmdResp.Stderr
-	} else {
-		body = cmdResp.Stdout
+	// Check out the execution status.
+	inspectResp, err := t.dockerClient.ContainerExecInspect(ctx, execResp.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "exec inspect")
 	}
 
-	return &Output{
-		Error: cmdResp.Error,
-		Body:  []byte(body),
+	return &commandOutput{
+		ExitCode: inspectResp.ExitCode,
+		Body:     body,
 	}, nil
 }
 
 func (t *Task) clean() {
-	if err := t.dockerClient.ContainerStop(t.ctx, t.containerID, nil); err != nil {
-		log.Error("Failed to stop container: %v", err)
+	if err := t.dockerClient.ContainerKill(t.ctx, t.containerID, "9"); err != nil {
+		log.Error("Failed to kill container: %v", err)
 	}
 
 	if err := t.dockerClient.ContainerRemove(t.ctx, t.containerID, types.ContainerRemoveOptions{
@@ -244,7 +222,7 @@ func (t *Task) clean() {
 		log.Error("Failed to remove container: %v", err)
 	}
 
-	err := os.RemoveAll(path.Join("/elaina/volume", t.uuid))
+	err := os.RemoveAll(t.sourceAbsVolumePath)
 	if err != nil {
 		log.Error("Failed to remove volume folder: %v", err)
 	}

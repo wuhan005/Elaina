@@ -14,25 +14,17 @@ func main() {
 	defer log.Stop()
 
 	// Check environment config, make sure the application is safe enough.
-	appURL := os.Getenv("APP_URL")
 	appPassword := os.Getenv("APP_PASSWORD")
-	appContainerPath := os.Getenv("APP_CONTAINER_PATH")
 
-	if appURL == "" {
-		log.Fatal("Empty APP_URL")
-	}
 	if appPassword == "" || len(appPassword) < 8 {
 		log.Fatal("APP_PASSWORD is not strong enough")
 	}
-	if appContainerPath == "" {
-		log.Fatal("APP_CONTAINER_PATH is empty")
-	}
 
-	err := os.MkdirAll("/elaina/volume", 0755)
+	err := os.MkdirAll("./volume", 0755)
 	if err != nil {
-		log.Fatal("Failed to create path /elaina/volume: %v", err)
+		log.Fatal("Failed to create path ./volume: %v", err)
 	}
-	log.Trace("Create /elaina/volume succeed!")
+	log.Trace("Create ./volume succeed!")
 
 	err = db.Init()
 	if err != nil {

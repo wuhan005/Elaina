@@ -4,9 +4,7 @@ import (
 	tmpl "html/template"
 	"io/fs"
 	"net/http"
-	"os"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -25,13 +23,6 @@ import (
 // New returns a new gin router.
 func New() *gin.Engine {
 	r := gin.Default()
-
-	r.Use(cors.New(cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"},
-		AllowHeaders:     []string{"Content-type", "User-Agent"},
-		AllowCredentials: true,
-		AllowOrigins:     []string{os.Getenv("APP_URL")},
-	}))
 
 	// Session
 	store := cookie.NewStore([]byte(randstr.String(50)))

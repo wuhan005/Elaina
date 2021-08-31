@@ -1,29 +1,5 @@
 version: '3'
 services:
-  elaina:
-    # image: registry.cn-beijing.aliyuncs.com/eggplant/elaina:latest
-    # image: registry.cn-hongkong.aliyuncs.com/eggplant/elaina:latest
-    image: wuhan005/elaina:latest
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-    links:
-      - postgres:postgres
-    volumes:
-      - /home/<your_user>/elaina:/elaina
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      APP_URL: http://localhost:8080
-      APP_PASSWORD: your_super_secret_here
-      APP_CONTAINER_PATH: /home/<your_user>/elaina
-      PGHOST: postgres
-      PGPORT: 5432
-      PGUSER: elaina
-      PGPASSWORD: elaina
-      PGDATABASE: elaina
-      PGSSLMODE: disable
-
   postgres:
     image: postgres
     volumes:
