@@ -35,7 +35,7 @@ $('#run').click(() => {
                 build_details.append($('<p></p>').text(item.body));
                 $('#result_data').append(build_details);
             } else {
-                $('#result_data').append(item.body)
+                $('#result_data').append($('<p></p>').text(item.body))
                 if (item.exit_code !== 0) {
                     $('#result_bar').css('color', 'red');
                 }
