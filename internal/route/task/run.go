@@ -52,10 +52,16 @@ func EditorHandler(c *gin.Context) {
 		selectLang = lang[0]
 	}
 
+	code := c.PostForm("c")
+	if code == "" {
+		code = sandbox.Placeholder
+	}
+
 	c.HTML(200, "sandbox.tmpl", gin.H{
 		"Sandbox":   sandbox,
 		"Language":  selectLang,
 		"Languages": lang,
+		"Code":      code,
 	})
 }
 

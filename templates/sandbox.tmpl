@@ -1,45 +1,51 @@
 <html>
 <head>
-    <title>{{ .Sandbox.Name }} - Elaina</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/codemirror.min.css"/>
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/theme/material-palenight.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="/static/css/sandbox.css"/>
+  <title>{{ .Sandbox.Name }} - Elaina</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/codemirror.min.css"/>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/theme/material-palenight.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="/static/css/sandbox.css"/>
 </head>
 <body>
 <div id="app">
-    <div class="header row">
-        <div class="col col-auto align-self-center">
-            <div class="title">{{ .Sandbox.Name }}</div>
-        </div>
-        <div class="col col-auto align-self-center">
-            <div class="lang"><span id="lang" class="label">{{ .Language }}</span></div>
-        </div>
-        {{ if ne (len .Languages) 1 }}
-        <div class="col align-self-center align-items-end">
-            <div class="btn-group" role="group" style="float: right">
-                {{ range $index, $lang := .Languages }}
-                <button lang="{{ $lang }}" type="button" class="btn btn-secondary">{{ $lang }}</button>
-                {{ end }}
-            </div>
-        </div>
+  <div class="header row">
+    <div class="col col-auto align-self-center">
+      <div class="title">{{ .Sandbox.Name }}</div>
+    </div>
+    <div class="col col-auto align-self-center">
+      <div class="lang"><span id="lang" class="label">{{ .Language }}</span></div>
+    </div>
+    {{ if ne (len .Languages) 1 }}
+    <div class="col align-self-center align-items-end">
+      <div class="btn-group" role="group" style="float: right">
+        {{ range $index, $lang := .Languages }}
+        <button lang="{{ $lang }}" type="button" class="btn btn-secondary">{{ $lang }}</button>
         {{ end }}
-        <div class="col align-self-center align-items-end">
-            <button id="run" type="button" class="btn btn-primary" style="float: right">Run</button>
-        </div>
+      </div>
     </div>
-
-    <textarea id="code" class="editor">{{ .Sandbox.Placeholder }}</textarea>
-
-    <div id="result_bar" class="result">
-        <span id="result_data"></span>
+    {{ end }}
+    <div class="col align-self-center align-items-end">
+      <button id="run" type="button" class="btn btn-primary" style="float: right">Run</button>
+      <form method="post" target="_blank">
+        <input id="post-code" type="hidden" name="c"/>
+        <button id="new-window" type="submit" class="btn btn-secondary mr-2" style="float: right; display: none;">
+          Open in new window
+        </button>
+      </form>
     </div>
+  </div>
 
-    <div class="footer">
-        <span id="time_cost" style="float: left;"></span>
-        <span>Powered by Elaina.</span>
-    </div>
+  <textarea id="code" class="editor">{{ .Code }}</textarea>
+
+  <div id="result_bar" class="result">
+    <span id="result_data"></span>
+  </div>
+
+  <div class="footer">
+    <span id="time_cost" style="float: left;"></span>
+    <span>Powered by Elaina.</span>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/js-base64@3.6.0/base64.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.2/codemirror.min.js"></script>

@@ -18,8 +18,8 @@ $('#run').click(() => {
     $('#result_bar').css('color', 'white');
 
     $('#result_data').text('Loading...');
-
-    $.post('', {'lang': lang, 'code': editor.getValue()}, (res) => {
+    
+    $.post(window.location.href + '/execute', {'lang': lang, 'code': editor.getValue()}, (res) => {
         $('#result_data').text('');
         let steps = res.data.result;
 
@@ -75,6 +75,12 @@ window.addEventListener('message', (evt) => {
         let code = Base64.decode(evt.data.code ?? '');
         if (code !== '') {
             editor.setValue(code);
+            $('#post-code').val(code)
         }
     }
 }, false);
+
+// Show button in iframe.
+if (window.self !== window.top) {
+    $('#new-window').show()
+}

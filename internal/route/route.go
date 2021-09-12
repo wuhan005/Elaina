@@ -38,7 +38,8 @@ func New() *gin.Engine {
 	run.Use(task.SandboxMiddleware)
 	{
 		run.GET("/:uid", task.EditorHandler)
-		run.POST("/:uid", __(task.RunTaskHandler))
+		run.POST("/:uid", task.EditorHandler)
+		run.POST("/:uid/execute", __(task.RunTaskHandler))
 	}
 
 	api := r.Group("/api")
