@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"os"
+	"strconv"
 
 	log "unknwon.dev/clog/v2"
 
@@ -12,6 +14,9 @@ import (
 func main() {
 	_ = log.NewConsole()
 	defer log.Stop()
+
+	port := flag.Int("port", 8080, "Web service port")
+	flag.Parse()
 
 	// Check environment config, make sure the application is safe enough.
 	appPassword := os.Getenv("APP_PASSWORD")
@@ -32,7 +37,7 @@ func main() {
 	}
 
 	r := route.New()
-	err = r.Run()
+	err = r.Run("0.0.0.0:" + strconv.Itoa(*port))
 	if err != nil {
 		log.Fatal("Failed to start HTTP server: %v", err)
 	}
