@@ -112,7 +112,7 @@ func (t *Task) Run() ([]*commandOutput, error) {
 	createContainerResp, err := t.dockerClient.ContainerCreate(t.ctx,
 		&container.Config{
 			Image:        t.runner.Image,
-			User:         "elaina",
+			User:         "root",
 			WorkingDir:   "/runtime",
 			Tty:          false,
 			AttachStdout: true,
@@ -172,7 +172,7 @@ func (t *Task) exec(ctx context.Context, cmd string) (*commandOutput, error) {
 	}
 
 	execResp, err := t.dockerClient.ContainerExecCreate(ctx, t.containerID, types.ExecConfig{
-		User:         "elaina",
+		User:         "root",
 		Tty:          false,
 		AttachStderr: true,
 		AttachStdout: true,
