@@ -110,11 +110,15 @@ func RunTaskHandler(c *gin.Context) (int, interface{}) {
 	defer ratelimit.Done(ipRateKey)
 
 	startAt := time.Now().UnixNano()
-	t, err := task.NewTask(selectLang, sandbox.Template, []byte(code))
+	t, err := task.NewDockerTask(c, task.NewDockerTaskOptions{
+		Language: selectLang,
+		Template: sandbox.Template,
+		Code:     []byte(code),
+	})
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to create task: %v", err)
 	}
-	output, err := t.Run()
+	output, err := t.Run(c)
 	if err != nil {
 		return gadget.MakeErrJSON(50000, "Failed to run task: %v", err)
 	}
