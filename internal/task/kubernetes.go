@@ -110,6 +110,10 @@ func (t *KubernetesTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 							v1.ResourceCPU:    *resource.NewQuantity(t.template.MaxCPUs, resource.DecimalSI),
 							v1.ResourceMemory: *resource.NewQuantity(t.template.MaxMemory*1024*1024, resource.DecimalSI),
 						},
+						Requests: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("1m"),
+							v1.ResourceMemory: *resource.NewQuantity(5*1024*1024, resource.DecimalSI),
+						},
 					},
 				},
 			},
