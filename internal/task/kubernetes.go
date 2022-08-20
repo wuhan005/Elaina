@@ -10,12 +10,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -125,6 +127,11 @@ func (t *KubernetesTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 		}
 	}()
 
+	// Wait the pod started.
+	if err := waitForPodRunning(ctx, t.k8sClient, pod.Namespace, pod.Name, time.Second*10); err != nil {
+		return nil, errors.Wrap(err, "wait for pod running")
+	}
+
 	// Write the code to the container.
 	filePath := filepath.Join("/code/" + "code" + t.runner.Ext)
 	cmd := []string{"sh", "-c", "echo '" + string(t.code) + "' > " + filePath}
@@ -187,4 +194,28 @@ func (t *KubernetesTask) exec(ctx context.Context, name, namespace string, cmd [
 		ExitCode: 0,
 		Body:     stdout.Bytes(),
 	}, nil
+}
+
+// waitForPodRunning polls up to timeout seconds for pod to enter running state.
+// Returns an error if the pod never enters the running state.
+func waitForPodRunning(ctx context.Context, client kubernetes.Interface, namespace, podName string, timeout time.Duration) error {
+	return wait.PollImmediate(time.Second, timeout, isPodRunning(ctx, client, podName, namespace))
+}
+
+// isPodRunning returns a condition function that indicates whether the given pod is currently running.
+func isPodRunning(ctx context.Context, client kubernetes.Interface, podName, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		pod, err := client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		switch pod.Status.Phase {
+		case v1.PodRunning:
+			return true, nil
+		case v1.PodFailed, v1.PodSucceeded:
+			return false, errors.New("pod is finished")
+		}
+		return false, nil
+	}
 }
