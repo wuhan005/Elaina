@@ -128,7 +128,7 @@ func (t *KubernetesTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 	}()
 
 	// Wait the pod started.
-	if err := waitForPodRunning(ctx, t.k8sClient, pod.Namespace, pod.Name, time.Second*10); err != nil {
+	if err := waitForPodRunning(ctx, t.k8sClient, pod.Namespace, pod.Name, time.Duration(t.template.Timeout)*time.Second); err != nil {
 		return nil, errors.Wrap(err, "wait for pod running")
 	}
 
@@ -199,7 +199,7 @@ func (t *KubernetesTask) exec(ctx context.Context, name, namespace string, cmd [
 // waitForPodRunning polls up to timeout seconds for pod to enter running state.
 // Returns an error if the pod never enters the running state.
 func waitForPodRunning(ctx context.Context, client kubernetes.Interface, namespace, podName string, timeout time.Duration) error {
-	return wait.PollImmediate(time.Second, timeout, isPodRunning(ctx, client, podName, namespace))
+	return wait.PollImmediate(100*time.Millisecond, timeout, isPodRunning(ctx, client, podName, namespace))
 }
 
 // isPodRunning returns a condition function that indicates whether the given pod is currently running.
