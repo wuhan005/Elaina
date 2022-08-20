@@ -147,13 +147,14 @@ func (t *KubernetesTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 	}
 
 	output := make([]*CommandOutput, 0, 2)
+	buildOutput := &CommandOutput{}
 	if t.runner.BuildCmd != "" {
-		buildOutput, err := t.exec(ctx, name, namespace, []string{"sh", "-c", t.runner.BuildCmd})
+		buildOutput, err = t.exec(ctx, name, namespace, []string{"sh", "-c", t.runner.BuildCmd})
 		if err != nil {
 			return nil, errors.Wrap(err, "exec: build")
 		}
-		output = append(output, buildOutput)
 	}
+	output = append(output, buildOutput)
 
 	runOutput, err := t.exec(ctx, name, namespace, []string{"sh", "-c", t.runner.RunCmd})
 	if err != nil {
