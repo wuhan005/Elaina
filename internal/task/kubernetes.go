@@ -7,13 +7,14 @@ package task
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+	"github.com/wuhan005/gadget"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,8 +138,9 @@ func (t *KubernetesTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 	}
 
 	// Write the code to the container.
-	filePath := filepath.Join("/code/" + "code" + t.runner.Ext)
-	cmd := []string{"sh", "-c", "echo '" + string(t.code) + "' > " + filePath}
+	filePath := "code" + t.runner.Ext
+	base64Code := gadget.Base64Encode(string(t.code))
+	cmd := []string{"sh", "-c", fmt.Sprintf("echo '%s' | base64 -d > %s", base64Code, filePath)}
 	_, err = t.exec(ctx, name, namespace, cmd)
 	if err != nil {
 		return nil, errors.Wrap(err, "exec: write code file")
