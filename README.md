@@ -1,6 +1,6 @@
 # Elaina ![Go](https://github.com/wuhan005/Elaina/workflows/Go/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/wuhan005/Elaina)](https://goreportcard.com/report/github.com/wuhan005/Elaina) ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/wuhan005/elaina) ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/wuhan005/elaina)
 
-<img align="right" src="elaina.gif" width=40%/>
+<img align="right" src="elaina.gif" width="40%"/>
 Docker-based remote code runner.
 
 [简体中文](https://github.com/wuhan005/Elaina/blob/master/README_zh.md)
