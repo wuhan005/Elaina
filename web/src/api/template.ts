@@ -25,6 +25,10 @@ export function listTemplates(params: { page: number; pageSize: number }) {
     return axios.get<ListTemplatesResp>('/api/templates', {params});
 }
 
+export function allTemplates() {
+    return axios.get<Template[]>('/api/templates/all');
+}
+
 export interface CreateTemplateReq {
     name: string;
     language: string[];

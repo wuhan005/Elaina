@@ -40,6 +40,16 @@ const allRouters: Array<RouteRecordRaw> = [
                 path: '/sandbox',
                 name: 'sandbox',
                 component: () => import('@/views/Sandbox.vue')
+            },
+            {
+                path: '/sandbox/new',
+                name: 'createSandbox',
+                component: () => import('@/views/SandboxModify.vue')
+            },
+            {
+                path: '/sandbox/:id',
+                name: 'editSandbox',
+                component: () => import('@/views/SandboxModify.vue')
             }
         ]
     }
