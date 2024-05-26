@@ -1,24 +1,47 @@
 import {createRouter, createWebHistory, RouteRecordRaw} from "vue-router";
+import {useAuthStore} from "@/store";
 
 const allRouters: Array<RouteRecordRaw> = [
     {
-        path: '/',
+        path: '/sign-in',
+        name: 'signIn',
+        component: () => import('@/views/SignIn.vue')
+    },
+    {
+        path: '',
         redirect: '/dashboard'
     },
     {
-        path: '/dashboard',
-        name: 'dashboard',
-        component: () => import('@/views/Dashboard.vue')
-    },
-    {
-        path: '/template',
-        name: 'template',
-        component: () => import('@/views/Template.vue')
-    },
-    {
-        path: '/sandbox',
-        name: 'sandbox',
-        component: () => import('@/views/Sandbox.vue')
+        path: '',
+        name: 'layout',
+        component: () => import('@/views/Layout.vue'),
+        children: [
+            {
+                path: '/dashboard',
+                name: 'dashboard',
+                component: () => import('@/views/Dashboard.vue')
+            },
+            {
+                path: '/template',
+                name: 'template',
+                component: () => import('@/views/Template.vue')
+            },
+            {
+                path: '/template/new',
+                name: 'createTemplate',
+                component: () => import('@/views/TemplateModify.vue')
+            },
+            {
+                path: '/template/:id',
+                name: 'editTemplate',
+                component: () => import('@/views/TemplateModify.vue')
+            },
+            {
+                path: '/sandbox',
+                name: 'sandbox',
+                component: () => import('@/views/Sandbox.vue')
+            }
+        ]
     }
 ]
 
@@ -27,6 +50,16 @@ const router = createRouter({
     routes: allRouters,
     scrollBehavior() {
         return {el: '#app', top: 0, behavior: 'smooth'}
+    }
+})
+
+router.beforeEach((to, from, next) => {
+    const authStore = useAuthStore()
+
+    if (to.name !== 'signIn' && !authStore.isAuthenticated) {
+        next({name: 'signIn'})
+    } else {
+        next()
     }
 })
 

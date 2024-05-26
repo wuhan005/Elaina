@@ -34,11 +34,12 @@
 
 <script setup lang="ts">
 import {ref} from 'vue'
-import {useRouter} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
 import {MenuValue} from "tdesign-vue-next";
 
+const route = useRoute()
 const router = useRouter()
-const menuValue = ref('dashboard')
+const menuValue = ref(route.name)
 
 const onChange = (value: MenuValue) => {
   router.push({name: value})

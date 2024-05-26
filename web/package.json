@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "axios": "^1.7.2",
+    "dayjs": "^1.11.11",
+    "less": "^4.2.0",
+    "pinia": "^2.1.7",
+    "pinia-plugin-persistedstate": "^3.2.1",
     "sass": "^1.77.2",
     "tdesign-vue-next": "^1.9.5",
     "vite-svg-loader": "^5.1.0",
