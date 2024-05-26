@@ -139,7 +139,7 @@ func (t *DockerTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 	// Clean containers and folder after executed.
 	defer t.clean(ctx)
 
-	if err := t.dockerClient.ContainerStart(ctx, t.containerID, types.ContainerStartOptions{}); err != nil {
+	if err := t.dockerClient.ContainerStart(ctx, t.containerID, container.StartOptions{}); err != nil {
 		return nil, err
 	}
 
@@ -214,7 +214,7 @@ func (t *DockerTask) clean(ctx context.Context) {
 		log.Error("Failed to kill container: %v", err)
 	}
 
-	if err := t.dockerClient.ContainerRemove(ctx, t.containerID, types.ContainerRemoveOptions{
+	if err := t.dockerClient.ContainerRemove(ctx, t.containerID, container.RemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,
 	}); err != nil {
