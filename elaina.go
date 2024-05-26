@@ -25,6 +25,9 @@ func main() {
 		logrus.WithError(err).Fatal("Failed to connect to database")
 	}
 
-	r := route.New(dbInstance)
+	r, err := route.New(dbInstance)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to create route")
+	}
 	r.Run(*port)
 }
