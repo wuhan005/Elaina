@@ -15,7 +15,7 @@ func Init() error {
 		&gorm.Config{},
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "open database")
 	}
 
 	err = db.AutoMigrate(&Tpl{}, &Sandbox{})

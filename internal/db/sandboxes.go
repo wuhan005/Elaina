@@ -30,14 +30,28 @@ type sandboxes struct {
 	*gorm.DB
 }
 
-func (db *sandboxes) GetByID(id uint) (*Sandbox, error) {
+type Sandbox struct {
+	gorm.Model
+
+	UID         string `gorm:"NOT NULL" json:"uid"`
+	Name        string `json:"name"`
+	TemplateID  uint   `gorm:"NOT NULL" json:"templateID"`
+	Template    *Tpl   `gorm:"ForeignKey:TemplateID" json:"template"`
+	Placeholder string `json:"placeholder"`
+	Editable    bool   `json:"editable"`
+}
+
+func (db *sandboxes) getBy(query string, args ...interface{}) (*Sandbox, error) {
 	var sb Sandbox
-	return &sb, db.Preload("Template").Model(&Sandbox{}).Where("id = ?", id).First(&sb).Error
+	return &sb, db.Preload("Template").Model(&Sandbox{}).Where(query, args...).First(&sb).Error
+}
+
+func (db *sandboxes) GetByID(id uint) (*Sandbox, error) {
+	return db.getBy("id = ?", id)
 }
 
 func (db *sandboxes) GetByUID(uid string) (*Sandbox, error) {
-	var sb Sandbox
-	return &sb, db.Preload("Template").Model(&Sandbox{}).Where("uid = ?", uid).First(&sb).Error
+	return db.getBy("uid = ?", uid)
 }
 
 func (db *sandboxes) ListAll() ([]*Sandbox, error) {
