@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/jackc/pgtype"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -16,6 +16,8 @@ import (
 type TplStore interface {
 	// All returns all the templates.
 	All(ctx context.Context) ([]*Tpl, error)
+	// List returns the templates with the given options.
+	List(ctx context.Context, options ListTplOptions) ([]*Tpl, int64, error)
 	// GetByID returns a template with the given id.
 	GetByID(ctx context.Context, id uint) (*Tpl, error)
 	// Create creates a new template with the given options.
@@ -37,8 +39,8 @@ type tpls struct {
 type Tpl struct {
 	dbutil.Model
 
-	Name     string           `json:"name"`
-	Language pgtype.TextArray `gorm:"type:text[]" json:"language"`
+	Name     string         `json:"name"`
+	Language pq.StringArray `gorm:"type:text[]" json:"language"`
 
 	// Limit
 	Timeout           int            `json:"timeout"`
@@ -73,6 +75,27 @@ func (db *tpls) All(ctx context.Context) ([]*Tpl, error) {
 	return templates, nil
 }
 
+type ListTplOptions struct {
+	dbutil.Pagination
+}
+
+func (db *tpls) List(ctx context.Context, options ListTplOptions) ([]*Tpl, int64, error) {
+	var templates []*Tpl
+
+	query := db.WithContext(ctx).Model(&Tpl{})
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, errors.Wrap(err, "count")
+	}
+
+	limit, offset := options.LimitOffset()
+	if err := query.Limit(limit).Offset(offset).Find(&templates).Error; err != nil {
+		return nil, 0, errors.Wrap(err, "find")
+	}
+	return templates, total, nil
+}
+
 type CreateTplOptions struct {
 	Name              string
 	Language          []string
@@ -86,11 +109,6 @@ type CreateTplOptions struct {
 }
 
 func (db *tpls) Create(ctx context.Context, options CreateTplOptions) (*Tpl, error) {
-	languages := pgtype.TextArray{}
-	if err := languages.Set(options.Language); err != nil {
-		return nil, errors.Wrap(err, "set language")
-	}
-
 	dnsValue, err := json.Marshal(options.DNS)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal dns")
@@ -102,7 +120,7 @@ func (db *tpls) Create(ctx context.Context, options CreateTplOptions) (*Tpl, err
 
 	tpl := &Tpl{
 		Name:              options.Name,
-		Language:          languages,
+		Language:          pq.StringArray(options.Language),
 		Timeout:           options.Timeout,
 		MaxCPUs:           options.MaxCPUs,
 		MaxMemory:         options.MaxMemory,
@@ -137,11 +155,6 @@ func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) e
 		return errors.Wrap(err, "get by ID")
 	}
 
-	languages := pgtype.TextArray{}
-	if err := languages.Set(options.Language); err != nil {
-		return errors.Wrap(err, "set language")
-	}
-
 	dnsValue, err := jsoniter.Marshal(options.DNS)
 	if err != nil {
 		return errors.Wrap(err, "marshal dns")
@@ -152,7 +165,7 @@ func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) e
 	}
 
 	template.Name = options.Name
-	template.Language = languages
+	template.Language = options.Language
 	template.Timeout = options.Timeout
 	template.MaxCPUs = options.MaxCPUs
 	template.MaxMemory = options.MaxMemory

@@ -13,6 +13,8 @@ import (
 type SandboxStore interface {
 	// All returns all the sandboxes.
 	All(ctx context.Context) ([]*Sandbox, error)
+	// List returns the sandboxes with the given options.
+	List(ctx context.Context, options ListSandboxOptions) ([]*Sandbox, int64, error)
 	// GetByID returns a sandbox with the given id.
 	GetByID(ctx context.Context, id uint) (*Sandbox, error)
 	// GetByUID returns a sandbox with the given uid.
@@ -71,6 +73,27 @@ func (db *sandboxes) All(ctx context.Context) ([]*Sandbox, error) {
 		return nil, errors.Wrap(err, "find")
 	}
 	return sandboxes, nil
+}
+
+type ListSandboxOptions struct {
+	dbutil.Pagination
+}
+
+func (db *sandboxes) List(ctx context.Context, options ListSandboxOptions) ([]*Sandbox, int64, error) {
+	var sandboxes []*Sandbox
+
+	query := db.WithContext(ctx).Model(&Sandbox{})
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, errors.Wrap(err, "count")
+	}
+
+	limit, offset := options.LimitOffset()
+	if err := query.Limit(limit).Offset(offset).Find(&sandboxes).Error; err != nil {
+		return nil, 0, errors.Wrap(err, "find")
+	}
+	return sandboxes, total, nil
 }
 
 type CreateSandboxOptions struct {
