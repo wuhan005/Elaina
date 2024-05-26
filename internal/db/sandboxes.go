@@ -1,25 +1,28 @@
 package db
 
 import (
-	"errors"
+	"context"
 
+	"github.com/pkg/errors"
 	"github.com/thanhpk/randstr"
 	"gorm.io/gorm"
+
+	"github.com/wuhan005/Elaina/internal/dbutil"
 )
 
 type SandboxStore interface {
+	// All returns all the sandboxes.
+	All(ctx context.Context) ([]*Sandbox, error)
 	// GetByID returns a sandbox with the given id.
-	GetByID(id uint) (*Sandbox, error)
+	GetByID(ctx context.Context, id uint) (*Sandbox, error)
 	// GetByUID returns a sandbox with the given uid.
-	GetByUID(uid string) (*Sandbox, error)
-	// ListAll returns all the sandboxes.
-	ListAll() ([]*Sandbox, error)
+	GetByUID(ctx context.Context, uid string) (*Sandbox, error)
 	// Create creates a new sandbox with the given options.
-	Create(opts CreateSandboxOptions) error
+	Create(ctx context.Context, options CreateSandboxOptions) (*Sandbox, error)
 	// Update edits a new sandbox with the given options.
-	Update(opts UpdateSandboxOptions) error
+	Update(ctx context.Context, id uint, options UpdateSandboxOptions) error
 	// Delete deletes a sandbox with the given id.
-	Delete(id uint) error
+	Delete(ctx context.Context, id uint) error
 }
 
 var Sandboxes SandboxStore
@@ -31,7 +34,7 @@ type sandboxes struct {
 }
 
 type Sandbox struct {
-	gorm.Model
+	dbutil.Model
 
 	UID         string `gorm:"NOT NULL" json:"uid"`
 	Name        string `json:"name"`
@@ -41,22 +44,33 @@ type Sandbox struct {
 	Editable    bool   `json:"editable"`
 }
 
-func (db *sandboxes) getBy(query string, args ...interface{}) (*Sandbox, error) {
-	var sb Sandbox
-	return &sb, db.Preload("Template").Model(&Sandbox{}).Where(query, args...).First(&sb).Error
+var ErrSandboxNotFound = errors.New("sandbox dose not exist")
+
+func (db *sandboxes) getBy(ctx context.Context, query string, args ...interface{}) (*Sandbox, error) {
+	var sandbox Sandbox
+	if err := db.WithContext(ctx).Preload("Template").Model(&Sandbox{}).Where(query, args...).First(&sandbox).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrSandboxNotFound
+		}
+		return nil, errors.Wrap(err, "first")
+	}
+	return &sandbox, nil
 }
 
-func (db *sandboxes) GetByID(id uint) (*Sandbox, error) {
-	return db.getBy("id = ?", id)
+func (db *sandboxes) GetByID(ctx context.Context, id uint) (*Sandbox, error) {
+	return db.getBy(ctx, "id = ?", id)
 }
 
-func (db *sandboxes) GetByUID(uid string) (*Sandbox, error) {
-	return db.getBy("uid = ?", uid)
+func (db *sandboxes) GetByUID(ctx context.Context, uid string) (*Sandbox, error) {
+	return db.getBy(ctx, "uid = ?", uid)
 }
 
-func (db *sandboxes) ListAll() ([]*Sandbox, error) {
-	var sbs []*Sandbox
-	return sbs, db.Preload("Template").Model(&Sandbox{}).Find(&sbs).Error
+func (db *sandboxes) All(ctx context.Context) ([]*Sandbox, error) {
+	var sandboxes []*Sandbox
+	if err := db.WithContext(ctx).Preload("Template").Model(&Sandbox{}).Find(&sandboxes).Error; err != nil {
+		return nil, errors.Wrap(err, "find")
+	}
+	return sandboxes, nil
 }
 
 type CreateSandboxOptions struct {
@@ -66,38 +80,53 @@ type CreateSandboxOptions struct {
 	Editable    bool
 }
 
-func (db *sandboxes) Create(opts CreateSandboxOptions) error {
-	return db.DB.Create(&Sandbox{
+func (db *sandboxes) Create(ctx context.Context, options CreateSandboxOptions) (*Sandbox, error) {
+	sandbox := &Sandbox{
 		UID:         randstr.String(10),
-		Name:        opts.Name,
-		TemplateID:  opts.TemplateID,
-		Placeholder: opts.Placeholder,
-		Editable:    opts.Editable,
-	}).Error
+		Name:        options.Name,
+		TemplateID:  options.TemplateID,
+		Placeholder: options.Placeholder,
+		Editable:    options.Editable,
+	}
+
+	if err := db.WithContext(ctx).Create(sandbox).Error; err != nil {
+		return nil, errors.Wrap(err, "create")
+	}
+	return sandbox, nil
 }
 
 type UpdateSandboxOptions struct {
-	ID          uint
 	Name        string
 	TemplateID  uint
 	Placeholder string
 	Editable    bool
 }
 
-func (db *sandboxes) Update(opts UpdateSandboxOptions) error {
-	_, err := db.GetByID(opts.ID)
+func (db *sandboxes) Update(ctx context.Context, id uint, options UpdateSandboxOptions) error {
+	sandbox, err := db.GetByID(ctx, id)
 	if err != nil {
-		return errors.New("sandbox not existed")
+		return errors.Wrap(err, "get by ID")
 	}
 
-	return db.DB.Model(&Sandbox{}).Where("id = ?", opts.ID).Updates(&Sandbox{
-		Name:        opts.Name,
-		TemplateID:  opts.TemplateID,
-		Placeholder: opts.Placeholder,
-		Editable:    opts.Editable,
-	}).Error
+	sandbox.Name = options.Name
+	sandbox.TemplateID = options.TemplateID
+	sandbox.Placeholder = options.Placeholder
+	sandbox.Editable = options.Editable
+
+	if err := db.WithContext(ctx).Save(sandbox).Error; err != nil {
+		return errors.Wrap(err, "save")
+	}
+	return nil
 }
 
-func (db *sandboxes) Delete(id uint) error {
-	return db.DB.Delete(&Sandbox{}, "id = ?", id).Error
+func (db *sandboxes) Delete(ctx context.Context, id uint) error {
+	_, err := db.GetByID(ctx, id)
+	if err != nil {
+		return errors.Wrap(err, "get by ID")
+	}
+
+	if err := db.WithContext(ctx).Delete(&Sandbox{}, "id = ?", id).Error; err != nil {
+		return errors.Wrap(err, "delete")
+	}
+	return nil
 }
