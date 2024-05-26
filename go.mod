@@ -1,6 +1,6 @@
 module github.com/wuhan005/Elaina
 
-go 1.18
+go 1.22
 
 require (
 	github.com/docker/docker v20.10.3+incompatible
