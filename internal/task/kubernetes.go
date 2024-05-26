@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/wuhan005/gadget"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -23,7 +24,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	log "unknwon.dev/clog/v2"
 
 	"github.com/wuhan005/Elaina/internal/db"
 )
@@ -128,7 +128,7 @@ func (t *KubernetesTask) Run(ctx context.Context) ([]*CommandOutput, error) {
 
 	defer func() {
 		if err := t.k8sClient.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
-			log.Error("Failed to delete pod: %v", err)
+			logrus.WithError(err).Error("Failed to delete pod")
 		}
 	}()
 

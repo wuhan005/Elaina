@@ -14,7 +14,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
-	log "unknwon.dev/clog/v2"
+	"github.com/sirupsen/logrus"
 
 	"github.com/wuhan005/Elaina/internal/db"
 )
@@ -211,19 +211,18 @@ func (t *DockerTask) exec(ctx context.Context, cmd string) (*CommandOutput, erro
 
 func (t *DockerTask) clean(ctx context.Context) {
 	if err := t.dockerClient.ContainerKill(ctx, t.containerID, "9"); err != nil {
-		log.Error("Failed to kill container: %v", err)
+		logrus.WithContext(ctx).WithError(err).Error("Failed to kill container")
 	}
 
 	if err := t.dockerClient.ContainerRemove(ctx, t.containerID, container.RemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,
 	}); err != nil {
-		log.Error("Failed to remove container: %v", err)
+		logrus.WithContext(ctx).WithError(err).Error("Failed to remove container")
 	}
-
-	err := os.RemoveAll(t.sourceAbsVolumePath)
-	if err != nil {
-		log.Error("Failed to remove volume folder: %v", err)
+	
+	if err := os.RemoveAll(t.sourceAbsVolumePath); err != nil {
+		logrus.WithContext(ctx).WithError(err).Error("Failed to remove volume folder")
 	}
 }
 

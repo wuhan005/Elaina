@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/charmbracelet/log"
 	"github.com/flamego/flamego"
 	"github.com/flamego/session"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
 	"github.com/wuhan005/Elaina/internal/dbutil"
@@ -38,7 +38,7 @@ func (c *Context) Success(data ...interface{}) error {
 		},
 	)
 	if err != nil {
-		log.Error("Failed to encode", "error", err)
+		logrus.WithContext(c.Request().Context()).WithError(err).Error("Failed to encode")
 	}
 	return nil
 }
@@ -57,7 +57,7 @@ func (c *Context) Error(statusCode int, message string, v ...interface{}) error 
 		},
 	)
 	if err != nil {
-		log.Error("Failed to encode", "error", err)
+		logrus.WithContext(c.Request().Context()).WithError(err).Error("Failed to encode")
 	}
 	return nil
 }

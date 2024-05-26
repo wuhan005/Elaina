@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/datatypes"
@@ -155,7 +154,7 @@ func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) e
 		return errors.Wrap(err, "get by ID")
 	}
 
-	dnsValue, err := jsoniter.Marshal(options.DNS)
+	dnsValue, err := json.Marshal(options.DNS)
 	if err != nil {
 		return errors.Wrap(err, "marshal dns")
 	}
