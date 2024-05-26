@@ -14,8 +14,8 @@
             <t-col :span="12">
               <t-form-item label="Programming Languages" name="language">
                 <t-checkbox-group v-model="formData.language">
-                  <t-checkbox v-for="language in LANGUAGES" v-bind:key="language.value" :key="language.value"
-                              :label="language.label" :value="language.value">
+                  <t-checkbox v-for="language in LANGUAGES" v-bind:key="language.value" :label="language.label"
+                              :value="language.value">
                   </t-checkbox>
                 </t-checkbox-group>
               </t-form-item>
@@ -76,6 +76,7 @@ import {onMounted, ref} from 'vue'
 import {FormProps, MessagePlugin, SubmitContext} from 'tdesign-vue-next';
 import {useRouter, useRoute} from "vue-router";
 import {
+  type Template,
   type CreateTemplateReq,
   type UpdateTemplateReq,
   createTemplate,
@@ -86,7 +87,6 @@ import {LANGUAGES} from '@/const/template'
 
 const route = useRoute()
 const router = useRouter()
-
 const mode = ref<'create' | 'edit'>(route.name === 'createTemplate' ? 'create' : 'edit')
 const id = ref<string | undefined>(route.params.id as string | undefined)
 
@@ -100,7 +100,7 @@ const FORM_RULES: FormProps['rules'] = {
   maxContainerPerIp: [{required: true, message: 'Maximum Number of Containers per IP is required'}],
 };
 
-const formData = ref<CreateTemplateReq | UpdateTemplateReq>({language: []} as CreateTemplateReq)
+const formData = ref<CreateTemplateReq | UpdateTemplateReq>({language: [] as string[]} as CreateTemplateReq)
 const onSubmit = (ctx: SubmitContext) => {
   if (ctx.validateResult === true) {
     if (mode.value === 'create') {
@@ -122,7 +122,7 @@ const onCancel = () => {
 
 onMounted(() => {
   if (mode.value === 'edit') {
-    getTemplate(id.value).then(res => {
+    getTemplate(id.value).then((res: Template) => {
       formData.value = {
         name: res.name,
         language: res.language,
@@ -130,6 +130,7 @@ onMounted(() => {
         maxCpus: res.maxCpus,
         maxMemory: res.maxMemory,
         internetAccess: res.internetAccess,
+        dns: res.dns,
         maxContainer: res.maxContainer,
         maxContainerPerIp: res.maxContainerPerIp,
       }

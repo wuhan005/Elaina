@@ -61,7 +61,6 @@ const COLUMNS: PrimaryTableCol<TableRowData>[] = [
   {title: 'Operators', align: 'left', fixed: 'right', width: 160, colKey: 'op'},
 ];
 const pagination = ref<PaginationProps>({
-  page: 1,
   pageSize: 20,
   current: 1,
 })
@@ -72,7 +71,7 @@ const router = useRouter()
 const getSandboxes = () => {
   isLoading.value = true
 
-  listSandboxes({page: pagination.value.page, pageSize: pagination.value.pageSize}).then(res => {
+  listSandboxes({page: pagination.value.current, pageSize: pagination.value.pageSize}).then(res => {
     data.value = res.sandboxes
     pagination.value.total = res.total
   }).finally(() => {

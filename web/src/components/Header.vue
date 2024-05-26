@@ -42,7 +42,7 @@ const router = useRouter()
 const menuValue = ref(route.name)
 
 const onChange = (value: MenuValue) => {
-  router.push({name: value})
+  router.push({name: value.toString()})
 }
 </script>
 

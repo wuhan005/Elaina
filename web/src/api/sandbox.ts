@@ -20,7 +20,7 @@ export interface ListSandboxesResp {
 }
 
 export function listSandboxes(params: { page: number; pageSize: number }) {
-    return axios.get<ListSandboxesResp>('/api/sandboxes', {params});
+    return axios.get<ListSandboxesResp, ListSandboxesResp>('/api/sandboxes', {params});
 }
 
 export interface CreateSandboxReq {
@@ -31,11 +31,11 @@ export interface CreateSandboxReq {
 }
 
 export function createSandbox(data: CreateSandboxReq) {
-    return axios.post<Sandbox>('/api/sandboxes', data);
+    return axios.post<Sandbox, Sandbox>('/api/sandboxes', data);
 }
 
-export function getSandbox(id: number) {
-    return axios.get<Sandbox>(`/api/sandbox/${id}`);
+export function getSandbox(id: string) {
+    return axios.get<Sandbox, Sandbox>(`/api/sandbox/${id}`);
 }
 
 export interface UpdateSandboxReq {
@@ -45,10 +45,10 @@ export interface UpdateSandboxReq {
     editable: boolean;
 }
 
-export function updateSandbox(id: number, data: UpdateSandboxReq) {
-    return axios.put<string>(`/api/sandbox/${id}`, data);
+export function updateSandbox(id: string, data: UpdateSandboxReq) {
+    return axios.put<string, string>(`/api/sandbox/${id}`, data);
 }
 
 export function deleteSandbox(id: number) {
-    return axios.delete<string>(`/api/sandbox/${id}`);
+    return axios.delete<string, string>(`/api/sandbox/${id}`);
 }

@@ -5,7 +5,7 @@ export interface SignInForm {
 }
 
 export function signIn(data: SignInForm) {
-    return axios.post<string>('/api/auth/sign-in', data)
+    return axios.post<string, string>('/api/auth/sign-in', data)
 }
 
 export interface ProfileResp {
@@ -13,5 +13,5 @@ export interface ProfileResp {
 }
 
 export function profile() {
-    return axios.get<ProfileResp>('/api/auth/profile')
+    return axios.get<ProfileResp, ProfileResp>('/api/auth/profile')
 }

@@ -11,7 +11,7 @@ export interface Template {
     maxCpus: number;
     maxMemory: number;
     internetAccess: boolean;
-    dns: any;
+    dns: { [key: string]: string };
     maxContainer: number;
     maxContainerPerIp: number;
 }
@@ -22,11 +22,11 @@ export interface ListTemplatesResp {
 }
 
 export function listTemplates(params: { page: number; pageSize: number }) {
-    return axios.get<ListTemplatesResp>('/api/templates', {params});
+    return axios.get<ListTemplatesResp, ListTemplatesResp>('/api/templates', {params});
 }
 
 export function allTemplates() {
-    return axios.get<Template[]>('/api/templates/all');
+    return axios.get<Template[], Template[]>('/api/templates/all');
 }
 
 export interface CreateTemplateReq {
@@ -36,17 +36,17 @@ export interface CreateTemplateReq {
     maxCpus: number;
     maxMemory: number;
     internetAccess: boolean;
-    dns: any;
+    dns: { [key: string]: string };
     maxContainer: number;
     maxContainerPerIp: number;
 }
 
 export function createTemplate(data: CreateTemplateReq) {
-    return axios.post<Template>('/api/templates', data);
+    return axios.post<Template, Template>('/api/templates', data);
 }
 
-export function getTemplate(id: number) {
-    return axios.get<Template>(`/api/template/${id}`);
+export function getTemplate(id: string) {
+    return axios.get<Template, Template>(`/api/template/${id}`);
 }
 
 export interface UpdateTemplateReq {
@@ -56,15 +56,15 @@ export interface UpdateTemplateReq {
     maxCpus: number;
     maxMemory: number;
     internetAccess: boolean;
-    dns: any;
+    dns: { [key: string]: string };
     maxContainer: number;
     maxContainerPerIp: number;
 }
 
-export function updateTemplate(id: number, data: UpdateTemplateReq) {
-    return axios.put<string>(`/api/template/${id}`, data);
+export function updateTemplate(id: string, data: UpdateTemplateReq) {
+    return axios.put<string, string>(`/api/template/${id}`, data);
 }
 
 export function deleteTemplate(id: number) {
-    return axios.delete<string>(`/api/template/${id}`);
+    return axios.delete<string, string>(`/api/template/${id}`);
 }

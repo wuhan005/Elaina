@@ -23,7 +23,7 @@ axios.interceptors.request.use(
 );
 
 axios.interceptors.response.use(
-    (response: AxiosResponse<HttpResponse>) => {
+    (response: AxiosResponse) => {
         const res = response.data;
         const statusCode = response.status
         if (statusCode / 100 !== 2) {
