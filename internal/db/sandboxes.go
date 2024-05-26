@@ -82,7 +82,7 @@ type ListSandboxOptions struct {
 func (db *sandboxes) List(ctx context.Context, options ListSandboxOptions) ([]*Sandbox, int64, error) {
 	var sandboxes []*Sandbox
 
-	query := db.WithContext(ctx).Model(&Sandbox{})
+	query := db.WithContext(ctx).Model(&Sandbox{}).Preload("Template")
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {

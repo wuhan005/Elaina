@@ -37,6 +37,15 @@ func (h *TemplateHandler) Templater(ctx context.Context) error {
 	return nil
 }
 
+func (h *TemplateHandler) All(ctx context.Context) error {
+	templates, err := db.Tpls.All(ctx.Request().Context())
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get all templates")
+		return ctx.ServerError()
+	}
+	return ctx.Success(templates)
+}
+
 func (h *TemplateHandler) List(ctx context.Context) error {
 	templates, total, err := db.Tpls.List(ctx.Request().Context(), db.ListTplOptions{
 		Pagination: dbutil.Pagination{

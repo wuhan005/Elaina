@@ -49,6 +49,7 @@ func New(db *gorm.DB) *flamego.Flame {
 			f.Combo("/templates").
 				Get(templateHandler.List).
 				Post(form.Bind(form.CreateTemplate{}), templateHandler.Create)
+			f.Get("/templates/all", templateHandler.All)
 			f.Group("/template/{id}", func() {
 				f.Combo("").
 					Get(templateHandler.Get).
@@ -60,7 +61,7 @@ func New(db *gorm.DB) *flamego.Flame {
 			f.Combo("/sandboxes").
 				Get(sandboxHandler.List).
 				Post(form.Bind(form.CreateSandbox{}), sandboxHandler.Create)
-			f.Combo("/sandbox/{id}", func() {
+			f.Group("/sandbox/{id}", func() {
 				f.Combo("").
 					Get(sandboxHandler.Get).
 					Put(form.Bind(form.UpdateSandbox{}), sandboxHandler.Update).
