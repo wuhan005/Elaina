@@ -7,8 +7,8 @@ package route
 import (
 	"net/http"
 
-	"github.com/wuhan005/Elaina/frontend"
 	"github.com/wuhan005/Elaina/internal/context"
+	"github.com/wuhan005/Elaina/web"
 )
 
 func Frontend(c context.Context) {
@@ -16,8 +16,8 @@ func Frontend(c context.Context) {
 		return
 	}
 
-	name := "index.html"
-	f, err := http.FS(frontend.FS).Open(name)
+	name := "dist/index.html"
+	f, err := http.FS(web.FS).Open(name)
 	if err != nil {
 		return
 	}
