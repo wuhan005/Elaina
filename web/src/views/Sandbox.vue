@@ -32,6 +32,7 @@
         </template>
         <template #op="{row}">
           <t-space>
+            <t-link theme="primary" :href="`/r/${row.uid}`" target="_blank">VIEW</t-link>
             <t-link theme="primary" @click="onUpdate(row.id)">EDIT</t-link>
             <t-popconfirm content="Are you sure you want to delete this sandbox?" @confirm="onDelete(row.id)">
               <t-link theme="danger">DELETE</t-link>
