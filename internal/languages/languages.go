@@ -10,7 +10,7 @@ var runners = []Runner{
 		Image:         "glot/php:latest",
 		FileName:      "main.php",
 		BuildCommands: nil,
-		RunCommand:    "",
+		RunCommand:    "php main.php",
 	},
 	{
 		Name:          "python",
@@ -19,27 +19,27 @@ var runners = []Runner{
 		BuildCommands: nil,
 		RunCommand:    "python main.py",
 	},
-	//{
-	//	Name:       "go",
-	//	Ext:        ".go",
-	//	Image:      "elainaruntime/golang:latest",
-	//	BuildCmd:   "go mod init elaina-runner && go build -v .",
-	//	RunCommand: "./elaina-runner",
-	//},
-	//{
-	//	Name:       "javascript",
-	//	Ext:        ".js",
-	//	Image:      "elainaruntime/javascript:latest",
-	//	BuildCmd:   "",
-	//	RunCommand: "node code.js",
-	//},
-	//{
-	//	Name:       "c",
-	//	Ext:        ".c",
-	//	Image:      "elainaruntime/clang:latest",
-	//	BuildCmd:   "gcc -v code.c -o code",
-	//	RunCommand: "./code",
-	//},
+	{
+		Name:          "go",
+		Image:         "glot/go:latest",
+		FileName:      "main.go",
+		BuildCommands: nil,
+		RunCommand:    "go run main.go",
+	},
+	{
+		Name:          "javascript",
+		Image:         "glot/javascript:latest",
+		FileName:      "main.js",
+		BuildCommands: nil,
+		RunCommand:    "node main.js",
+	},
+	{
+		Name:          "javascript",
+		Image:         "glot/c:latest",
+		FileName:      "main.c",
+		BuildCommands: nil,
+		RunCommand:    "clang main.c && ./a.out",
+	},
 }
 
 func Get(name string) (*Runner, bool) {
