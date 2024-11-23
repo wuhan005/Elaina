@@ -20,6 +20,6 @@ jobs:
       - name: Push image
         run: |
           docker pull glot/${{ matrix.image-name }}:latest
-          docker tag docker.io/glot/${{ matrix.image-name }}:latest ccr.ccs.tencentyun.com/qcloud-image/glot:${{ matrix.image-name }}
-          docker push ccr.ccs.tencentyun.com/qcloud-image/glot:${{ env.IMAGE_TAG }}
+          docker tag glot/${{ matrix.image-name }}:latest ccr.ccs.tencentyun.com/qcloud-image/glot:${{ matrix.image-name }}
+          docker push ccr.ccs.tencentyun.com/qcloud-image/glot:${{ matrix.image-name }}
 
