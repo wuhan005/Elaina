@@ -6,8 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    matrix:
-      image-name: [php, python]
+    strategy:
+      matrix:
+        image-name: [php, python]
     steps:
       - name: Login to Tencent Cloud Container Registry
         uses: docker/login-action@v2
