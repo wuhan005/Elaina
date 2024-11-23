@@ -30,3 +30,4 @@ jobs:
             GITHUB_SHA=${{ github.sha }}
           tags: |
             registry.hub.docker.com/wuhan005/elaina:${{ env.IMAGE_TAG }}
+            registry.hub.docker.com/wuhan005/elaina:latest
