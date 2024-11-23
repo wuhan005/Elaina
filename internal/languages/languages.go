@@ -21,7 +21,7 @@ var runners = []Runner{
 	},
 	{
 		Name:          "go",
-		Image:         "glot/go:latest",
+		Image:         "glot/golang:latest",
 		FileName:      "main.go",
 		BuildCommands: nil,
 		RunCommand:    "go run main.go",
