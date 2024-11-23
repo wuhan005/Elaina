@@ -12,6 +12,10 @@ import (
 	"github.com/wuhan005/Elaina/internal/dbutil"
 )
 
+var _ TplStore = (*tpls)(nil)
+
+var Tpls TplStore
+
 type TplStore interface {
 	// All returns all the templates.
 	All(ctx context.Context) ([]*Tpl, error)
@@ -27,9 +31,9 @@ type TplStore interface {
 	Delete(ctx context.Context, id uint) error
 }
 
-var Tpls TplStore
-
-var _ TplStore = (*tpls)(nil)
+func NewTplStore(db *gorm.DB) TplStore {
+	return &tpls{db}
+}
 
 type tpls struct {
 	*gorm.DB

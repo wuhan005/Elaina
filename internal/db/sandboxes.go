@@ -10,6 +10,10 @@ import (
 	"github.com/wuhan005/Elaina/internal/dbutil"
 )
 
+var _ SandboxStore = (*sandboxes)(nil)
+
+var Sandboxes SandboxStore
+
 type SandboxStore interface {
 	// All returns all the sandboxes.
 	All(ctx context.Context) ([]*Sandbox, error)
@@ -27,9 +31,9 @@ type SandboxStore interface {
 	Delete(ctx context.Context, id uint) error
 }
 
-var Sandboxes SandboxStore
-
-var _ SandboxStore = (*sandboxes)(nil)
+func NewSandboxStore(db *gorm.DB) SandboxStore {
+	return &sandboxes{db}
+}
 
 type sandboxes struct {
 	*gorm.DB

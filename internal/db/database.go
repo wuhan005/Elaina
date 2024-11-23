@@ -19,13 +19,12 @@ func Init() (*gorm.DB, error) {
 		return nil, errors.Wrap(err, "open database")
 	}
 
-	err = db.AutoMigrate(&Tpl{}, &Sandbox{})
-	if err != nil {
+	if err := db.AutoMigrate(&Tpl{}, &Sandbox{}); err != nil {
 		return nil, errors.Wrap(err, "auto migrate")
 	}
 
-	Tpls = &tpls{DB: db}
-	Sandboxes = &sandboxes{DB: db}
+	Tpls = NewTplStore(db)
+	Sandboxes = NewSandboxStore(db)
 
 	return db, nil
 }
