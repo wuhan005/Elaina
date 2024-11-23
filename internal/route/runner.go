@@ -6,16 +6,16 @@ package route
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/flamego/template"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 
+	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
-	"github.com/wuhan005/Elaina/internal/task"
+	"github.com/wuhan005/Elaina/internal/runtime"
 )
 
 type RunnerHandler struct{}
@@ -58,12 +58,15 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 }
 
 func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error {
-	languages := sandbox.Template.Language
+	if err := ctx.Request().ParseForm(); err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to parse form")
+		return ctx.Error(http.StatusBadRequest, "Failed to parse form: %v", err)
+	}
 
-	_ = ctx.Request().ParseForm()
+	templateLanguages := sandbox.Template.Language
 	selectedLanguage := ctx.Request().PostForm.Get("lang")
-	if !lo.Contains(languages, selectedLanguage) {
-		selectedLanguage = languages[0]
+	if !lo.Contains(templateLanguages, selectedLanguage) {
+		selectedLanguage = templateLanguages[0]
 	}
 	code := ctx.Request().PostForm.Get("code")
 
@@ -71,27 +74,34 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 
 	startAt := time.Now().UnixNano()
 
-	var t task.Runner
+	var r runtime.ExecRuntime
 	var err error
-	if os.Getenv("ELAINA_KUBERNETES_MODE") == "on" {
-		t, err = task.NewKubernetesTask(ctx.Request().Context(), task.NewKubernetesTaskOptions{
+
+	switch config.App.RuntimeMode {
+	case "kubernetes", "k8s":
+		r, err = runtime.NewKubernetesTask(ctx.Request().Context(), runtime.NewKubernetesTaskOptions{
 			Language: selectedLanguage,
 			Template: sandbox.Template,
 			Code:     []byte(code),
 		})
-	} else {
-		t, err = task.NewDockerTask(ctx.Request().Context(), task.NewDockerTaskOptions{
+
+	case "docker", "":
+		r, err = runtime.NewDockerTask(ctx.Request().Context(), runtime.NewDockerTaskOptions{
 			Language: selectedLanguage,
 			Template: sandbox.Template,
 			Code:     []byte(code),
 		})
+
+	default:
+		return ctx.Error(http.StatusInternalServerError, "unexpected runtime mode: %q", config.App.RuntimeMode)
 	}
+
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to create task: %v", err)
 	}
 
-	output, err := t.Run(ctx.Request().Context())
+	output, err := r.Run(ctx.Request().Context())
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to run task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to run task: %v", err)

@@ -1,15 +1,16 @@
 package db
 
 import (
-	"os"
-
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/wuhan005/Elaina/internal/config"
 )
 
 func Init() (*gorm.DB, error) {
-	dsn := os.ExpandEnv("postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE")
+	dsn := config.Postgres.DSN
+
 	db, err := gorm.Open(
 		postgres.Open(dsn),
 		&gorm.Config{},

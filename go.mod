@@ -7,6 +7,7 @@ require (
 	github.com/flamego/flamego v1.9.4
 	github.com/flamego/session v1.6.5
 	github.com/flamego/template v1.2.2
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0

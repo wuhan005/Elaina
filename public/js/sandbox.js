@@ -18,29 +18,25 @@ $('#run').click(() => {
     $('#result_bar').css('color', 'white');
 
     $('#result_data').text('Loading...');
-    
+
     $.post(window.location.href + '/execute', {'lang': lang, 'code': editor.getValue()}, (res) => {
         $('#result_data').text('');
-        let steps = res.data.result;
+        const {error, stderr, stdout} = res.data.result;
 
-        steps.forEach((item, index) => {
-            if (item.body === null) {
-                item.body = '';
-            }
-            item.body = Base64.decode(item.body)
-            if (index === 0 && item.exit_code === 0) {
-                let build_details = $('<details style="color:gray;"></details>');
-                let build_summary = $('<summary></summary>').text('Build logs');
-                build_details.append(build_summary);
-                build_details.append($('<p></p>').text(item.body));
-                $('#result_data').append(build_details);
-            } else {
-                $('#result_data').append($('<p></p>').text(item.body))
-                if (item.exit_code !== 0) {
-                    $('#result_bar').css('color', 'red');
-                }
-            }
-        })
+        if (error) {
+            const build_details = $('<details style="color:red;"></details>');
+            const build_summary = $('<summary></summary>').text('Error');
+            build_details.append(build_summary);
+            build_details.append($('<p></p>').text(error));
+
+            $('#result_bar').css('color', 'red');
+            $('#result_data').append(build_details);
+            $('#result_data').append($('<p></p>').text(stderr));
+            
+        } else {
+            $('#result_bar').css('color', 'white');
+            $('#result_data').text(stdout);
+        }
 
         let startAt = res.data.start_at;
         let endAt = res.data.end_at;

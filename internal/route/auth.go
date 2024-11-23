@@ -7,10 +7,10 @@ package route
 import (
 	"crypto/subtle"
 	"net/http"
-	"os"
 
 	"github.com/flamego/session"
 
+	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/form"
 )
@@ -29,7 +29,7 @@ func (h *AuthHandler) Authenticator(ctx context.Context) error {
 }
 
 func (h *AuthHandler) SignIn(ctx context.Context, session session.Session, f form.SignIn) error {
-	appPassword := os.Getenv("APP_PASSWORD")
+	appPassword := config.App.Password
 	if subtle.ConstantTimeCompare([]byte(appPassword), []byte(f.Password)) != 1 {
 		return ctx.Error(http.StatusForbidden, "Invalid password")
 	}
