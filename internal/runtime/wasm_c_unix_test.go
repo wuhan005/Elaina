@@ -38,6 +38,10 @@ func TestWASMC(t *testing.T) {
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
 	}
+	if err := Init(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = Close(context.Background()) })
 
 	cache, err := wazero.NewCompilationCacheWithDir(config.App.WASMCacheDir)
 	if err != nil {

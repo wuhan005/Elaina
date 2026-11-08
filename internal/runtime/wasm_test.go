@@ -54,9 +54,9 @@ func TestNewWASMTaskValidation(t *testing.T) {
 		nil,
 		{MaxMemory: -1},
 		{MaxMemory: 4097},
-		{MaxCPUs: -1},
-		{MaxCPUs: 11},
-		{MaxCPUs: 1},
+		{MaxCPU: -1},
+		{MaxCPU: 11},
+		{MaxCPU: 1},
 		{Timeout: -1},
 		{Timeout: 61},
 	} {
@@ -122,6 +122,10 @@ func TestWASMInterpreters(t *testing.T) {
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
 	}
+	if err := Init(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = Close(context.Background()) })
 
 	t.Setenv("ELAINA_TEST_SECRET", "host-only")
 

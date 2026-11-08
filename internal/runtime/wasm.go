@@ -83,11 +83,6 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 		return nil, errors.Wrap(err, "resolve WASM runtime directory")
 	}
 
-	cacheDir, err := filepath.Abs(config.App.WASMCacheDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "resolve WASM cache directory")
-	}
-
 	dir, err := os.MkdirTemp("", "elaina-wasm-")
 	if err != nil {
 		return nil, errors.Wrap(err, "create WASM workspace")
@@ -112,7 +107,7 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 	}
 
 	startAt := time.Now()
-	runErr := t.runWASM(execCtx, runtimeDir, cacheDir, dir, stdout, stderr)
+	runErr := t.runWASM(execCtx, runtimeDir, dir, stdout, stderr)
 	output := &ExecOutput{
 		Stdout:   stdout.buffer.String(),
 		Stderr:   stderr.buffer.String(),

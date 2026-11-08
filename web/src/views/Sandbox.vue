@@ -22,7 +22,7 @@
           </t-tag>
         </template>
         <template #template="{row}">
-          {{ row.template.name }}
+          {{ row.template?.name ?? 'Template unavailable' }}
         </template>
         <template #placeholder="{row}">
           <code>{{ row.placeholder }}</code>

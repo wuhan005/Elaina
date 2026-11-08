@@ -32,12 +32,11 @@ type wasmModuleOptions struct {
 	features  api.CoreFeatures
 }
 
-func (t *WASMTask) runWASM(ctx context.Context, runtimeDir, cacheDir, dir string, stdout, stderr *wasmOutputBuffer) error {
-	cache, err := wazero.NewCompilationCacheWithDir(cacheDir)
-	if err != nil {
-		return errors.Wrap(err, "open WASM compilation cache")
+func (t *WASMTask) runWASM(ctx context.Context, runtimeDir, dir string, stdout, stderr *wasmOutputBuffer) error {
+	cache := compilationCache
+	if cache == nil {
+		return errors.New("WASM runtime is not initialized")
 	}
-	defer func() { _ = cache.Close(ctx) }()
 
 	if t.runner.Name == "go" {
 		return t.runGoWASM(ctx, cache, filepath.Join(runtimeDir, "go"), dir, stdout, stderr)
@@ -71,20 +70,17 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		memory = 4096
 	}
 
-	// Interpreter DWARF decoding can delay cancellation; language tracebacks do not depend on it.
-	configuration := wazero.NewRuntimeConfig().
-		WithCompilationCache(cache).WithMemoryLimitPages(uint32(memory * 16)).
-		WithCloseOnContextDone(true).WithDebugInfoEnabled(false)
-	if options.features != 0 {
-		configuration = configuration.WithCoreFeatures(options.features)
+	r := &wasmRuntime{
+		Runtime: wazero.NewRuntimeWithConfig(ctx, wasmRuntimeConfig(cache, uint32(memory*16), options.features)),
 	}
-	r := wazero.NewRuntimeWithConfig(ctx, configuration)
 	defer func() { _ = r.Close(ctx) }()
 
 	data, err := os.ReadFile(options.path)
 	if err != nil {
 		return errors.Wrap(err, "read WASM module (install the language artifacts first)")
 	}
+
+	// Decode with this task's memory limit; the shared cache only reuses machine code.
 	module, err := r.CompileModule(ctx, data)
 	if err != nil {
 		return errors.Wrap(err, "compile WASM module")

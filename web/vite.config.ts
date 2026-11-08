@@ -32,7 +32,15 @@ export default defineConfig({
             '/api': {
                 target: 'http://localhost:8080',
                 changeOrigin: true,
-            }
-        }
-    }
+            },
+            '/r/': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
+            '/static/': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
+        },
+    },
 })

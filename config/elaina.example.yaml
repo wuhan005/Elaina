@@ -4,6 +4,7 @@ app:
   password_hash: "" # Required bcrypt hash; omit the "admin:" prefix from the output.
   # Relative paths are resolved from the server's working directory.
   wasm_runtime_dir: .wasm
+  # Installed interpreters and compilers are warmed before the server starts listening.
   wasm_cache_dir: .wasm/cache # Must be writable by the server.
 
 postgres:

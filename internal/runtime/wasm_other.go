@@ -11,6 +11,6 @@ import (
 	"errors"
 )
 
-func (*WASMTask) runWASM(context.Context, string, string, string, *wasmOutputBuffer, *wasmOutputBuffer) error {
+func (*WASMTask) runWASM(context.Context, string, string, *wasmOutputBuffer, *wasmOutputBuffer) error {
 	return errors.New("the WASI socket host requires Linux or macOS")
 }

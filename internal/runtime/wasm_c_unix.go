@@ -12,8 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/experimental"
 )
 
 func (t *WASMTask) compileCWASM(ctx context.Context, cache wazero.CompilationCache, toolchain, dir string, stderr *wasmOutputBuffer) error {
@@ -45,7 +43,7 @@ func (t *WASMTask) compileCWASM(ctx context.Context, cache wazero.CompilationCac
 			dir:       dir,
 			toolchain: toolchain,
 			// These instructions are enabled only for the pinned compiler and linker.
-			features: api.CoreFeaturesV2 | experimental.CoreFeaturesTailCall | experimental.CoreFeaturesTypedFunctionReferences,
+			features: wasmCompilerFeatures,
 		}, stderr, stderr); err != nil {
 			return errors.Wrapf(err, "C %s", args[0])
 		}

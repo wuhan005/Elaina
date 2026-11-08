@@ -39,6 +39,10 @@ func TestWASMGo(t *testing.T) {
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
 	}
+	if err := Init(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = Close(context.Background()) })
 
 	run := func(t *testing.T, code string, internet bool, memory int64, timeout int) *ExecOutput {
 		t.Helper()
