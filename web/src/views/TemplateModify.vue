@@ -12,7 +12,7 @@
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Programming Languages" name="language">
+              <t-form-item label="Programming Languages" name="language" help="WASM: C (Clang 22), Go 1.27.3, Python 3.12, PHP 8.2, QuickJS (not Node.js). Native extensions and subprocesses are unavailable.">
                 <t-checkbox-group v-model="formData.language">
                   <t-checkbox v-for="language in LANGUAGES" v-bind:key="language.value" :label="language.label"
                               :value="language.value">
@@ -21,22 +21,22 @@
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Time Limit (s)" name="timeout">
+              <t-form-item label="Time Limit (s)" name="timeout" help="Includes compilation and startup. Start with 60 seconds for C/Go compiler cold starts.">
                 <t-input-number v-model="formData.timeout" :min="0" :max="60"/>
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Maximum CPUs" name="maxCpus">
+              <t-form-item label="Maximum CPUs" name="maxCpus" help="Set to 0 for all languages. WASM has no per-task CPU quota.">
                 <t-input-number v-model="formData.maxCpus" :min="0" :max="10"/>
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Maximum Memory (MB)" name="maxMemory">
+              <t-form-item label="Maximum Memory (MiB)" name="maxMemory" help="For WASM this limits linear memory only, not total process memory. Start with 512 MiB for C/Go, 128 MiB for interpreters.">
                 <t-input-number v-model="formData.maxMemory" :min="6" :max="1024"/>
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Internet Access" name="internetAccess">
+              <t-form-item label="Internet Access" name="internetAccess" help="Go's default HTTP client supports DNS/HTTPS. C supports IPv4 TCP/DNS; TLS libraries are not bundled. PHP supports IPv4 TCP/HTTP only. Python/JavaScript networking is unavailable.">
                 <t-switch v-model="formData.internetAccess"></t-switch>
               </t-form-item>
             </t-col>

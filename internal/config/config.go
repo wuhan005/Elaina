@@ -10,15 +10,9 @@ import (
 )
 
 var App struct {
-	Password    string `envconfig:"APP_PASSWORD"`
-	RuntimeMode string `envconfig:"RUNTIME_MODE" default:"docker"`
-
-	KubernetesServiceHost string `envconfig:"KUBERNETES_SERVICE_HOST"`
-	KubernetesNamespace   string `envconfig:"KUBERNETES_NAMESPACE"`
-	KubernetesCAData      string `envconfig:"KUBERNETES_CA_DATA"`
-	KubernetesCertData    string `envconfig:"KUBERNETES_CERT_DATA"`
-	KubernetesKeyData     string `envconfig:"KUBERNETES_KEY_DATA"`
-	KubernetesBearerToken string `envconfig:"KUBERNETES_BEARER_TOKEN"`
+	Password       string `envconfig:"APP_PASSWORD"`
+	WASMRuntimeDir string `envconfig:"WASM_RUNTIME_DIR" default:".wasm"`
+	WASMCacheDir   string `envconfig:"WASM_CACHE_DIR" default:".wasm/cache"`
 }
 
 var Postgres struct {

@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var RateLimitError = errors.New("rate limit")
+var ErrRateLimit = errors.New("rate limit")
 
 var rate = rateLimit{
 	buckets: map[string]*bucket{},
@@ -31,7 +31,7 @@ func Add(key string, max int64) error {
 	bkt, ok := rate.buckets[key]
 	if !ok {
 		if max <= 0 {
-			return RateLimitError
+			return ErrRateLimit
 		}
 		rate.buckets[key] = &bucket{
 			RWMutex: sync.RWMutex{},
@@ -44,7 +44,7 @@ func Add(key string, max int64) error {
 	bkt.Lock()
 	defer bkt.Unlock()
 	if bkt.data+1 > max {
-		return RateLimitError
+		return ErrRateLimit
 	}
 	bkt.data++
 	return nil

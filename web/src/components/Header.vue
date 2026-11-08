@@ -43,7 +43,7 @@ import {useAuthStore} from "@/store";
 
 const route = useRoute()
 const router = useRouter()
-const menuValue = ref(route.name)
+const menuValue = ref(typeof route.name === 'string' ? route.name : '')
 const authStore = useAuthStore()
 
 const onChange = (value: MenuValue) => {

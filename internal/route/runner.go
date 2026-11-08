@@ -12,7 +12,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 
-	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/runtime"
@@ -74,28 +73,11 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 
 	startAt := time.Now().UnixNano()
 
-	var r runtime.ExecRuntime
-	var err error
-
-	switch config.App.RuntimeMode {
-	case "kubernetes", "k8s":
-		r, err = runtime.NewKubernetesTask(ctx.Request().Context(), runtime.NewKubernetesTaskOptions{
-			Language: selectedLanguage,
-			Template: sandbox.Template,
-			Code:     []byte(code),
-		})
-
-	case "docker", "":
-		r, err = runtime.NewDockerTask(ctx.Request().Context(), runtime.NewDockerTaskOptions{
-			Language: selectedLanguage,
-			Template: sandbox.Template,
-			Code:     []byte(code),
-		})
-
-	default:
-		return ctx.Error(http.StatusInternalServerError, "unexpected runtime mode: %q", config.App.RuntimeMode)
-	}
-
+	r, err := runtime.NewTask(ctx.Request().Context(), runtime.NewTaskOptions{
+		Language: selectedLanguage,
+		Template: sandbox.Template,
+		Code:     []byte(code),
+	})
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to create task: %v", err)

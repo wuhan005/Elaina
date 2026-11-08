@@ -17,7 +17,7 @@ import (
 
 func Bind(model interface{}) flamego.Handler {
 	// Ensure not pointer.
-	if reflect.TypeOf(model).Kind() == reflect.Ptr {
+	if reflect.TypeOf(model).Kind() == reflect.Pointer {
 		panic("form: pointer can not be accepted as binding model")
 	}
 
@@ -35,7 +35,7 @@ func Bind(model interface{}) flamego.Handler {
 
 		errors, ok := govalid.Check(obj.Interface())
 		if !ok {
-			_ = ctx.Error(http.StatusBadRequest, errors[0].Error())
+			_ = ctx.Error(http.StatusBadRequest, "%s", errors[0].Error())
 			return
 		}
 

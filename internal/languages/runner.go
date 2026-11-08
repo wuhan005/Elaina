@@ -5,9 +5,7 @@
 package languages
 
 type Runner struct {
-	Name          string
-	Image         string
-	FileName      string
-	BuildCommands []string
-	RunCommand    string
+	Name       string
+	FileName   string
+	WASMModule string
 }

@@ -6,25 +6,11 @@ package runtime
 
 import (
 	"context"
+
+	"github.com/wuhan005/Elaina/internal/db"
 )
 
-type ExecInputRunInstructions struct {
-	BuildCommands []string `json:"buildCommands"`
-	RunCommand    string   `json:"runCommand"`
-}
-
-type ExecInputFile struct {
-	Name    string `json:"name"`
-	Content string `json:"content"`
-}
-
-type ExecInput struct {
-	RunInstructions ExecInputRunInstructions `json:"runInstructions"`
-	Files           []*ExecInputFile         `json:"files"`
-	Stdin           *string                  `json:"stdin"`
-}
-
-// ExecOutput is the glot output style.
+// ExecOutput contains the program output and execution duration.
 type ExecOutput struct {
 	Stdout   string `json:"stdout"`
 	Stderr   string `json:"stderr"`
@@ -34,4 +20,15 @@ type ExecOutput struct {
 
 type ExecRuntime interface {
 	Run(ctx context.Context) (*ExecOutput, error)
+}
+
+type NewTaskOptions struct {
+	Language string
+	Template *db.Tpl
+	Code     []byte
+}
+
+// NewTask creates a WASM task for the selected language.
+func NewTask(ctx context.Context, options NewTaskOptions) (ExecRuntime, error) {
+	return NewWASMTask(ctx, NewWASMTaskOptions(options))
 }

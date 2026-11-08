@@ -4,7 +4,7 @@
       <div class="title-container">
         <h1 class="title">Elaina</h1>
         <div class="sub-title">
-          <p class="tip">Container-based remote code runner.</p>
+          <p class="tip">WASM-based remote code runner.</p>
         </div>
       </div>
 
