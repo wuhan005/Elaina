@@ -67,7 +67,7 @@ func (c *Context) Status(statusCode int) {
 }
 
 const (
-	SessionIDIsAuthenticated = "_isAuthenticated"
+	SessionIDIsAuthenticated = "elaina:authenticated"
 )
 
 // Contexter initializes a classic context for a request.
