@@ -42,15 +42,15 @@ type tpls struct {
 type Tpl struct {
 	dbutil.Model
 
-	Name     string         `json:"name"`
-	Language pq.StringArray `gorm:"type:text[]" json:"language"`
+	Name     string
+	Language pq.StringArray `gorm:"type:text[]"`
 
-	Timeout        int   `json:"timeout"`
-	MaxMemory      int64 `json:"maxMemory"`
-	InternetAccess bool  `json:"internetAccess"`
+	Timeout        int
+	MaxMemory      int64
+	InternetAccess bool
 
 	// Retain legacy CPU quotas until the user saves the template without them.
-	MaxCPUs int64 `json:"maxCpus"`
+	MaxCPUs int64
 }
 
 var ErrTemplateNotFound = errors.New("template dose not exist")

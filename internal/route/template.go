@@ -13,6 +13,7 @@ import (
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/dbutil"
+	"github.com/wuhan005/Elaina/internal/dto"
 	"github.com/wuhan005/Elaina/internal/form"
 )
 
@@ -43,7 +44,12 @@ func (h *TemplateHandler) All(ctx context.Context) error {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get all templates")
 		return ctx.ServerError()
 	}
-	return ctx.Success(templates)
+
+	items := make([]*dto.Template, 0, len(templates))
+	for _, template := range templates {
+		items = append(items, dto.ToTemplate(template))
+	}
+	return ctx.Success(items)
 }
 
 func (h *TemplateHandler) List(ctx context.Context) error {
@@ -58,14 +64,19 @@ func (h *TemplateHandler) List(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	return ctx.Success(map[string]interface{}{
-		"templates": templates,
-		"total":     total,
+	items := make([]*dto.Template, 0, len(templates))
+	for _, template := range templates {
+		items = append(items, dto.ToTemplate(template))
+	}
+
+	return ctx.Success(dto.ListTemplatesResp{
+		Templates: items,
+		Total:     total,
 	})
 }
 
 func (h *TemplateHandler) Get(ctx context.Context, template *db.Tpl) error {
-	return ctx.Success(template)
+	return ctx.Success(dto.ToTemplate(template))
 }
 
 func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) error {
@@ -80,7 +91,8 @@ func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) err
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create template")
 		return ctx.ServerError()
 	}
-	return ctx.Success(template)
+
+	return ctx.Success(dto.ToTemplate(template))
 }
 
 func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.UpdateTemplate) error {

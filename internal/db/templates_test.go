@@ -6,45 +6,14 @@ package db
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"os"
 	"testing"
-	"time"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 func TestTemplateSettings(t *testing.T) {
-	dsn := os.Getenv("TEST_POSTGRES_DSN")
-	if dsn == "" {
-		t.Skip("set TEST_POSTGRES_DSN to run template storage tests")
-	}
-	namespace := fmt.Sprintf("elaina_template_test_%d", time.Now().UnixNano())
-	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			TablePrefix: namespace + ".",
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	connection, err := database.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = connection.Close() })
-	if err := database.Exec("CREATE SCHEMA " + namespace).Error; err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { database.Exec("DROP SCHEMA " + namespace + " CASCADE") })
-	if err := database.AutoMigrate(&Tpl{}); err != nil {
-		t.Fatal(err)
-	}
+	database := newTestDatabase(t)
+
 	// Simulate columns left behind by an existing container-based deployment.
-	table := namespace + ".tpls"
+	table := "tpls"
 	if err := database.Exec("ALTER TABLE " + table + " ADD COLUMN max_container bigint, ADD COLUMN max_container_per_ip bigint, ADD COLUMN dns jsonb").Error; err != nil {
 		t.Fatal(err)
 	}
@@ -75,19 +44,6 @@ func TestTemplateSettings(t *testing.T) {
 	}
 	if tpl.MaxCPUs != 2 {
 		t.Fatal("legacy CPU quota was silently discarded")
-	}
-	data, err := json.Marshal(tpl)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var response map[string]interface{}
-	if err := json.Unmarshal(data, &response); err != nil {
-		t.Fatal(err)
-	}
-	for _, key := range []string{"maxContainer", "maxContainerPerIp", "dns"} {
-		if _, exists := response[key]; exists {
-			t.Fatalf("retired setting still exposed: %s", key)
-		}
 	}
 	if err := store.Update(ctx, tpl.ID, UpdateTplOptions{
 		Name:           "Updated",

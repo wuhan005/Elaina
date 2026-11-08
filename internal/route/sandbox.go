@@ -13,6 +13,7 @@ import (
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/dbutil"
+	"github.com/wuhan005/Elaina/internal/dto"
 	"github.com/wuhan005/Elaina/internal/form"
 )
 
@@ -50,14 +51,19 @@ func (h *SandboxHandler) List(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	return ctx.Success(map[string]interface{}{
-		"sandboxes": sandboxes,
-		"total":     total,
+	items := make([]*dto.Sandbox, 0, len(sandboxes))
+	for _, sandbox := range sandboxes {
+		items = append(items, dto.ToSandbox(sandbox))
+	}
+
+	return ctx.Success(dto.ListSandboxesResp{
+		Sandboxes: items,
+		Total:     total,
 	})
 }
 
 func (h *SandboxHandler) Get(ctx context.Context, sandbox *db.Sandbox) error {
-	return ctx.Success(sandbox)
+	return ctx.Success(dto.ToSandbox(sandbox))
 }
 
 func (h *SandboxHandler) Create(ctx context.Context, f form.CreateSandbox) error {
@@ -72,7 +78,7 @@ func (h *SandboxHandler) Create(ctx context.Context, f form.CreateSandbox) error
 		return ctx.ServerError()
 	}
 
-	return ctx.Success(sandbox)
+	return ctx.Success(dto.ToSandbox(sandbox))
 }
 
 func (h *SandboxHandler) Update(ctx context.Context, sandbox *db.Sandbox, f form.UpdateSandbox) error {

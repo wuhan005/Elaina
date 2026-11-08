@@ -14,6 +14,7 @@ import (
 
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
+	"github.com/wuhan005/Elaina/internal/dto"
 	"github.com/wuhan005/Elaina/internal/runtime"
 )
 
@@ -48,7 +49,7 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 		code = sandbox.Placeholder
 	}
 
-	data["Sandbox"] = sandbox
+	data["Sandbox"] = dto.ToSandbox(sandbox)
 	data["Language"] = selectedLanguage
 	data["Languages"] = languages
 	data["Code"] = code

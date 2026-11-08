@@ -44,12 +44,12 @@ type sandboxes struct {
 type Sandbox struct {
 	dbutil.Model
 
-	UID         string `gorm:"NOT NULL" json:"uid"`
-	Name        string `json:"name"`
-	TemplateID  uint   `gorm:"NOT NULL" json:"templateID"`
-	Template    *Tpl   `gorm:"ForeignKey:TemplateID" json:"template"`
-	Placeholder string `json:"placeholder"`
-	Editable    bool   `json:"editable"`
+	UID         string `gorm:"NOT NULL"`
+	Name        string
+	TemplateID  uint `gorm:"NOT NULL"`
+	Template    *Tpl `gorm:"ForeignKey:TemplateID"`
+	Placeholder string
+	Editable    bool
 }
 
 var ErrSandboxNotFound = errors.New("sandbox dose not exist")
