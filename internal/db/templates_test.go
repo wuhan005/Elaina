@@ -32,7 +32,7 @@ func TestTemplateSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := database.Model(tpl).Update("MaxCPUs", 2).Error; err != nil {
+	if err := database.Model(tpl).Update("MaxCPU", 2).Error; err != nil {
 		t.Fatal(err)
 	}
 	if err := database.Exec("UPDATE "+table+" SET max_container = 5, max_container_per_ip = 3, dns = '{\"example.com\":\"127.0.0.1\"}' WHERE id = ?", tpl.ID).Error; err != nil {
@@ -42,13 +42,14 @@ func TestTemplateSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tpl.MaxCPUs != 2 {
+	if tpl.MaxCPU != 2 {
 		t.Fatal("legacy CPU quota was silently discarded")
 	}
 	if err := store.Update(ctx, tpl.ID, UpdateTplOptions{
 		Name:           "Updated",
 		Language:       []string{"c", "go"},
 		Timeout:        0,
+		MaxCPU:         0,
 		MaxMemory:      0,
 		InternetAccess: false,
 	}); err != nil {
@@ -58,7 +59,7 @@ func TestTemplateSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tpl.Name != "Updated" || len(tpl.Language) != 2 || tpl.MaxCPUs != 0 || tpl.Timeout != 0 || tpl.MaxMemory != 0 || tpl.InternetAccess {
+	if tpl.Name != "Updated" || len(tpl.Language) != 2 || tpl.MaxCPU != 0 || tpl.Timeout != 0 || tpl.MaxMemory != 0 || tpl.InternetAccess {
 		t.Fatalf("zero-valued settings were not saved: %+v", tpl)
 	}
 	var legacy struct {

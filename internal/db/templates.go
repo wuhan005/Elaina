@@ -46,11 +46,9 @@ type Tpl struct {
 	Language pq.StringArray `gorm:"type:text[]"`
 
 	Timeout        int
+	MaxCPU         int64
 	MaxMemory      int64
 	InternetAccess bool
-
-	// Retain legacy CPU quotas until the user saves the template without them.
-	MaxCPUs int64
 }
 
 var ErrTemplateNotFound = errors.New("template dose not exist")
@@ -125,6 +123,7 @@ type UpdateTplOptions struct {
 	Name           string
 	Language       []string
 	Timeout        int
+	MaxCPU         int64
 	MaxMemory      int64
 	InternetAccess bool
 }
@@ -138,7 +137,7 @@ func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) e
 	template.Name = options.Name
 	template.Language = options.Language
 	template.Timeout = options.Timeout
-	template.MaxCPUs = 0
+	template.MaxCPU = options.MaxCPU
 	template.MaxMemory = options.MaxMemory
 	template.InternetAccess = options.InternetAccess
 

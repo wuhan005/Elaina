@@ -34,7 +34,7 @@ func TestResponses(t *testing.T) {
 		Timeout:        60,
 		MaxMemory:      512,
 		InternetAccess: true,
-		MaxCPUs:        2,
+		MaxCPU:         2,
 	}
 	sandbox := &db.Sandbox{
 		Model: dbutil.Model{

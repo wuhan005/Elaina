@@ -4,6 +4,12 @@
 
 package languages
 
+type Runner struct {
+	Name       string
+	FileName   string
+	WASMModule string
+}
+
 var runners = []Runner{
 	{
 		Name:       "php",

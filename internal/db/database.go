@@ -37,7 +37,10 @@ func Init() (*gorm.DB, error) {
 		return nil, errors.Wrap(err, "open database")
 	}
 
-	if err := db.AutoMigrate(&Tpl{}, &Sandbox{}); err != nil {
+	if err := db.AutoMigrate(
+		&Tpl{},
+		&Sandbox{},
+	); err != nil {
 		return nil, errors.Wrap(err, "auto migrate")
 	}
 

@@ -21,6 +21,7 @@ import (
 // Context represents context of a request.
 type Context struct {
 	flamego.Context
+
 	IsAuthenticated bool
 }
 

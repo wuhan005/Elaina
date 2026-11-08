@@ -18,11 +18,9 @@ type Template struct {
 	Name           string   `json:"name"`
 	Language       []string `json:"language" extensions:"x-nullable"`
 	Timeout        int      `json:"timeout"`
+	MaxCPU         int64    `json:"maxCpu"`
 	MaxMemory      int64    `json:"maxMemory"`
 	InternetAccess bool     `json:"internetAccess"`
-
-	// Keep the legacy CPU quota visible until the template is migrated.
-	MaxCPUs int64 `json:"maxCpus"`
 } // @name Template
 
 func ToTemplate(template *db.Tpl) *Template {
@@ -37,9 +35,9 @@ func ToTemplate(template *db.Tpl) *Template {
 		Name:           template.Name,
 		Language:       template.Language,
 		Timeout:        template.Timeout,
+		MaxCPU:         template.MaxCPU,
 		MaxMemory:      template.MaxMemory,
 		InternetAccess: template.InternetAccess,
-		MaxCPUs:        template.MaxCPUs,
 	}
 }
 
