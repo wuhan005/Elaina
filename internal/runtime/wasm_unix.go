@@ -38,18 +38,22 @@ func (t *WASMTask) runWASM(ctx context.Context, runtimeDir, cacheDir, dir string
 		return errors.Wrap(err, "open WASM compilation cache")
 	}
 	defer func() { _ = cache.Close(ctx) }()
+
 	if t.runner.Name == "go" {
 		return t.runGoWASM(ctx, cache, filepath.Join(runtimeDir, "go"), dir, stdout, stderr)
 	}
+
 	if t.runner.Name == "c" {
 		toolchain := filepath.Join(runtimeDir, "c")
 		if err := t.compileCWASM(ctx, cache, toolchain, dir, stderr); err != nil {
 			return err
 		}
+
 		return t.runWASMModule(ctx, nil, wasmModuleOptions{
 			path: filepath.Join(dir, "main.wasm"), args: []string{"main"}, dir: dir, internet: t.template.InternetAccess,
 		}, stdout, stderr)
 	}
+
 	return t.runWASMModule(ctx, cache, wasmModuleOptions{
 		path: filepath.Join(runtimeDir, t.runner.WASMModule), args: []string{t.runner.Name, "/" + t.runner.FileName},
 		dir: dir, internet: t.template.InternetAccess,
@@ -61,6 +65,7 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 	if memory == 0 {
 		memory = 4096
 	}
+
 	// Interpreter DWARF decoding can delay cancellation; language tracebacks do not depend on it.
 	configuration := wazero.NewRuntimeConfig().
 		WithCompilationCache(cache).WithMemoryLimitPages(uint32(memory * 16)).
@@ -70,6 +75,7 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 	}
 	r := wazero.NewRuntimeWithConfig(ctx, configuration)
 	defer func() { _ = r.Close(ctx) }()
+
 	data, err := os.ReadFile(options.path)
 	if err != nil {
 		return errors.Wrap(err, "read WASM module (install the language artifacts first)")
@@ -79,11 +85,13 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		return errors.Wrap(err, "compile WASM module")
 	}
 	defer func() { _ = module.Close(ctx) }()
+
 	null, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
 	if err != nil {
 		return errors.Wrap(err, "open WASM stdio")
 	}
 	defer func() { _ = null.Close() }()
+
 	var host *wasmunix.System
 	dirs := []string{options.dir}
 	preopens := map[wasi.FD]string{3: "/"}
@@ -91,6 +99,7 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		dirs = append(dirs, options.toolchain+":ro")
 		preopens[4] = "/toolchain"
 	}
+
 	ctx, system, err := imports.NewBuilder().WithName(options.args[0]).
 		WithArgs(options.args[1:]...).WithEnv(append([]string{"PWD=/"}, options.env...)...).WithDirs(dirs...).
 		WithStdio(int(null.Fd()), int(null.Fd()), int(null.Fd())).
@@ -105,11 +114,13 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		return errors.Wrap(err, "instantiate WASI host")
 	}
 	defer func() { _ = system.Close(ctx) }()
+
 	if options.toolchain != "" {
 		if errno := host.FDStatSetRights(ctx, 4, wasmReadOnlyRights&wasi.DirectoryRights, wasmReadOnlyRights); errno != wasi.ESUCCESS {
 			return errors.Errorf("restrict WASM toolchain: %s", errno)
 		}
 	}
+
 	// Wake WASI timers and polls; socket calls use Go's cancellable network poller.
 	done := make(chan struct{})
 	stop := context.AfterFunc(ctx, func() {
@@ -121,6 +132,7 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 			<-done
 		}
 	}()
+
 	_, err = r.InstantiateModule(ctx, module, wazero.NewModuleConfig().WithName(""))
 	return err
 }
@@ -133,15 +145,18 @@ func wasmSocketABI(_ string, fn wazergo.Function[*preview1.Module]) wazergo.Func
 				stack[0] = uint64(wasi.EINVAL)
 				return
 			}
+
 			fn.Func(m, ctx, module, stack)
 		})
 	}
+
 	if fn.Name == "sock_recv" {
 		// wasi-go v0.8.0 writes four bytes for WASI's two-byte roflags value.
 		fixed := wazergo.F5(wasmSocketReceive)
 		fixed.Name = fn.Name
 		return fixed
 	}
+
 	return fn
 }
 
@@ -151,5 +166,6 @@ func wasmSocketReceive(m *preview1.Module, ctx context.Context, fd types.Int32, 
 		count.Store(types.Int32(n))
 		resultFlags.Store(types.Uint16(receivedFlags))
 	}
+
 	return types.Errno(errno)
 }

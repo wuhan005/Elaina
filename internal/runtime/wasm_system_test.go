@@ -13,6 +13,7 @@ import (
 
 func TestWASMCapabilities(t *testing.T) {
 	ctx := context.Background()
+
 	// A nil delegate makes any accidental forwarding fail the test.
 	s := &wasmSystem{}
 	for _, path := range []string{"/etc/passwd", "..", "../secret", "dir/../../secret", "dir/../file", "file\x00suffix", ""} {
@@ -33,20 +34,24 @@ func TestWASMCapabilities(t *testing.T) {
 			}
 		}
 	}
+
 	for _, path := range []string{"main.py", ".", "dir/file", "./file"} {
 		if !validWASMPath(path) {
 			t.Fatalf("rejected workspace path: %q", path)
 		}
 	}
+
 	if s.PathSymlink(ctx, "/etc", 3, "link") != wasi.ENOTSUP {
 		t.Fatal("symlinks must not expose host files")
 	}
+
 	if _, errno := s.SockOpen(ctx, wasi.InetFamily, wasi.StreamSocket, wasi.TCPProtocol, 0, 0); errno != wasi.EPERM {
 		t.Fatal("InternetAccess=false allowed a socket")
 	}
 	if _, errno := s.SockAddressInfo(ctx, "localhost", "80", wasi.AddressInfo{}, nil); errno != wasi.EPERM {
 		t.Fatal("InternetAccess=false allowed DNS")
 	}
+
 	s.internet = true
 	if _, errno := s.SockOpen(ctx, wasi.UnixFamily, wasi.StreamSocket, wasi.IPProtocol, 0, 0); errno != wasi.EPERM {
 		t.Fatal("Unix sockets must not expose host services")

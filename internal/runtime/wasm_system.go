@@ -29,6 +29,7 @@ func (s *wasmSystem) FDWrite(ctx context.Context, fd wasi.FD, buffers []wasi.IOV
 	if !ok {
 		return s.System.FDWrite(ctx, fd, buffers)
 	}
+
 	stat, errno := s.FDStatGet(ctx, fd)
 	if errno != wasi.ESUCCESS {
 		return 0, errno
@@ -36,6 +37,7 @@ func (s *wasmSystem) FDWrite(ctx context.Context, fd wasi.FD, buffers []wasi.IOV
 	if !stat.RightsBase.Has(wasi.FDWriteRight) {
 		return 0, wasi.ENOTCAPABLE
 	}
+
 	var count wasi.Size
 	for _, buffer := range buffers {
 		n, err := output.Write(buffer)
@@ -44,6 +46,7 @@ func (s *wasmSystem) FDWrite(ctx context.Context, fd wasi.FD, buffers []wasi.IOV
 			return count, wasi.EIO
 		}
 	}
+
 	return count, wasi.ESUCCESS
 }
 
@@ -52,6 +55,7 @@ func (s *wasmSystem) FDClose(ctx context.Context, fd wasi.FD) wasi.Errno {
 	if errno == wasi.ESUCCESS {
 		delete(s.outputs, fd)
 	}
+
 	return errno
 }
 
@@ -59,11 +63,13 @@ func validWASMPath(path string) bool {
 	if path == "" || strings.HasPrefix(path, "/") || strings.ContainsRune(path, 0) {
 		return false
 	}
+
 	for _, part := range strings.Split(path, "/") {
 		if part == ".." {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -72,6 +78,7 @@ func (s *wasmSystem) FDPreStatGet(ctx context.Context, fd wasi.FD) (wasi.PreStat
 	if name, ok := s.preopens[fd]; ok && errno == wasi.ESUCCESS {
 		stat.PreStatDir.NameLength = wasi.Size(len(name))
 	}
+
 	return stat, errno
 }
 
@@ -80,6 +87,7 @@ func (s *wasmSystem) FDPreStatDirName(ctx context.Context, fd wasi.FD) (string, 
 	if path, ok := s.preopens[fd]; ok && errno == wasi.ESUCCESS {
 		name = path
 	}
+
 	return name, errno
 }
 
@@ -87,6 +95,7 @@ func (s *wasmSystem) SockOpen(ctx context.Context, family wasi.ProtocolFamily, k
 	if !s.internet || (family != wasi.InetFamily && family != wasi.Inet6Family) {
 		return -1, wasi.EPERM
 	}
+
 	return s.System.SockOpen(ctx, family, kind, protocol, base, inheriting)
 }
 
@@ -94,6 +103,7 @@ func (s *wasmSystem) SockAddressInfo(ctx context.Context, name, service string, 
 	if !s.internet {
 		return 0, wasi.EPERM
 	}
+
 	return s.System.SockAddressInfo(ctx, name, service, hints, results)
 }
 
@@ -109,6 +119,7 @@ func (s *wasmSystem) PathOpen(ctx context.Context, fd wasi.FD, flags wasi.Lookup
 	if !validWASMPath(path) {
 		return -1, wasi.EPERM
 	}
+
 	stat, errno := s.FDStatGet(ctx, fd)
 	if errno != wasi.ESUCCESS {
 		return -1, errno
@@ -118,6 +129,7 @@ func (s *wasmSystem) PathOpen(ctx context.Context, fd wasi.FD, flags wasi.Lookup
 		base &= stat.RightsInheriting
 		inheriting &= stat.RightsInheriting
 	}
+
 	return s.System.PathOpen(ctx, fd, flags, path, open, base, inheriting, fdFlags)
 }
 
@@ -125,6 +137,7 @@ func (s *wasmSystem) PathCreateDirectory(ctx context.Context, fd wasi.FD, path s
 	if !validWASMPath(path) {
 		return wasi.EPERM
 	}
+
 	return s.System.PathCreateDirectory(ctx, fd, path)
 }
 
@@ -132,6 +145,7 @@ func (s *wasmSystem) PathFileStatGet(ctx context.Context, fd wasi.FD, flags wasi
 	if !validWASMPath(path) {
 		return wasi.FileStat{}, wasi.EPERM
 	}
+
 	return s.System.PathFileStatGet(ctx, fd, flags, path)
 }
 
@@ -139,6 +153,7 @@ func (s *wasmSystem) PathFileStatSetTimes(ctx context.Context, fd wasi.FD, flags
 	if !validWASMPath(path) {
 		return wasi.EPERM
 	}
+
 	return s.System.PathFileStatSetTimes(ctx, fd, flags, path, access, modify, times)
 }
 
@@ -146,6 +161,7 @@ func (s *wasmSystem) PathLink(ctx context.Context, fd wasi.FD, flags wasi.Lookup
 	if !validWASMPath(oldPath) || !validWASMPath(newPath) {
 		return wasi.EPERM
 	}
+
 	return s.System.PathLink(ctx, fd, flags, oldPath, newFD, newPath)
 }
 
@@ -153,6 +169,7 @@ func (s *wasmSystem) PathRename(ctx context.Context, fd wasi.FD, oldPath string,
 	if !validWASMPath(oldPath) || !validWASMPath(newPath) {
 		return wasi.EPERM
 	}
+
 	return s.System.PathRename(ctx, fd, oldPath, newFD, newPath)
 }
 
@@ -160,6 +177,7 @@ func (s *wasmSystem) PathRemoveDirectory(ctx context.Context, fd wasi.FD, path s
 	if !validWASMPath(path) {
 		return wasi.EPERM
 	}
+
 	return s.System.PathRemoveDirectory(ctx, fd, path)
 }
 
@@ -167,5 +185,6 @@ func (s *wasmSystem) PathUnlinkFile(ctx context.Context, fd wasi.FD, path string
 	if !validWASMPath(path) {
 		return wasi.EPERM
 	}
+
 	return s.System.PathUnlinkFile(ctx, fd, path)
 }

@@ -30,6 +30,7 @@ func TestWASMC(t *testing.T) {
 	if dir == "" {
 		t.Skip("set WASM_TEST_DIR to run C WASM integration tests")
 	}
+
 	original := config.App
 	t.Cleanup(func() { config.App = original })
 	config.App.WASMRuntimeDir = dir
@@ -37,37 +38,47 @@ func TestWASMC(t *testing.T) {
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
 	}
+
 	cache, err := wazero.NewCompilationCacheWithDir(config.App.WASMCacheDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = cache.Close(context.Background()) })
+
 	run := func(t *testing.T, code string, internet bool, timeout int) *ExecOutput {
 		t.Helper()
+
 		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
 			Language: "c", Template: &db.Tpl{MaxMemory: 512, Timeout: timeout, InternetAccess: internet}, Code: []byte(code),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		output, err := task.Run(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return output
 	}
+
 	compile := func(t *testing.T, ctx context.Context, workspace, code string, memory int64) (*wasmOutputBuffer, error) {
 		t.Helper()
+
 		if err := os.WriteFile(filepath.Join(workspace, "main.c"), []byte(code), 0600); err != nil {
 			t.Fatal(err)
 		}
+
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
+
 		output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
 		task := &WASMTask{template: &db.Tpl{MaxMemory: memory, InternetAccess: true}}
 		err := task.compileCWASM(ctx, cache, filepath.Join(dir, "c"), workspace, output)
 		return output, err
 	}
+
 	t.Run("compile and run", func(t *testing.T) {
 		t.Setenv("ELAINA_HOST_SECRET", "must-not-leak")
 		output := run(t, `#include <stdio.h>
@@ -85,6 +96,7 @@ int main(void) {
 			t.Fatalf("C WASM compile/link/run: %+v", output)
 		}
 	})
+
 	t.Run("HTTP and DNS", func(t *testing.T) {
 		var requests atomic.Int64
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,6 +104,7 @@ int main(void) {
 			_, _ = w.Write([]byte("network-ok"))
 		}))
 		defer server.Close()
+
 		port := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[1]
 		for _, host := range []string{"127.0.0.1", "localhost"} {
 			code := wasmCHTTPClient(host, port)
@@ -100,15 +113,18 @@ int main(void) {
 			if output.Error != "" || !strings.Contains(output.Stdout, "network-ok") || requests.Load() != before+1 {
 				t.Fatalf("network enabled: %+v requests=%d", output, requests.Load())
 			}
+
 			output = run(t, code, false, 60)
 			if output.Error == "" || requests.Load() != before+1 {
 				t.Fatalf("network disabled: %+v requests=%d", output, requests.Load())
 			}
 		}
 	})
+
 	t.Run("blocked HTTP cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+
 		entered := make(chan time.Time, 1)
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			entered <- time.Now()
@@ -116,6 +132,7 @@ int main(void) {
 			<-r.Context().Done()
 		}))
 		defer server.Close()
+
 		port := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[1]
 		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
 			Language: "c", Template: &db.Tpl{MaxMemory: 512, Timeout: 60, InternetAccess: true},
@@ -124,10 +141,12 @@ int main(void) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		_, err = task.Run(ctx)
 		if !errors.Is(err, context.Canceled) {
 			t.Fatalf("request cancellation: %v", err)
 		}
+
 		select {
 		case start := <-entered:
 			if time.Since(start) > 2*time.Second {
@@ -137,6 +156,7 @@ int main(void) {
 			t.Fatal("C program did not reach the HTTP server")
 		}
 	})
+
 	t.Run("compiler cannot read host files", func(t *testing.T) {
 		parent := t.TempDir()
 		secret := "ELAINA_PRIVATE_COMPILE_SENTINEL_73b924"
@@ -144,6 +164,7 @@ int main(void) {
 		if err := os.WriteFile(path, []byte("#error "+secret+"\n"), 0600); err != nil {
 			t.Fatal(err)
 		}
+
 		for _, code := range []string{
 			fmt.Sprintf("#include %q\nint main(void) {return 0;}", path),
 			"#include \"../secret.h\"\nint main(void) {return 0;}",
@@ -153,15 +174,18 @@ int main(void) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 			output, err := compile(t, ctx, workspace, code, 512)
 			cancel()
+
 			diagnostic := output.buffer.String()
 			if err == nil || strings.Contains(diagnostic, secret) || (!strings.Contains(diagnostic, "file not found") && !strings.Contains(diagnostic, "Operation not permitted")) {
 				t.Fatalf("compiler file isolation: %v %s", err, output.buffer.String())
 			}
 		}
 	})
+
 	t.Run("compiler cannot execute commands", func(t *testing.T) {
 		workspace := t.TempDir()
 		marker := filepath.Join(t.TempDir(), "command-executed")
@@ -169,9 +193,11 @@ int main(void) {
 		if err := os.WriteFile(filepath.Join(workspace, "Makefile"), []byte("all:\n\t"+command+"\n"), 0600); err != nil {
 			t.Fatal(err)
 		}
+
 		code := fmt.Sprintf(`__attribute__((import_module("env"), import_name("system"))) extern int command(const char *);
 __attribute__((constructor)) static void initialize(void) { command(%q); }
 int main(void) { return 0; }`, command)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		if output, err := compile(t, ctx, workspace, code, 512); err != nil {
@@ -180,6 +206,7 @@ int main(void) { return 0; }`, command)
 		if _, err := os.Stat(marker); !os.IsNotExist(err) {
 			t.Fatal("compilation executed a command")
 		}
+
 		output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
 		task := &WASMTask{template: &db.Tpl{MaxMemory: 512}}
 		err := task.runWASMModule(ctx, nil, wasmModuleOptions{
@@ -191,7 +218,9 @@ int main(void) { return 0; }`, command)
 		if _, err := os.Stat(marker); !os.IsNotExist(err) {
 			t.Fatal("WASM execution escaped to a host command")
 		}
+
 		compiler := t.TempDir()
+
 		probe, err := os.ReadFile(filepath.Join(workspace, "main.wasm"))
 		if err != nil {
 			t.Fatal(err)
@@ -206,6 +235,7 @@ int main(void) { return 0; }`, command)
 			t.Fatal("compiler probe executed a host command")
 		}
 	})
+
 	t.Run("compiler network is always denied", func(t *testing.T) {
 		workspace := t.TempDir()
 		code := `#include <errno.h>
@@ -217,19 +247,23 @@ int main(void) {
  if (socket(AF_INET, SOCK_STREAM, 0) != -1 || errno != EPERM) return 2;
  puts("compiler-network-denied"); return 42;
 }`
+
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		if output, err := compile(t, ctx, workspace, code, 512); err != nil {
 			t.Fatalf("compile network probe: %v %s", err, output.buffer.String())
 		}
+
 		probe, err := os.ReadFile(filepath.Join(workspace, "main.wasm"))
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		compiler := t.TempDir()
 		if err := os.WriteFile(filepath.Join(compiler, "clang.wasm"), probe, 0600); err != nil {
 			t.Fatal(err)
 		}
+
 		output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
 		task := &WASMTask{template: &db.Tpl{MaxMemory: 512, InternetAccess: true}}
 		err = task.compileCWASM(ctx, cache, compiler, workspace, output)
@@ -237,12 +271,14 @@ int main(void) {
 			t.Fatalf("compiler network gate: %v %s", err, output.buffer.String())
 		}
 	})
+
 	t.Run("compiler resource limits", func(t *testing.T) {
 		large := "#define M0 1\n"
 		for i := 1; i <= 26; i++ {
 			large += fmt.Sprintf("#define M%d M%d,M%d\n", i, i-1, i-1)
 		}
 		large += "int data[] = {M26}; int main(void) {return 0;}"
+
 		for _, test := range []struct {
 			name, code string
 			memory     int64
@@ -255,11 +291,13 @@ int main(void) {
 			t.Run(test.name, func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), test.timeout)
 				defer cancel()
+
 				start := time.Now()
 				output, err := compile(t, ctx, t.TempDir(), test.code, test.memory)
 				if err == nil {
 					t.Fatal("compiler exceeded its resource limit")
 				}
+
 				switch test.name {
 				case "memory":
 					if ctx.Err() != nil {
@@ -280,6 +318,7 @@ int main(void) {
 			})
 		}
 	})
+
 	t.Run("execution limits and errors", func(t *testing.T) {
 		for _, test := range []struct {
 			name, code, error string
@@ -297,6 +336,7 @@ int main(void) {
 				}
 			})
 		}
+
 		output := run(t, "#include <stdlib.h>\n#include <stdio.h>\nint main(void) {void *p=malloc(768u*1024*1024); if(p) {free(p); return 1;} puts(\"memory-limited\");}", false, 60)
 		if output.Error != "" || strings.TrimSpace(output.Stdout) != "memory-limited" {
 			t.Fatalf("runtime memory limit: %+v", output)

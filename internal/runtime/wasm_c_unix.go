@@ -26,6 +26,7 @@ func (t *WASMTask) compileCWASM(ctx context.Context, cache wazero.CompilationCac
 	}
 	commands = append(commands, []string{"wasm-ld", "-z", "stack-size=1048576", "--strip-debug", "-L/toolchain/sysroot/lib/wasm32-wasip1",
 		"/toolchain/sysroot/lib/wasm32-wasip1/crt1.o", "/main.o", "/network.o", "-lc", "-lclang_rt.builtins", "-o", "/main.wasm"})
+
 	for _, args := range commands {
 		// Compiler stages never inherit the program's network permission or environment.
 		if err := t.runWASMModule(ctx, cache, wasmModuleOptions{
@@ -36,5 +37,6 @@ func (t *WASMTask) compileCWASM(ctx context.Context, cache wazero.CompilationCac
 			return errors.Wrapf(err, "C %s", args[0])
 		}
 	}
+
 	return nil
 }

@@ -28,12 +28,14 @@ func (s *wasmNetworkSystem) socketCall(ctx context.Context, fd wasi.FD, write bo
 	if ctx.Err() != nil {
 		return wasi.ECANCELED
 	}
+
 	if err := unix.SetNonblock(int(native), true); err != nil {
 		return wasi.MakeErrno(err)
 	}
 	if stat.Flags.Has(wasi.NonBlock) {
 		return call()
 	}
+
 	duplicate, err := unix.Dup(int(native))
 	if err != nil {
 		return wasi.MakeErrno(err)
@@ -45,6 +47,7 @@ func (s *wasmNetworkSystem) socketCall(ctx context.Context, fd wasi.FD, write bo
 	if err != nil {
 		return wasi.MakeErrno(err)
 	}
+
 	option := wasi.RecvTimeout
 	if write {
 		option = wasi.SendTimeout
@@ -56,6 +59,7 @@ func (s *wasmNetworkSystem) socketCall(ctx context.Context, fd wasi.FD, write bo
 			}
 		}
 	}
+
 	done := make(chan struct{})
 	stop := context.AfterFunc(ctx, func() {
 		_ = socket.SetDeadline(time.Now())
@@ -66,11 +70,13 @@ func (s *wasmNetworkSystem) socketCall(ctx context.Context, fd wasi.FD, write bo
 			<-done
 		}
 	}()
+
 	ready := func(uintptr) bool {
 		if ctx.Err() != nil {
 			errno = wasi.ECANCELED
 			return true
 		}
+
 		errno = call()
 		return errno != wasi.EAGAIN && errno != wasi.EINPROGRESS
 	}
@@ -79,6 +85,7 @@ func (s *wasmNetworkSystem) socketCall(ctx context.Context, fd wasi.FD, write bo
 	} else {
 		err = raw.Read(ready)
 	}
+
 	switch {
 	case ctx.Err() != nil:
 		return wasi.ECANCELED
@@ -99,6 +106,7 @@ func (s *wasmNetworkSystem) SockConnect(ctx context.Context, fd wasi.FD, peer wa
 			pending = errno == wasi.EINPROGRESS
 			return errno
 		}
+
 		value, errno := s.SockGetOpt(ctx, fd, wasi.QuerySocketError)
 		if errno != wasi.ESUCCESS {
 			return errno
@@ -106,9 +114,11 @@ func (s *wasmNetworkSystem) SockConnect(ctx context.Context, fd wasi.FD, peer wa
 		if errno = wasi.Errno(value.(wasi.IntValue)); errno != wasi.ESUCCESS {
 			return errno
 		}
+
 		address, errno = s.SockLocalAddress(ctx, fd)
 		return errno
 	})
+
 	return address, errno
 }
 
@@ -118,6 +128,7 @@ func (s *wasmNetworkSystem) SockAccept(ctx context.Context, fd wasi.FD, flags wa
 		accepted, peer, address, errno = s.System.SockAccept(ctx, fd, flags)
 		return errno
 	})
+
 	return accepted, peer, address, errno
 }
 
@@ -128,17 +139,20 @@ func (s *wasmNetworkSystem) SockRecv(ctx context.Context, fd wasi.FD, buffers []
 	if waitAll {
 		remaining = append([]wasi.IOVec(nil), buffers...)
 	}
+
 	errno = s.socketCall(ctx, fd, false, func() wasi.Errno {
 		for {
 			n, receivedFlags, errno := s.System.SockRecv(ctx, fd, remaining, flags)
 			if errno != wasi.ESUCCESS {
 				return errno
 			}
+
 			count += n
 			resultFlags |= receivedFlags
 			if !waitAll || n == 0 {
 				return wasi.ESUCCESS
 			}
+
 			for len(remaining) > 0 && int(n) >= len(remaining[0]) {
 				n -= wasi.Size(len(remaining[0]))
 				remaining = remaining[1:]
@@ -152,9 +166,11 @@ func (s *wasmNetworkSystem) SockRecv(ctx context.Context, fd wasi.FD, buffers []
 			}
 		}
 	})
+
 	if count > 0 && errno != wasi.ECANCELED {
 		errno = wasi.ESUCCESS
 	}
+
 	return count, resultFlags, errno
 }
 
@@ -163,6 +179,7 @@ func (s *wasmNetworkSystem) SockSend(ctx context.Context, fd wasi.FD, buffers []
 		count, errno = s.System.SockSend(ctx, fd, buffers, flags)
 		return errno
 	})
+
 	return count, errno
 }
 
@@ -171,6 +188,7 @@ func (s *wasmNetworkSystem) SockRecvFrom(ctx context.Context, fd wasi.FD, buffer
 		count, resultFlags, address, errno = s.System.SockRecvFrom(ctx, fd, buffers, flags)
 		return errno
 	})
+
 	return count, resultFlags, address, errno
 }
 
@@ -179,6 +197,7 @@ func (s *wasmNetworkSystem) SockSendTo(ctx context.Context, fd wasi.FD, buffers 
 		count, errno = s.System.SockSendTo(ctx, fd, buffers, flags, address)
 		return errno
 	})
+
 	return count, errno
 }
 
@@ -187,6 +206,7 @@ func (s *wasmNetworkSystem) FDRead(ctx context.Context, fd wasi.FD, buffers []wa
 		count, _, errno := s.SockRecv(ctx, fd, buffers, 0)
 		return count, errno
 	}
+
 	return s.System.FDRead(ctx, fd, buffers)
 }
 
@@ -194,5 +214,6 @@ func (s *wasmNetworkSystem) FDWrite(ctx context.Context, fd wasi.FD, buffers []w
 	if _, _, errno := s.LookupSocketFD(fd, 0); errno == wasi.ESUCCESS {
 		return s.SockSend(ctx, fd, buffers, 0)
 	}
+
 	return s.System.FDWrite(ctx, fd, buffers)
 }

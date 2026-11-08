@@ -43,21 +43,26 @@ func NewWASMTask(_ context.Context, options NewWASMTaskOptions) (*WASMTask, erro
 	if !ok || runner.WASMModule == "" {
 		return nil, errors.Errorf("unsupported WASM language: %q", options.Language)
 	}
+
 	if options.Template == nil {
 		return nil, errors.New("missing template")
 	}
+
 	if options.Template.MaxMemory < 0 || options.Template.MaxMemory > 4096 {
 		return nil, errors.New("WASM memory limit must be between 0 and 4096 MiB")
 	}
+
 	if options.Template.MaxCPUs < 0 || options.Template.MaxCPUs > 10 {
 		return nil, errors.New("WASM CPU limit must be between 0 and 10")
 	}
 	if options.Template.MaxCPUs != 0 {
 		return nil, errors.New("wazero does not support per-task CPU quotas; set MaxCPUs to 0 and configure the deployment CPU limit")
 	}
+
 	if options.Template.Timeout < 0 || options.Template.Timeout > 60 {
 		return nil, errors.New("WASM timeout must be between 0 and 60 seconds")
 	}
+
 	return &WASMTask{runner: runner, template: options.Template, code: options.Code}, nil
 }
 
@@ -73,10 +78,12 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "resolve WASM runtime directory")
 	}
+
 	cacheDir, err := filepath.Abs(config.App.WASMCacheDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolve WASM cache directory")
 	}
+
 	dir, err := os.MkdirTemp("", "elaina-wasm-")
 	if err != nil {
 		return nil, errors.Wrap(err, "create WASM workspace")
@@ -86,6 +93,7 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 			logrus.WithContext(ctx).WithError(err).Error("Failed to remove WASM workspace")
 		}
 	}()
+
 	if err := os.WriteFile(filepath.Join(dir, t.runner.FileName), t.code, 0600); err != nil {
 		return nil, errors.Wrap(err, "write WASM source")
 	}
@@ -96,6 +104,7 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 	startAt := time.Now()
 	runErr := t.runWASM(execCtx, runtimeDir, cacheDir, dir, stdout, stderr)
 	output := &ExecOutput{Stdout: stdout.buffer.String(), Stderr: stderr.buffer.String(), Duration: time.Since(startAt).Nanoseconds()}
+
 	var exitErr *sys.ExitError
 	switch {
 	case ctx.Err() != nil:
@@ -127,6 +136,7 @@ func (b *wasmOutputBuffer) Write(p []byte) (int, error) {
 	if len(p) <= remaining {
 		return b.buffer.Write(p)
 	}
+
 	n, _ := b.buffer.Write(p[:remaining])
 	b.exceeded = true
 	b.cancel()

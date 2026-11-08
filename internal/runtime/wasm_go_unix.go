@@ -25,6 +25,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 	if err != nil {
 		return errors.Wrap(err, "read Go toolchain (run scripts/build-wasm-go.sh)")
 	}
+
 	file, err := parser.ParseFile(token.NewFileSet(), "main.go", t.code, parser.ImportsOnly)
 	if err != nil {
 		return errors.Wrap(err, "parse Go imports")
@@ -32,6 +33,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 	if file.Name.Name != "main" {
 		return errors.New("Go source must declare package main")
 	}
+
 	http := false
 	for _, spec := range file.Imports {
 		path, err := strconv.Unquote(spec.Path.Value)
@@ -43,6 +45,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 		}
 		http = http || path == "net/http"
 	}
+
 	args := []string{"compile", "-p", "main", "-pack", "-c", "1", "-nolocalimports", "-importcfg", "/toolchain/importcfg", "-o", "/main.a", "/main.go"}
 	if http {
 		// Install the WASI dialer for the standard HTTP client's default transport.
@@ -52,6 +55,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 		}
 		args = append(args, "/http_bridge.go")
 	}
+
 	env := []string{"GOOS=wasip1", "GOARCH=wasm", "GOROOT=/toolchain", "GOMAXPROCS=1", "TMPDIR=/"}
 	for _, args := range [][]string{args, {"link", "-s", "-w", "-linkmode=internal", "-importcfg", "/toolchain/importcfg", "-o", "/main.wasm", "/main.a"}} {
 		if err := t.runWASMModule(ctx, cache, wasmModuleOptions{
@@ -60,6 +64,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 			return errors.Wrapf(err, "Go %s", args[0])
 		}
 	}
+
 	var runtimeEnv []string
 	if t.template.InternetAccess {
 		certificates, err := wasmGoRootCertificates()
@@ -73,6 +78,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 			runtimeEnv = []string{"SSL_CERT_FILE=/.elaina-ca.pem"}
 		}
 	}
+
 	// Request-specific programs must not accumulate in the persistent toolchain cache.
 	return t.runWASMModule(ctx, nil, wasmModuleOptions{
 		path: filepath.Join(dir, "main.wasm"), args: []string{"main"}, dir: dir, internet: t.template.InternetAccess,
@@ -89,6 +95,7 @@ func wasmGoRootCertificates() ([]byte, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "read Go root certificates")
 		}
+
 		var certificates []byte
 		for block, rest := pem.Decode(data); block != nil; block, rest = pem.Decode(rest) {
 			// Only public certificates are exposed to guest code.
@@ -96,9 +103,11 @@ func wasmGoRootCertificates() ([]byte, error) {
 				certificates = append(certificates, pem.EncodeToMemory(block)...)
 			}
 		}
+
 		if len(certificates) > 0 {
 			return certificates, nil
 		}
 	}
+
 	return nil, nil
 }

@@ -31,6 +31,7 @@ func TestWASMGo(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "go", "importcfg")); err != nil {
 		t.Fatal("run scripts/build-wasm-go.sh before the Go WASM tests: ", err)
 	}
+
 	original := config.App
 	t.Cleanup(func() { config.App = original })
 	config.App.WASMRuntimeDir = dir
@@ -38,20 +39,25 @@ func TestWASMGo(t *testing.T) {
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
 	}
+
 	run := func(t *testing.T, code string, internet bool, memory int64, timeout int) *ExecOutput {
 		t.Helper()
+
 		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
 			Language: "go", Template: &db.Tpl{MaxMemory: memory, Timeout: timeout, InternetAccess: internet}, Code: []byte(code),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		output, err := task.Run(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return output
 	}
+
 	t.Run("compile and run", func(t *testing.T) {
 		t.Setenv("ELAINA_HOST_SECRET", "must-not-leak")
 		output := run(t, `package main
@@ -69,6 +75,7 @@ func main() {
 			t.Fatalf("Go WASM compile/link/run: %+v", output)
 		}
 	})
+
 	t.Run("HTTP and DNS", func(t *testing.T) {
 		var requests atomic.Int64
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +83,7 @@ func main() {
 			_, _ = w.Write([]byte("network-ok"))
 		}))
 		defer server.Close()
+
 		for _, address := range []string{server.URL, strings.Replace(server.URL, "127.0.0.1", "localhost", 1)} {
 			code := fmt.Sprintf(`package main
 import ("fmt"; "io"; "net/http"; "os")
@@ -85,22 +93,26 @@ func main() { r, err := http.Get(%q); if err != nil { fmt.Fprintln(os.Stderr, er
 			if output.Error != "" || output.Stdout != "network-ok" || requests.Load() != before+1 {
 				t.Fatalf("network enabled: %+v requests=%d", output, requests.Load())
 			}
+
 			output = run(t, code, false, 512, 60)
 			if output.Error == "" || requests.Load() != before+1 {
 				t.Fatalf("network disabled: %+v requests=%d", output, requests.Load())
 			}
 		}
 	})
+
 	t.Run("HTTPS", func(t *testing.T) {
 		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte("tls-ok"))
 		}))
 		defer server.Close()
+
 		cert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.Certificate().Raw})
 		certificates, err := wasmGoRootCertificates()
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		code := fmt.Sprintf(`package main
 import ("crypto/tls"; "crypto/x509"; "fmt"; "io"; "net/http"; "os")
 func main() {
@@ -116,6 +128,7 @@ func main() {
 			t.Fatalf("HTTPS with verified certificate: %+v", output)
 		}
 	})
+
 	t.Run("errors and limits", func(t *testing.T) {
 		for _, test := range []struct {
 			name, code, error, stderr string
@@ -137,9 +150,11 @@ func main() {
 			})
 		}
 	})
+
 	t.Run("blocked HTTP cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+
 		entered := make(chan time.Time, 1)
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			entered <- time.Now()
@@ -147,6 +162,7 @@ func main() {
 			<-r.Context().Done()
 		}))
 		defer server.Close()
+
 		code := fmt.Sprintf("package main; import \"net/http\"; func main() { _, _ = http.Get(%q) }", server.URL)
 		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
 			Language: "go", Template: &db.Tpl{MaxMemory: 512, Timeout: 60, InternetAccess: true}, Code: []byte(code),
@@ -154,10 +170,12 @@ func main() {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		_, err = task.Run(ctx)
 		if err == nil || !strings.Contains(err.Error(), "context canceled") {
 			t.Fatalf("request cancellation: %v", err)
 		}
+
 		select {
 		case start := <-entered:
 			if time.Since(start) > 2*time.Second {

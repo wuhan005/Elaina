@@ -35,6 +35,7 @@ func TestNewTask(t *testing.T) {
 			t.Fatalf("%s: got %T, want WASM", language, task)
 		}
 	}
+
 	if _, err := NewTask(context.Background(), NewTaskOptions{Language: "unknown", Template: &db.Tpl{}}); err == nil {
 		t.Fatal("expected an error for an unsupported language")
 	}
@@ -46,6 +47,7 @@ func TestNewWASMTaskValidation(t *testing.T) {
 			t.Fatalf("expected an error for template %+v", template)
 		}
 	}
+
 	if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{Language: "python", Template: &db.Tpl{InternetAccess: true}}); err != nil {
 		t.Fatal(err)
 	}
@@ -54,16 +56,19 @@ func TestNewWASMTaskValidation(t *testing.T) {
 func TestWASMOutputLimit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	buffer := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
 	if n, err := buffer.Write(bytes.Repeat([]byte{'x'}, wasmOutputLimit)); n != wasmOutputLimit || err != nil {
 		t.Fatalf("write at limit: %d, %v", n, err)
 	}
+
 	if n, err := buffer.Write([]byte("overflow")); n != 0 || err == nil {
 		t.Fatalf("write beyond limit: %d, %v", n, err)
 	}
 	if !buffer.exceeded || buffer.buffer.Len() != wasmOutputLimit || ctx.Err() == nil {
 		t.Fatal("output overflow did not cancel execution with bounded output")
 	}
+
 	buffer = &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
 	reader := struct{ io.Reader }{bytes.NewReader(bytes.Repeat([]byte{'x'}, 2*wasmOutputLimit))}
 	if _, err := io.Copy(buffer, reader); err == nil || buffer.buffer.Len() != wasmOutputLimit {
@@ -76,6 +81,7 @@ func TestWASMInterpreters(t *testing.T) {
 	if dir == "" {
 		t.Skip("set WASM_TEST_DIR to run the interpreter integration tests")
 	}
+
 	original := config.App
 	t.Cleanup(func() { config.App = original })
 	config.App.WASMRuntimeDir = dir
@@ -83,9 +89,12 @@ func TestWASMInterpreters(t *testing.T) {
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
 	}
+
 	t.Setenv("ELAINA_TEST_SECRET", "host-only")
+
 	run := func(t *testing.T, language, code string, internet bool, memory int64, timeout int) *ExecOutput {
 		t.Helper()
+
 		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
 			Language: language, Code: []byte(code),
 			Template: &db.Tpl{InternetAccess: internet, MaxMemory: memory, Timeout: timeout},
@@ -93,12 +102,15 @@ func TestWASMInterpreters(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		output, err := task.Run(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return output
 	}
+
 	for _, test := range []struct{ language, code, exit, loop, sleep string }{
 		{"python", `import os, sys, time
 assert os.getenv('ELAINA_TEST_SECRET') is None
@@ -132,9 +144,11 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 					t.Fatalf("filesystem/stdio/isolation: %+v", output)
 				}
 			}
+
 			if output := run(t, test.language, test.exit, false, 128, 60); output.Error != "exit status 7" {
 				t.Fatalf("exit: %+v", output)
 			}
+
 			for _, code := range []string{test.loop, test.sleep} {
 				start := time.Now()
 				if output := run(t, test.language, code, false, 128, 10); output.Error != "execution timed out" || strings.TrimSpace(output.Stdout) != "started" || time.Since(start) > 12*time.Second {
@@ -143,6 +157,7 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 			}
 		})
 	}
+
 	t.Run("PHP networking", func(t *testing.T) {
 		var requests atomic.Int64
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -150,35 +165,42 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 			_, _ = w.Write([]byte("network-ok"))
 		}))
 		defer server.Close()
+
 		code := fmt.Sprintf(`<?php $r = file_get_contents(%q); if ($r === false) exit(1); echo $r;`, server.URL)
 		output := run(t, "php", code, true, 128, 60)
 		if output.Error != "" || output.Stdout != "network-ok" || requests.Load() != 1 {
 			t.Fatalf("network enabled: %+v, requests=%d", output, requests.Load())
 		}
+
 		output = run(t, "php", code, false, 128, 60)
 		if output.Error == "" || strings.Contains(output.Stdout, "network-ok") || requests.Load() != 1 {
 			t.Fatalf("network disabled: %+v, requests=%d", output, requests.Load())
 		}
+
 		code = strings.Replace(code, "127.0.0.1", "localhost", 1)
 		output = run(t, "php", code, true, 128, 60)
 		if output.Error == "" || requests.Load() != 1 {
 			t.Fatalf("DNS compatibility changed; update the documented restriction: %+v", output)
 		}
+
 		output = run(t, "php", `<?php if (in_array('https', stream_get_wrappers()) || function_exists('curl_init')) exit(1); echo 'no-tls';`, true, 128, 60)
 		if output.Error != "" || output.Stdout != "no-tls" {
 			t.Fatalf("HTTPS compatibility changed: %+v", output)
 		}
 	})
+
 	t.Run("blocked network timeout", func(t *testing.T) {
 		if output := run(t, "php", `<?php echo 'ready';`, false, 128, 60); output.Error != "" {
 			t.Fatalf("warm PHP compilation cache: %+v", output)
 		}
+
 		var requests atomic.Int64
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requests.Add(1)
 			<-r.Context().Done()
 		}))
 		defer server.Close()
+
 		code := fmt.Sprintf(`<?php echo 'started'; file_get_contents(%q);`, server.URL)
 		start := time.Now()
 		output := run(t, "php", code, true, 128, 10)
@@ -186,9 +208,11 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 			t.Fatalf("blocking host call survived timeout: %+v requests=%d", output, requests.Load())
 		}
 	})
+
 	t.Run("blocked network cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+
 		connected := make(chan struct{})
 		disconnected := make(chan struct{})
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -200,6 +224,7 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 			cancel()
 			server.Close()
 		}()
+
 		task, err := NewWASMTask(ctx, NewWASMTaskOptions{Language: "php",
 			Template: &db.Tpl{Timeout: 60, MaxMemory: 128, InternetAccess: true},
 			Code:     []byte(fmt.Sprintf(`<?php file_get_contents(%q);`, server.URL)),
@@ -207,8 +232,10 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		done := make(chan error, 1)
 		go func() { _, err := task.Run(ctx); done <- err }()
+
 		select {
 		case <-connected:
 		case err := <-done:
@@ -216,7 +243,9 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 		case <-time.After(30 * time.Second):
 			t.Fatal("task did not connect")
 		}
+
 		cancel()
+
 		select {
 		case err := <-done:
 			if !errors.Is(err, context.Canceled) {
@@ -225,12 +254,14 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 		case <-time.After(2 * time.Second):
 			t.Fatal("task did not stop after cancellation")
 		}
+
 		select {
 		case <-disconnected:
 		case <-time.After(time.Second):
 			t.Fatal("cancelled task left its socket open")
 		}
 	})
+
 	t.Run("documented limitations", func(t *testing.T) {
 		python := `import socket, time
 try:
@@ -250,17 +281,20 @@ print('limitations-ok')`
 		if output := run(t, "python", python, true, 128, 60); output.Error != "" || strings.TrimSpace(output.Stdout) != "limitations-ok" {
 			t.Fatalf("Python compatibility: %+v", output)
 		}
+
 		javascript := `if (typeof require !== 'undefined' || typeof fetch !== 'undefined' || typeof setTimeout !== 'undefined') throw Error('capabilities changed'); console.log('limitations-ok');`
 		if output := run(t, "javascript", javascript, true, 128, 60); output.Error != "" || strings.TrimSpace(output.Stdout) != "limitations-ok" {
 			t.Fatalf("JavaScript compatibility: %+v", output)
 		}
 	})
+
 	t.Run("concurrent tasks", func(t *testing.T) {
 		var wg sync.WaitGroup
 		for i := 0; i < 2; i++ {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
+
 				marker := fmt.Sprintf("task-%d", i)
 				code := fmt.Sprintf("import sys\nprint(%q)\nsys.stderr.write(%q)", marker, marker)
 				if output := run(t, "python", code, false, 128, 60); output.Error != "" || strings.TrimSpace(output.Stdout) != marker || output.Stderr != marker {
@@ -268,17 +302,22 @@ print('limitations-ok')`
 				}
 			}()
 		}
+
 		wg.Wait()
 	})
+
 	if output := run(t, "python", `print('x' * (2 * 1024 * 1024))`, false, 128, 60); output.Error != "output limit exceeded" || len(output.Stdout) > wasmOutputLimit {
 		t.Fatalf("output limit: error=%s bytes=%d", output.Error, len(output.Stdout))
 	}
+
 	if output := run(t, "python", `data = bytearray(128 * 1024 * 1024)`, false, 64, 60); output.Error == "" || !strings.Contains(output.Stderr, "MemoryError") {
 		t.Fatalf("linear memory limit: %+v", output)
 	}
+
 	t.Run("request cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 		defer cancel()
+
 		task, _ := NewWASMTask(ctx, NewWASMTaskOptions{Language: "python", Template: &db.Tpl{Timeout: 60}, Code: []byte("while True: pass")})
 		if _, err := task.Run(ctx); !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("got %v, want request cancellation", err)
