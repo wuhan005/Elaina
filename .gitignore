@@ -23,3 +23,6 @@ volume/
 Elaina
 /.DS_Store
 /.wasm/
+/config/*.yaml
+/config/*.yml
+!/config/*.example.yaml

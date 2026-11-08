@@ -1,0 +1,9 @@
+# Copy to config/elaina.yaml and set the administrator password and PostgreSQL DSN.
+app:
+  password: "" # Required, at least 8 characters.
+  # Relative paths are resolved from the server's working directory.
+  wasm_runtime_dir: .wasm
+  wasm_cache_dir: .wasm/cache # Must be writable by the server.
+
+postgres:
+  dsn: "postgres://postgres:change-me@127.0.0.1:5432/elaina?sslmode=disable"

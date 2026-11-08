@@ -48,7 +48,8 @@ WORKDIR /etc/elaina
 COPY --from=go_builder /app/elaina /etc/elaina/elaina
 COPY --from=wasm_builder /wasm /etc/elaina/.wasm
 COPY --from=go_wasm_builder /wasm/go /etc/elaina/.wasm/go
-RUN mkdir /etc/elaina/.wasm/cache && chown 10001:10001 /etc/elaina/.wasm/cache
+RUN mkdir -p /etc/elaina/config /etc/elaina/.wasm/cache && chown 10001:10001 /etc/elaina/.wasm/cache
+# Mount config/elaina.yaml read-only and make it readable by UID 10001.
 USER 10001:10001
 
 ENTRYPOINT ["/etc/elaina/elaina"]

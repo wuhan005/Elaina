@@ -5,25 +5,36 @@
 package config
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 var App struct {
-	Password       string `envconfig:"APP_PASSWORD"`
-	WASMRuntimeDir string `envconfig:"WASM_RUNTIME_DIR" default:".wasm"`
-	WASMCacheDir   string `envconfig:"WASM_CACHE_DIR" default:".wasm/cache"`
+	Password       string `mapstructure:"password"`
+	WASMRuntimeDir string `mapstructure:"wasm_runtime_dir"`
+	WASMCacheDir   string `mapstructure:"wasm_cache_dir"`
 }
 
 var Postgres struct {
-	DSN string `envconfig:"POSTGRES_DSN"`
+	DSN string `mapstructure:"dsn"`
 }
 
-func Init() error {
-	if err := envconfig.Process("", &App); err != nil {
+func Init(configFilePath string) error {
+	v := viper.New()
+	v.SetConfigFile(configFilePath)
+	v.SetDefault("app.wasm_runtime_dir", ".wasm")
+	v.SetDefault("app.wasm_cache_dir", ".wasm/cache")
+	if err := v.ReadInConfig(); err != nil {
+		return errors.Wrap(err, "read config file")
+	}
+
+	if err := v.UnmarshalKey("app", &App); err != nil {
 		return errors.Wrap(err, "parse app")
 	}
-	if err := envconfig.Process("", &Postgres); err != nil {
+	App.WASMRuntimeDir = v.GetString("app.wasm_runtime_dir")
+	App.WASMCacheDir = v.GetString("app.wasm_cache_dir")
+
+	if err := v.UnmarshalKey("postgres", &Postgres); err != nil {
 		return errors.Wrap(err, "parse postgres")
 	}
 

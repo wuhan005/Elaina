@@ -12,16 +12,17 @@ import (
 
 func main() {
 	port := flag.Int("port", 8080, "Web service port")
+	configPath := flag.String("config", "./config/elaina.yaml", "Path to the configuration file")
 	flag.Parse()
 
-	if err := config.Init(); err != nil {
+	if err := config.Init(*configPath); err != nil {
 		logrus.WithError(err).Fatal("Failed to init config")
 	}
 
-	// Check environment config, make sure the application is safe enough.
+	// Require an administrator password before starting the server.
 	appPassword := config.App.Password
 	if appPassword == "" || len(appPassword) < 8 {
-		logrus.Fatal("APP_PASSWORD is not strong enough")
+		logrus.Fatal("app.password must contain at least 8 characters")
 	}
 
 	dbInstance, err := db.Init()
