@@ -7,10 +7,12 @@ package config
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var App struct {
-	Password       string `mapstructure:"password"`
+	PasswordHash string `mapstructure:"password_hash"`
+
 	WASMRuntimeDir string `mapstructure:"wasm_runtime_dir"`
 	WASMCacheDir   string `mapstructure:"wasm_cache_dir"`
 }
@@ -36,6 +38,10 @@ func Init(configFilePath string) error {
 
 	if err := v.UnmarshalKey("postgres", &Postgres); err != nil {
 		return errors.Wrap(err, "parse postgres")
+	}
+
+	if _, err := bcrypt.Cost([]byte(App.PasswordHash)); err != nil {
+		return errors.New("app.password_hash must contain a bcrypt password hash")
 	}
 
 	return nil

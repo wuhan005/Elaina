@@ -1,6 +1,7 @@
-# Copy to config/elaina.yaml and set the administrator password and PostgreSQL DSN.
+# Copy to config/elaina.yaml and set the administrator password hash and PostgreSQL DSN.
 app:
-  password: "" # Required, at least 8 characters.
+  # Generate with: htpasswd -nB -C 12 admin (password must be 8-72 UTF-8 bytes).
+  password_hash: "" # Required bcrypt hash; omit the "admin:" prefix from the output.
   # Relative paths are resolved from the server's working directory.
   wasm_runtime_dir: .wasm
   wasm_cache_dir: .wasm/cache # Must be writable by the server.

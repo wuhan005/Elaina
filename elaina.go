@@ -19,12 +19,6 @@ func main() {
 		logrus.WithError(err).Fatal("Failed to init config")
 	}
 
-	// Require an administrator password before starting the server.
-	appPassword := config.App.Password
-	if appPassword == "" || len(appPassword) < 8 {
-		logrus.Fatal("app.password must contain at least 8 characters")
-	}
-
 	dbInstance, err := db.Init()
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to connect to database")

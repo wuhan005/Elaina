@@ -5,10 +5,10 @@
 package route
 
 import (
-	"crypto/subtle"
 	"net/http"
 
 	"github.com/flamego/session"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/context"
@@ -29,8 +29,8 @@ func (h *AuthHandler) Authenticator(ctx context.Context) error {
 }
 
 func (h *AuthHandler) SignIn(ctx context.Context, session session.Session, f form.SignIn) error {
-	appPassword := config.App.Password
-	if subtle.ConstantTimeCompare([]byte(appPassword), []byte(f.Password)) != 1 {
+	if len(f.Password) < 8 || len(f.Password) > 72 ||
+		bcrypt.CompareHashAndPassword([]byte(config.App.PasswordHash), []byte(f.Password)) != nil {
 		return ctx.Error(http.StatusForbidden, "Invalid password")
 	}
 
