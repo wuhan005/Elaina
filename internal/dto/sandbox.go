@@ -18,10 +18,10 @@ type Sandbox struct {
 	UID         string    `json:"uid"`
 	Name        string    `json:"name"`
 	TemplateID  uint      `json:"templateID"`
-	Template    *Template `json:"template"`
+	Template    *Template `json:"template" extensions:"x-nullable"`
 	Placeholder string    `json:"placeholder"`
 	Editable    bool      `json:"editable"`
-}
+} // @name Sandbox
 
 func ToSandbox(sandbox *db.Sandbox) *Sandbox {
 	if sandbox == nil {
@@ -44,4 +44,4 @@ func ToSandbox(sandbox *db.Sandbox) *Sandbox {
 type ListSandboxesResp struct {
 	Sandboxes []*Sandbox `json:"sandboxes"`
 	Total     int64      `json:"total"`
-}
+} // @name ListSandboxesResp

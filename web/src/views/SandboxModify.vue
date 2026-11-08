@@ -54,14 +54,8 @@ import '@/style/form.less'
 import {onMounted, ref} from 'vue'
 import {FormProps, MessagePlugin, SubmitContext} from 'tdesign-vue-next';
 import {useRouter, useRoute} from "vue-router";
-import {
-  type CreateSandboxReq,
-  type UpdateSandboxReq,
-  createSandbox,
-  updateSandbox,
-  getSandbox,
-} from "@/api/sandbox";
-import {type Template, allTemplates} from "@/api/template";
+import type {CreateSandboxReq, UpdateSandboxReq, Template} from "@/api/api";
+import {client} from "@/api/client";
 
 const route = useRoute()
 const router = useRouter()
@@ -77,13 +71,15 @@ const formData = ref<CreateSandboxReq | UpdateSandboxReq>({} as CreateSandboxReq
 const onSubmit = (ctx: SubmitContext) => {
   if (ctx.validateResult === true) {
     if (mode.value === 'create') {
-      createSandbox(formData.value).then(() => {
+      client.sandboxes.createSandbox(formData.value).then(() => {
         MessagePlugin.success('Create new sandbox successfully')
         router.push({name: 'sandbox'})
       })
     } else {
-      updateSandbox(id.value, formData.value).then(res => {
-        MessagePlugin.success(res)
+      client.sandboxes.updateSandbox({
+        id: Number(id.value),
+      }, formData.value).then(res => {
+        MessagePlugin.success(res.data.data)
       })
     }
   }
@@ -96,17 +92,21 @@ const onCancel = () => {
 const templates = ref<Template[]>([])
 
 onMounted(() => {
-  allTemplates().then(res => {
-    templates.value = res
+  client.templates.allTemplates().then(res => {
+    templates.value = res.data.data
   })
 
   if (mode.value === 'edit') {
-    getSandbox(id.value).then(res => {
+    client.sandboxes.getSandbox({
+      id: Number(id.value),
+    }).then(res => {
+      const sandbox = res.data.data
+
       formData.value = {
-        name: res.name,
-        templateID: res.templateID,
-        placeholder: res.placeholder,
-        editable: res.editable,
+        name: sandbox.name,
+        templateID: sandbox.templateID,
+        placeholder: sandbox.placeholder,
+        editable: sandbox.editable,
       }
     })
   }

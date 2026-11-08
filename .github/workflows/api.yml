@@ -1,0 +1,54 @@
+name: API
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'docs/**'
+      - 'web/**'
+      - 'scripts/generate.sh'
+      - '.github/workflows/api.yml'
+  pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'docs/**'
+      - 'web/**'
+      - 'scripts/generate.sh'
+      - '.github/workflows/api.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.x
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm --dir web install --frozen-lockfile
+      - name: Create frontend dist folder
+        run: mkdir -p web/dist && touch web/dist/1
+      - name: Generate API files
+        run: ./scripts/generate.sh
+      - name: Check generated files
+        run: git diff --exit-code -- docs/swagger.json docs/swagger.yaml web/src/api/api.ts
+      - name: Test generated client
+        run: pnpm --dir web test
+      - name: Build frontend
+        run: pnpm --dir web build

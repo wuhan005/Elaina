@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/wuhan005/Elaina/internal/dbutil"
+	"github.com/wuhan005/Elaina/internal/dto"
 )
 
 // Context represents context of a request.
@@ -33,8 +34,8 @@ func (c *Context) Success(data ...interface{}) error {
 	}
 
 	err := json.NewEncoder(c.ResponseWriter()).Encode(
-		map[string]interface{}{
-			"data": d,
+		dto.Response[interface{}]{
+			Data: d,
 		},
 	)
 	if err != nil {
@@ -52,8 +53,8 @@ func (c *Context) Error(statusCode int, message string, v ...interface{}) error 
 	c.ResponseWriter().WriteHeader(statusCode)
 
 	err := json.NewEncoder(c.ResponseWriter()).Encode(
-		map[string]interface{}{
-			"msg": fmt.Sprintf(message, v...),
+		dto.ErrorResponse{
+			Msg: fmt.Sprintf(message, v...),
 		},
 	)
 	if err != nil {

@@ -60,7 +60,8 @@
 import {onMounted, ref} from 'vue';
 import {MessagePlugin, PrimaryTableCol, TableRowData, type PaginationProps} from 'tdesign-vue-next';
 import dayjs from 'dayjs'
-import {type Template, listTemplates, deleteTemplate} from "@/api/template";
+import type {Template} from "@/api/api";
+import {client} from "@/api/client";
 import {useRouter} from "vue-router";
 import {LANGUAGES_MAP} from "@/const/template";
 
@@ -85,9 +86,12 @@ const router = useRouter()
 const getTemplates = () => {
   isLoading.value = true
 
-  listTemplates({page: pagination.value.current, pageSize: pagination.value.pageSize}).then(res => {
-    data.value = res.templates
-    pagination.value.total = res.total
+  client.templates.listTemplates({
+    page: pagination.value.current,
+    pageSize: pagination.value.pageSize,
+  }).then(res => {
+    data.value = res.data.data.templates
+    pagination.value.total = res.data.data.total
   }).finally(() => {
     isLoading.value = false
   })
@@ -102,8 +106,10 @@ const onUpdate = (id: number) => {
 }
 
 const onDelete = (id: number) => {
-  deleteTemplate(id).then(res => {
-    MessagePlugin.success(res)
+  client.templates.deleteTemplate({
+    id,
+  }).then(res => {
+    MessagePlugin.success(res.data.data)
   }).finally(() => {
     getTemplates()
   })

@@ -55,7 +55,8 @@ import type {FormRule, SubmitContext} from 'tdesign-vue-next';
 import {MessagePlugin} from 'tdesign-vue-next';
 import {ref} from 'vue';
 import {useRouter} from 'vue-router';
-import {type SignInForm, signIn} from "@/api/auth";
+import type {SignInForm} from "@/api/api";
+import {client} from "@/api/client";
 import {useAuthStore} from "@/store";
 
 const currentYear = new Date().getFullYear();
@@ -70,8 +71,8 @@ const showPsw = ref(false);
 const onSubmit = async (ctx: SubmitContext) => {
   if (ctx.validateResult === true) {
 
-    signIn(formData.value).then(token => {
-      authStore.setToken(token);
+    client.auth.signIn(formData.value).then(res => {
+      authStore.setToken(res.data.data);
 
       MessagePlugin.success('Sign in successfully');
       router.push({name: 'dashboard'});

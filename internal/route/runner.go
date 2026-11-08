@@ -20,6 +20,12 @@ import (
 
 type RunnerHandler struct{}
 
+type ExecutionResult struct {
+	Result  *runtime.ExecOutput `json:"result"`
+	StartAt int64               `json:"start_at"`
+	EndAt   int64               `json:"end_at"`
+} // @name ExecutionResult
+
 func NewRunnerHandler() *RunnerHandler {
 	return &RunnerHandler{}
 }
@@ -57,6 +63,21 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 	t.HTML(http.StatusOK, "sandbox")
 }
 
+// Execute execute code in a sandbox.
+// @Summary Execute code in a sandbox
+// @Tags Runner
+// @Description Uses the sandbox template permissions and limits. Missing or unsupported lang selects the first configured language. Unknown sandbox UIDs redirect to /.
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Param uid path string true "UID"
+// @Param lang formData string false "Programming language"
+// @Param code formData string false "Source code"
+// @Success 200 {object} dto.Response[ExecutionResult]
+// @Failure 400 {object} dto.ErrorResponse "Invalid request"
+// @Success 302 "Sandbox not found; redirect to /"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID executeCode
+// @Router /r/{uid}/execute [post]
 func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error {
 	if err := ctx.Request().ParseForm(); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to parse form")
@@ -92,9 +113,9 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 
 	endAt := time.Now().UnixNano()
 
-	return ctx.Success(map[string]interface{}{
-		"result":   output,
-		"start_at": startAt,
-		"end_at":   endAt,
+	return ctx.Success(ExecutionResult{
+		Result:  output,
+		StartAt: startAt,
+		EndAt:   endAt,
 	})
 }

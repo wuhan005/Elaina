@@ -1,0 +1,785 @@
+basePath: /
+definitions:
+  CreateSandboxReq:
+    properties:
+      editable:
+        type: boolean
+      name:
+        type: string
+      placeholder:
+        type: string
+      templateID:
+        type: integer
+    required:
+    - name
+    - templateID
+    type: object
+  CreateTemplateReq:
+    properties:
+      internetAccess:
+        default: false
+        type: boolean
+      language:
+        description: 'Supported languages: c, go, php, python, javascript.'
+        items:
+          type: string
+        type: array
+      maxMemory:
+        default: 0
+        maximum: 4096
+        minimum: 0
+        type: integer
+      name:
+        type: string
+      timeout:
+        default: 0
+        maximum: 60
+        minimum: 0
+        type: integer
+    required:
+    - language
+    - name
+    type: object
+  ErrorResponse:
+    properties:
+      msg:
+        type: string
+    required:
+    - msg
+    type: object
+  ExecutionResult:
+    properties:
+      end_at:
+        type: integer
+      result:
+        $ref: '#/definitions/runtime.ExecOutput'
+      start_at:
+        type: integer
+    required:
+    - end_at
+    - result
+    - start_at
+    type: object
+  ListSandboxesResp:
+    properties:
+      sandboxes:
+        items:
+          $ref: '#/definitions/Sandbox'
+        type: array
+      total:
+        type: integer
+    required:
+    - sandboxes
+    - total
+    type: object
+  ListTemplatesResp:
+    properties:
+      templates:
+        items:
+          $ref: '#/definitions/Template'
+        type: array
+      total:
+        type: integer
+    required:
+    - templates
+    - total
+    type: object
+  Sandbox:
+    properties:
+      createdAt:
+        type: string
+      editable:
+        type: boolean
+      id:
+        type: integer
+      name:
+        type: string
+      placeholder:
+        type: string
+      template:
+        allOf:
+        - $ref: '#/definitions/Template'
+        x-nullable: true
+      templateID:
+        type: integer
+      uid:
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - createdAt
+    - editable
+    - id
+    - name
+    - placeholder
+    - template
+    - templateID
+    - uid
+    - updatedAt
+    type: object
+  SignInForm:
+    properties:
+      password:
+        description: Password must contain 8-72 UTF-8 bytes.
+        type: string
+    required:
+    - password
+    type: object
+  Template:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      internetAccess:
+        type: boolean
+      language:
+        items:
+          type: string
+        type: array
+        x-nullable: true
+      maxCpus:
+        description: Keep the legacy CPU quota visible until the template is migrated.
+        type: integer
+      maxMemory:
+        type: integer
+      name:
+        type: string
+      timeout:
+        type: integer
+      updatedAt:
+        type: string
+    required:
+    - createdAt
+    - id
+    - internetAccess
+    - language
+    - maxCpus
+    - maxMemory
+    - name
+    - timeout
+    - updatedAt
+    type: object
+  UpdateSandboxReq:
+    properties:
+      editable:
+        type: boolean
+      name:
+        type: string
+      placeholder:
+        type: string
+      templateID:
+        type: integer
+    required:
+    - name
+    - templateID
+    type: object
+  UpdateTemplateReq:
+    properties:
+      internetAccess:
+        default: false
+        type: boolean
+      language:
+        description: 'Supported languages: c, go, php, python, javascript.'
+        items:
+          type: string
+        type: array
+      maxMemory:
+        default: 0
+        maximum: 4096
+        minimum: 0
+        type: integer
+      name:
+        type: string
+      timeout:
+        default: 0
+        maximum: 60
+        minimum: 0
+        type: integer
+    required:
+    - language
+    - name
+    type: object
+  dto.Response-ExecutionResult:
+    properties:
+      data:
+        $ref: '#/definitions/ExecutionResult'
+    required:
+    - data
+    type: object
+  dto.Response-ListSandboxesResp:
+    properties:
+      data:
+        $ref: '#/definitions/ListSandboxesResp'
+    required:
+    - data
+    type: object
+  dto.Response-ListTemplatesResp:
+    properties:
+      data:
+        $ref: '#/definitions/ListTemplatesResp'
+    required:
+    - data
+    type: object
+  dto.Response-Sandbox:
+    properties:
+      data:
+        $ref: '#/definitions/Sandbox'
+    required:
+    - data
+    type: object
+  dto.Response-Template:
+    properties:
+      data:
+        $ref: '#/definitions/Template'
+    required:
+    - data
+    type: object
+  dto.Response-any:
+    properties:
+      data: {}
+    required:
+    - data
+    type: object
+  dto.Response-array_Template:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Template'
+        type: array
+    required:
+    - data
+    type: object
+  dto.Response-string:
+    properties:
+      data:
+        type: string
+    required:
+    - data
+    type: object
+  runtime.ExecOutput:
+    properties:
+      duration:
+        type: integer
+      error:
+        type: string
+      stderr:
+        type: string
+      stdout:
+        type: string
+    required:
+    - duration
+    - error
+    - stderr
+    - stdout
+    type: object
+info:
+  contact: {}
+  description: Management and WASM code execution API. Successful JSON responses use
+    a data envelope; errors contain msg.
+  title: Elaina API
+  version: "1.0"
+paths:
+  /api/auth/profile:
+    get:
+      description: 'Returns data: null when the session is authenticated.'
+      operationId: profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Check the current session
+      tags:
+      - Auth
+  /api/auth/sign-in:
+    post:
+      consumes:
+      - application/json
+      operationId: signIn
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/SignInForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Invalid password
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Sign in with the administrator password
+      tags:
+      - Auth
+  /api/auth/sign-out:
+    post:
+      operationId: signOut
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Sign out the current session
+      tags:
+      - Auth
+  /api/sandbox/{id}:
+    delete:
+      operationId: deleteSandbox
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Delete a sandbox
+      tags:
+      - Sandboxes
+    get:
+      operationId: getSandbox
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-Sandbox'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get a sandbox
+      tags:
+      - Sandboxes
+    put:
+      consumes:
+      - application/json
+      operationId: updateSandbox
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateSandboxReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Update a sandbox
+      tags:
+      - Sandboxes
+  /api/sandboxes:
+    get:
+      operationId: listSandboxes
+      parameters:
+      - default: 1
+        description: Page number; values below 1 use 1
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size; values below 1 use 20
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-ListSandboxesResp'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List sandboxes
+      tags:
+      - Sandboxes
+    post:
+      consumes:
+      - application/json
+      operationId: createSandbox
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/CreateSandboxReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-Sandbox'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Create a sandbox
+      tags:
+      - Sandboxes
+  /api/template/{id}:
+    delete:
+      operationId: deleteTemplate
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Delete a template
+      tags:
+      - Templates
+    get:
+      operationId: getTemplate
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-Template'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get a template
+      tags:
+      - Templates
+    put:
+      consumes:
+      - application/json
+      description: Zero timeout uses 10 seconds; zero memory uses 4096 MiB of WASM
+        linear memory. Legacy CPU/container/DNS fields are accepted only when zero
+        or empty.
+      operationId: updateTemplate
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateTemplateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Update a template
+      tags:
+      - Templates
+  /api/templates:
+    get:
+      operationId: listTemplates
+      parameters:
+      - default: 1
+        description: Page number; values below 1 use 1
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size; values below 1 use 20
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-ListTemplatesResp'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List templates
+      tags:
+      - Templates
+    post:
+      consumes:
+      - application/json
+      description: Zero timeout uses 10 seconds; zero memory uses 4096 MiB of WASM
+        linear memory. Legacy CPU/container/DNS fields are accepted only when zero
+        or empty.
+      operationId: createTemplate
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/CreateTemplateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-Template'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Create a template
+      tags:
+      - Templates
+  /api/templates/all:
+    get:
+      operationId: allTemplates
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-array_Template'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get all templates
+      tags:
+      - Templates
+  /r/{uid}/execute:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Uses the sandbox template permissions and limits. Missing or unsupported
+        lang selects the first configured language. Unknown sandbox UIDs redirect
+        to /.
+      operationId: executeCode
+      parameters:
+      - description: UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Programming language
+        in: formData
+        name: lang
+        type: string
+      - description: Source code
+        in: formData
+        name: code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-ExecutionResult'
+        "302":
+          description: Sandbox not found; redirect to /
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Execute code in a sandbox
+      tags:
+      - Runner
+securityDefinitions:
+  SessionAuth:
+    description: Use "Token <session token>" with the token returned by signIn.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

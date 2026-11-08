@@ -78,10 +78,19 @@ func TestSignIn(t *testing.T) {
 			if (result.Data != "") != (test.status == http.StatusOK) {
 				t.Fatal("unexpected session token")
 			}
+			if test.status != http.StatusOK {
+				var failure map[string]string
+				if err := json.Unmarshal(response.Body.Bytes(), &failure); err != nil {
+					t.Fatal(err)
+				}
+				if len(failure) != 1 || failure["msg"] == "" {
+					t.Fatalf("unexpected error envelope: %s", response.Body.String())
+				}
+			}
 
 			profile := httptest.NewRecorder()
 			request = httptest.NewRequest(http.MethodGet, "/api/auth/profile", nil)
-			request.Header.Set("Authorization", "Bearer "+result.Data)
+			request.Header.Set("Authorization", "Token "+result.Data)
 			router.ServeHTTP(profile, request)
 			wantStatus := http.StatusUnauthorized
 			if test.status == http.StatusOK {
@@ -89,6 +98,9 @@ func TestSignIn(t *testing.T) {
 			}
 			if profile.Code != wantStatus {
 				t.Fatalf("expected profile status %d, got %d", wantStatus, profile.Code)
+			}
+			if wantStatus == http.StatusOK && strings.TrimSpace(profile.Body.String()) != `{"data":null}` {
+				t.Fatalf("unexpected profile envelope: %s", profile.Body.String())
 			}
 		})
 	}

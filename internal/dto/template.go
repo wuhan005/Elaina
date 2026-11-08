@@ -16,14 +16,14 @@ type Template struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 
 	Name           string   `json:"name"`
-	Language       []string `json:"language"`
+	Language       []string `json:"language" extensions:"x-nullable"`
 	Timeout        int      `json:"timeout"`
 	MaxMemory      int64    `json:"maxMemory"`
 	InternetAccess bool     `json:"internetAccess"`
 
 	// Keep the legacy CPU quota visible until the template is migrated.
 	MaxCPUs int64 `json:"maxCpus"`
-}
+} // @name Template
 
 func ToTemplate(template *db.Tpl) *Template {
 	if template == nil {
@@ -46,4 +46,4 @@ func ToTemplate(template *db.Tpl) *Template {
 type ListTemplatesResp struct {
 	Templates []*Template `json:"templates"`
 	Total     int64       `json:"total"`
-}
+} // @name ListTemplatesResp

@@ -5,5 +5,6 @@
 package form
 
 type SignIn struct {
+	// Password must contain 8-72 UTF-8 bytes.
 	Password string `json:"password" valid:"required"`
-}
+} // @name SignInForm

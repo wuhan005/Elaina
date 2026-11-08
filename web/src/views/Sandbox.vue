@@ -48,8 +48,8 @@
 import {onMounted, ref} from 'vue';
 import {MessagePlugin, PrimaryTableCol, TableRowData, type PaginationProps} from 'tdesign-vue-next';
 import dayjs from 'dayjs'
-import {type Sandbox, listSandboxes, deleteSandbox} from "@/api/sandbox";
-import {type Template, listTemplates, deleteTemplate} from "@/api/template";
+import type {Sandbox} from "@/api/api";
+import {client} from "@/api/client";
 import {useRouter} from "vue-router";
 
 const COLUMNS: PrimaryTableCol<TableRowData>[] = [
@@ -72,9 +72,12 @@ const router = useRouter()
 const getSandboxes = () => {
   isLoading.value = true
 
-  listSandboxes({page: pagination.value.current, pageSize: pagination.value.pageSize}).then(res => {
-    data.value = res.sandboxes
-    pagination.value.total = res.total
+  client.sandboxes.listSandboxes({
+    page: pagination.value.current,
+    pageSize: pagination.value.pageSize,
+  }).then(res => {
+    data.value = res.data.data.sandboxes
+    pagination.value.total = res.data.data.total
   }).finally(() => {
     isLoading.value = false
   })
@@ -89,8 +92,10 @@ const onUpdate = (id: number) => {
 }
 
 const onDelete = (id: number) => {
-  deleteSandbox(id).then(res => {
-    MessagePlugin.success(res)
+  client.sandboxes.deleteSandbox({
+    id,
+  }).then(res => {
+    MessagePlugin.success(res.data.data)
   }).finally(() => {
     getSandboxes()
   })

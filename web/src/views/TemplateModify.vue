@@ -66,14 +66,8 @@ import '@/style/form.less'
 import {onMounted, ref} from 'vue'
 import {FormProps, MessagePlugin, SubmitContext} from 'tdesign-vue-next';
 import {useRouter, useRoute} from "vue-router";
-import {
-  type Template,
-  type CreateTemplateReq,
-  type UpdateTemplateReq,
-  createTemplate,
-  updateTemplate,
-  getTemplate
-} from "@/api/template";
+import type {CreateTemplateReq, UpdateTemplateReq} from "@/api/api";
+import {client} from "@/api/client";
 import {LANGUAGES} from '@/const/template'
 
 const route = useRoute()
@@ -97,14 +91,16 @@ const formData = ref<CreateTemplateReq | UpdateTemplateReq>({
 const onSubmit = (ctx: SubmitContext) => {
   if (ctx.validateResult === true) {
     if (mode.value === 'create') {
-      createTemplate(formData.value).then(() => {
+      client.templates.createTemplate(formData.value).then(() => {
         MessagePlugin.success('Create new template successfully')
         router.push({name: 'template'})
       })
     } else {
-      updateTemplate(id.value, formData.value).then(res => {
+      client.templates.updateTemplate({
+        id: Number(id.value),
+      }, formData.value).then(res => {
         legacyMaxCpus.value = 0
-        MessagePlugin.success(res)
+        MessagePlugin.success(res.data.data)
       })
     }
   }
@@ -116,14 +112,18 @@ const onCancel = () => {
 
 onMounted(() => {
   if (mode.value === 'edit') {
-    getTemplate(id.value).then((res: Template) => {
-      legacyMaxCpus.value = res.maxCpus
+    client.templates.getTemplate({
+      id: Number(id.value),
+    }).then(res => {
+      const template = res.data.data
+      legacyMaxCpus.value = template.maxCpus
+
       formData.value = {
-        name: res.name,
-        language: res.language,
-        timeout: res.timeout,
-        maxMemory: res.maxMemory,
-        internetAccess: res.internetAccess,
+        name: template.name,
+        language: template.language,
+        timeout: template.timeout,
+        maxMemory: template.maxMemory,
+        internetAccess: template.internetAccess,
       }
     })
   }

@@ -38,6 +38,16 @@ func (h *TemplateHandler) Templater(ctx context.Context) error {
 	return nil
 }
 
+// All get all templates.
+// @Summary Get all templates
+// @Tags Templates
+// @Produce json
+// @Security SessionAuth
+// @Success 200 {object} dto.Response[[]dto.Template]
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID allTemplates
+// @Router /api/templates/all [get]
 func (h *TemplateHandler) All(ctx context.Context) error {
 	templates, err := db.Tpls.All(ctx.Request().Context())
 	if err != nil {
@@ -52,6 +62,18 @@ func (h *TemplateHandler) All(ctx context.Context) error {
 	return ctx.Success(items)
 }
 
+// List list templates.
+// @Summary List templates
+// @Tags Templates
+// @Produce json
+// @Security SessionAuth
+// @Param page query int false "Page number; values below 1 use 1" default(1)
+// @Param pageSize query int false "Page size; values below 1 use 20" default(20)
+// @Success 200 {object} dto.Response[dto.ListTemplatesResp]
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID listTemplates
+// @Router /api/templates [get]
 func (h *TemplateHandler) List(ctx context.Context) error {
 	templates, total, err := db.Tpls.List(ctx.Request().Context(), db.ListTplOptions{
 		Pagination: dbutil.Pagination{
@@ -75,10 +97,36 @@ func (h *TemplateHandler) List(ctx context.Context) error {
 	})
 }
 
+// Get get a template.
+// @Summary Get a template
+// @Tags Templates
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "ID"
+// @Success 200 {object} dto.Response[dto.Template]
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 404 {object} dto.ErrorResponse "Not found"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID getTemplate
+// @Router /api/template/{id} [get]
 func (h *TemplateHandler) Get(ctx context.Context, template *db.Tpl) error {
 	return ctx.Success(dto.ToTemplate(template))
 }
 
+// Create create a template.
+// @Summary Create a template
+// @Tags Templates
+// @Description Zero timeout uses 10 seconds; zero memory uses 4096 MiB of WASM linear memory. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param data body form.CreateTemplate true "Request body"
+// @Success 200 {object} dto.Response[dto.Template]
+// @Failure 400 {object} dto.ErrorResponse "Invalid request"
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID createTemplate
+// @Router /api/templates [post]
 func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) error {
 	template, err := db.Tpls.Create(ctx.Request().Context(), db.CreateTplOptions{
 		Name:           f.Name,
@@ -95,6 +143,22 @@ func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) err
 	return ctx.Success(dto.ToTemplate(template))
 }
 
+// Update update a template.
+// @Summary Update a template
+// @Tags Templates
+// @Description Zero timeout uses 10 seconds; zero memory uses 4096 MiB of WASM linear memory. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+// @Accept json
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "ID"
+// @Param data body form.UpdateTemplate true "Request body"
+// @Success 200 {object} dto.Response[string]
+// @Failure 400 {object} dto.ErrorResponse "Invalid request"
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 404 {object} dto.ErrorResponse "Not found"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID updateTemplate
+// @Router /api/template/{id} [put]
 func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.UpdateTemplate) error {
 	templateID := template.ID
 
@@ -114,6 +178,18 @@ func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.U
 	return ctx.Success("Template updated successfully")
 }
 
+// Delete delete a template.
+// @Summary Delete a template
+// @Tags Templates
+// @Produce json
+// @Security SessionAuth
+// @Param id path int true "ID"
+// @Success 200 {object} dto.Response[string]
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 404 {object} dto.ErrorResponse "Not found"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @ID deleteTemplate
+// @Router /api/template/{id} [delete]
 func (h *TemplateHandler) Delete(ctx context.Context, template *db.Tpl) error {
 	templateID := template.ID
 

@@ -18,6 +18,14 @@ import (
 )
 
 // New returns a new Flamego router.
+// @Title Elaina API
+// @Version 1.0
+// @Description Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg.
+// @BasePath /
+// @SecurityDefinitions.apikey SessionAuth
+// @In header
+// @Name Authorization
+// @Description Use "Token <session token>" with the token returned by signIn.
 func New(db *gorm.DB) (*flamego.Flame, error) {
 	f := flamego.Classic()
 

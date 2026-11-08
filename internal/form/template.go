@@ -11,18 +11,19 @@ import (
 )
 
 type CreateTemplate struct {
-	Name           string   `json:"name" valid:"required"`
+	Name string `json:"name" valid:"required"`
+	// Supported languages: c, go, php, python, javascript.
 	Language       []string `json:"language" valid:"required"`
-	Timeout        int      `json:"timeout" valid:"min:0;max:60"`
-	MaxMemory      int64    `json:"maxMemory" valid:"min:0;max:4096"`
-	InternetAccess bool     `json:"internetAccess"`
+	Timeout        int      `json:"timeout,omitempty" valid:"min:0;max:60" minimum:"0" maximum:"60" default:"0"`
+	MaxMemory      int64    `json:"maxMemory,omitempty" valid:"min:0;max:4096" minimum:"0" maximum:"4096" default:"0"`
+	InternetAccess bool     `json:"internetAccess,omitempty" default:"false"`
 
 	// Decode retired fields to reject unsupported settings from older clients.
-	MaxCPUs           int64             `json:"maxCpus"`
-	DNS               map[string]string `json:"dns"`
-	MaxContainer      int64             `json:"maxContainer"`
-	MaxContainerPerIP int64             `json:"maxContainerPerIp"`
-}
+	MaxCPUs           int64             `json:"maxCpus" swaggerignore:"true"`
+	DNS               map[string]string `json:"dns" swaggerignore:"true"`
+	MaxContainer      int64             `json:"maxContainer" swaggerignore:"true"`
+	MaxContainerPerIP int64             `json:"maxContainerPerIp" swaggerignore:"true"`
+} // @name CreateTemplateReq
 
 func (f CreateTemplate) Validate() error {
 	if f.MaxCPUs != 0 {
@@ -42,7 +43,7 @@ func (f CreateTemplate) Validate() error {
 	return nil
 }
 
-type UpdateTemplate CreateTemplate
+type UpdateTemplate CreateTemplate // @name UpdateTemplateReq
 
 func (f UpdateTemplate) Validate() error {
 	return CreateTemplate(f).Validate()
