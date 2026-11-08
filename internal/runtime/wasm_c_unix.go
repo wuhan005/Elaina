@@ -18,7 +18,16 @@ import (
 
 func (t *WASMTask) compileCWASM(ctx context.Context, cache wazero.CompilationCache, toolchain, dir string, stderr *wasmOutputBuffer) error {
 	var commands [][]string
-	for _, source := range []struct{ path, output string }{{"/main.c", "/main.o"}, {"/toolchain/network.c", "/network.o"}} {
+	for _, source := range []struct{ path, output string }{
+		{
+			"/main.c",
+			"/main.o",
+		},
+		{
+			"/toolchain/network.c",
+			"/network.o",
+		},
+	} {
 		commands = append(commands, []string{"clang", "-cc1", "-triple", "wasm32-unknown-wasi", "-isysroot", "/toolchain/sysroot",
 			"-I/toolchain/include",
 			"-internal-isystem", "/toolchain/sysroot/include/wasm32-wasip1", "-internal-isystem", "/toolchain/sysroot/lib/clang/22/include",
@@ -30,7 +39,11 @@ func (t *WASMTask) compileCWASM(ctx context.Context, cache wazero.CompilationCac
 	for _, args := range commands {
 		// Compiler stages never inherit the program's network permission or environment.
 		if err := t.runWASMModule(ctx, cache, wasmModuleOptions{
-			path: filepath.Join(toolchain, args[0]+".wasm"), args: args, env: []string{"TMPDIR=/"}, dir: dir, toolchain: toolchain,
+			path:      filepath.Join(toolchain, args[0]+".wasm"),
+			args:      args,
+			env:       []string{"TMPDIR=/"},
+			dir:       dir,
+			toolchain: toolchain,
 			// These instructions are enabled only for the pinned compiler and linker.
 			features: api.CoreFeaturesV2 | experimental.CoreFeaturesTailCall | experimental.CoreFeaturesTypedFunctionReferences,
 		}, stderr, stderr); err != nil {

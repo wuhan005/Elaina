@@ -30,7 +30,9 @@ type TplStore interface {
 }
 
 func NewTplStore(db *gorm.DB) TplStore {
-	return &tpls{db}
+	return &tpls{
+		db,
+	}
 }
 
 type tpls struct {

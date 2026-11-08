@@ -27,7 +27,8 @@ type wasmReceiveSystem struct{ wasi.System }
 func TestWASMDNSResultLimit(t *testing.T) {
 	for _, count := range []uint64{16, 256, 257, 0xffffffff} {
 		called := false
-		fn := wasmSocketABI("", wazergo.Function[*preview1.Module]{Name: "sock_getaddrinfo",
+		fn := wasmSocketABI("", wazergo.Function[*preview1.Module]{
+			Name: "sock_getaddrinfo",
 			Func: func(*preview1.Module, context.Context, api.Module, []uint64) { called = true },
 		})
 
@@ -60,10 +61,13 @@ func TestWASMReadOnlyToolchain(t *testing.T) {
 	host := &wasmunix.System{}
 	defer func() { _ = host.Close(ctx) }()
 	root := host.Preopen(wasmunix.FD(fd), "/toolchain", wasi.FDStat{
-		RightsBase: wasmReadOnlyRights & wasi.DirectoryRights, RightsInheriting: wasmReadOnlyRights,
+		RightsBase:       wasmReadOnlyRights & wasi.DirectoryRights,
+		RightsInheriting: wasmReadOnlyRights,
 	})
 
-	s := &wasmSystem{System: host}
+	s := &wasmSystem{
+		System: host,
+	}
 	file, errno := s.PathOpen(ctx, root, 0, "package.a", 0, wasi.FDReadRight|wasi.FDFileStatGetRight, wasi.AllRights, 0)
 	if errno != wasi.ESUCCESS {
 		t.Fatalf("read-only open with Go's inheriting rights: %v", errno)
@@ -104,14 +108,22 @@ func TestWASMStdioIsolation(t *testing.T) {
 	host := &wasmunix.System{}
 	defer func() { _ = host.Close(ctx) }()
 
-	output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
-	s := &wasmSystem{System: host, outputs: map[wasi.FD]*wasmOutputBuffer{1: output}}
+	output := &wasmOutputBuffer{
+		limit:  wasmOutputLimit,
+		cancel: cancel,
+	}
+	s := &wasmSystem{
+		System:  host,
+		outputs: map[wasi.FD]*wasmOutputBuffer{1: output},
+	}
 	for range 3 {
 		fd, err := unix.Open(os.DevNull, unix.O_RDWR, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		host.Preopen(wasmunix.FD(fd), "stdio", wasi.FDStat{RightsBase: wasi.FileRights})
+		host.Preopen(wasmunix.FD(fd), "stdio", wasi.FDStat{
+			RightsBase: wasi.FileRights,
+		})
 	}
 
 	if n, errno := s.FDWrite(ctx, 1, []wasi.IOVec{[]byte("captured")}); errno != wasi.ESUCCESS || n != 8 || output.buffer.String() != "captured" {
@@ -133,7 +145,9 @@ func TestWASMStdioIsolation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	guest := host.Register(wasmunix.FD(fd), wasi.FDStat{RightsBase: wasi.FileRights})
+	guest := host.Register(wasmunix.FD(fd), wasi.FDStat{
+		RightsBase: wasi.FileRights,
+	})
 	if guest != 1 {
 		t.Fatalf("expected stdout descriptor reuse, got %d", guest)
 	}
@@ -165,7 +179,9 @@ func TestWASMSocketReceiveABI(t *testing.T) {
 	count := types.Ptr[types.Int32](m.Memory(), 4)
 	flags := types.Ptr[types.Uint16](m.Memory(), 2)
 	buffers := types.MakeList(types.Ptr[wasi.IOVec](m.Memory(), 16), 0)
-	errno := wasmSocketReceive(&preview1.Module{WASI: &wasmReceiveSystem{}}, ctx, 4, buffers, 0, count, flags)
+	errno := wasmSocketReceive(&preview1.Module{
+		WASI: &wasmReceiveSystem{},
+	}, ctx, 4, buffers, 0, count, flags)
 	if errno != 0 || count.Load() != 122 || flags.Load() != 0 {
 		t.Fatalf("sock_recv overwrote the adjacent byte count: errno=%d count=%d flags=%d", errno, count.Load(), flags.Load())
 	}

@@ -26,7 +26,12 @@ import (
 func TestNewTask(t *testing.T) {
 	for _, language := range []string{"php", "python", "javascript", "go", "c"} {
 		task, err := NewTask(context.Background(), NewTaskOptions{
-			Language: language, Template: &db.Tpl{MaxMemory: 128, Timeout: 10, InternetAccess: true},
+			Language: language,
+			Template: &db.Tpl{
+				MaxMemory:      128,
+				Timeout:        10,
+				InternetAccess: true,
+			},
 		})
 		if err != nil {
 			t.Fatalf("%s: %v", language, err)
@@ -36,19 +41,39 @@ func TestNewTask(t *testing.T) {
 		}
 	}
 
-	if _, err := NewTask(context.Background(), NewTaskOptions{Language: "unknown", Template: &db.Tpl{}}); err == nil {
+	if _, err := NewTask(context.Background(), NewTaskOptions{
+		Language: "unknown",
+		Template: &db.Tpl{},
+	}); err == nil {
 		t.Fatal("expected an error for an unsupported language")
 	}
 }
 
 func TestNewWASMTaskValidation(t *testing.T) {
-	for _, template := range []*db.Tpl{nil, {MaxMemory: -1}, {MaxMemory: 4097}, {MaxCPUs: -1}, {MaxCPUs: 11}, {MaxCPUs: 1}, {Timeout: -1}, {Timeout: 61}} {
-		if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{Language: "python", Template: template}); err == nil {
+	for _, template := range []*db.Tpl{
+		nil,
+		{MaxMemory: -1},
+		{MaxMemory: 4097},
+		{MaxCPUs: -1},
+		{MaxCPUs: 11},
+		{MaxCPUs: 1},
+		{Timeout: -1},
+		{Timeout: 61},
+	} {
+		if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+			Language: "python",
+			Template: template,
+		}); err == nil {
 			t.Fatalf("expected an error for template %+v", template)
 		}
 	}
 
-	if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{Language: "python", Template: &db.Tpl{InternetAccess: true}}); err != nil {
+	if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		Language: "python",
+		Template: &db.Tpl{
+			InternetAccess: true,
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -57,7 +82,10 @@ func TestWASMOutputLimit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	buffer := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
+	buffer := &wasmOutputBuffer{
+		limit:  wasmOutputLimit,
+		cancel: cancel,
+	}
 	if n, err := buffer.Write(bytes.Repeat([]byte{'x'}, wasmOutputLimit)); n != wasmOutputLimit || err != nil {
 		t.Fatalf("write at limit: %d, %v", n, err)
 	}
@@ -69,8 +97,13 @@ func TestWASMOutputLimit(t *testing.T) {
 		t.Fatal("output overflow did not cancel execution with bounded output")
 	}
 
-	buffer = &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
-	reader := struct{ io.Reader }{bytes.NewReader(bytes.Repeat([]byte{'x'}, 2*wasmOutputLimit))}
+	buffer = &wasmOutputBuffer{
+		limit:  wasmOutputLimit,
+		cancel: cancel,
+	}
+	reader := struct{ io.Reader }{
+		bytes.NewReader(bytes.Repeat([]byte{'x'}, 2*wasmOutputLimit)),
+	}
 	if _, err := io.Copy(buffer, reader); err == nil || buffer.buffer.Len() != wasmOutputLimit {
 		t.Fatal("io.Copy bypassed the output limit")
 	}
@@ -96,8 +129,13 @@ func TestWASMInterpreters(t *testing.T) {
 		t.Helper()
 
 		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
-			Language: language, Code: []byte(code),
-			Template: &db.Tpl{InternetAccess: internet, MaxMemory: memory, Timeout: timeout},
+			Language: language,
+			Code:     []byte(code),
+			Template: &db.Tpl{
+				InternetAccess: internet,
+				MaxMemory:      memory,
+				Timeout:        timeout,
+			},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -112,7 +150,9 @@ func TestWASMInterpreters(t *testing.T) {
 	}
 
 	for _, test := range []struct{ language, code, exit, loop, sleep string }{
-		{"python", `import os, sys, time
+		{
+			"python",
+			`import os, sys, time
 assert os.getenv('ELAINA_TEST_SECRET') is None
 assert not os.path.exists('/etc/passwd')
 assert not os.path.exists('data.txt')
@@ -124,18 +164,34 @@ except OSError: pass
 with open('data.txt', 'w') as f: f.write('file-ok')
 time.sleep(0.001)
 print(open('data.txt').read())
-sys.stderr.write('stderr-ok')`, `raise SystemExit(7)`, "print('started', flush=True)\nwhile True: pass", "import time\nprint('started', flush=True)\ntime.sleep(60)"},
-		{"php", `<?php
+sys.stderr.write('stderr-ok')`,
+			`raise SystemExit(7)`,
+			"print('started', flush=True)\nwhile True: pass",
+			"import time\nprint('started', flush=True)\ntime.sleep(60)",
+		},
+		{
+			"php",
+			`<?php
 if (getenv('ELAINA_TEST_SECRET') || file_exists('/etc/passwd') || file_exists('data.txt')) exit(1);
 if (stream_get_contents(STDIN) !== '') exit(2);
 file_put_contents('data.txt', 'file-ok');
 usleep(1000);
-echo file_get_contents('data.txt'); fwrite(STDERR, 'stderr-ok');`, `<?php exit(7);`, `<?php echo 'started'; while (true) {}`, `<?php echo 'started'; sleep(60);`},
-		{"javascript", `import * as std from 'qjs:std';
+echo file_get_contents('data.txt'); fwrite(STDERR, 'stderr-ok');`,
+			`<?php exit(7);`,
+			`<?php echo 'started'; while (true) {}`,
+			`<?php echo 'started'; sleep(60);`,
+		},
+		{
+			"javascript",
+			`import * as std from 'qjs:std';
 import * as os from 'qjs:os';
 if (std.getenv('ELAINA_TEST_SECRET') || std.loadFile('/etc/passwd') || std.loadFile('data.txt')) std.exit(1);
 const f = std.open('data.txt', 'w'); f.puts('file-ok'); f.close();
-os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stderr-ok'); }, 10);`, `import * as std from 'qjs:std'; std.exit(7);`, `console.log('started'); while (true) {}`, `import * as os from 'qjs:os'; console.log('started'); os.setTimeout(() => {}, 60000);`},
+os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stderr-ok'); }, 10);`,
+			`import * as std from 'qjs:std'; std.exit(7);`,
+			`console.log('started'); while (true) {}`,
+			`import * as os from 'qjs:os'; console.log('started'); os.setTimeout(() => {}, 60000);`,
+		},
 	} {
 		t.Run(test.language, func(t *testing.T) {
 			for i := 0; i < 2; i++ {
@@ -225,9 +281,14 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 			server.Close()
 		}()
 
-		task, err := NewWASMTask(ctx, NewWASMTaskOptions{Language: "php",
-			Template: &db.Tpl{Timeout: 60, MaxMemory: 128, InternetAccess: true},
-			Code:     []byte(fmt.Sprintf(`<?php file_get_contents(%q);`, server.URL)),
+		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
+			Language: "php",
+			Template: &db.Tpl{
+				Timeout:        60,
+				MaxMemory:      128,
+				InternetAccess: true,
+			},
+			Code: []byte(fmt.Sprintf(`<?php file_get_contents(%q);`, server.URL)),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -318,7 +379,13 @@ print('limitations-ok')`
 		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 		defer cancel()
 
-		task, _ := NewWASMTask(ctx, NewWASMTaskOptions{Language: "python", Template: &db.Tpl{Timeout: 60}, Code: []byte("while True: pass")})
+		task, _ := NewWASMTask(ctx, NewWASMTaskOptions{
+			Language: "python",
+			Template: &db.Tpl{
+				Timeout: 60,
+			},
+			Code: []byte("while True: pass"),
+		})
 		if _, err := task.Run(ctx); !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("got %v, want request cancellation", err)
 		}

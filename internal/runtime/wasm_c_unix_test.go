@@ -49,7 +49,13 @@ func TestWASMC(t *testing.T) {
 		t.Helper()
 
 		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
-			Language: "c", Template: &db.Tpl{MaxMemory: 512, Timeout: timeout, InternetAccess: internet}, Code: []byte(code),
+			Language: "c",
+			Template: &db.Tpl{
+				MaxMemory:      512,
+				Timeout:        timeout,
+				InternetAccess: internet,
+			},
+			Code: []byte(code),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -73,8 +79,16 @@ func TestWASMC(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
-		task := &WASMTask{template: &db.Tpl{MaxMemory: memory, InternetAccess: true}}
+		output := &wasmOutputBuffer{
+			limit:  wasmOutputLimit,
+			cancel: cancel,
+		}
+		task := &WASMTask{
+			template: &db.Tpl{
+				MaxMemory:      memory,
+				InternetAccess: true,
+			},
+		}
 		err := task.compileCWASM(ctx, cache, filepath.Join(dir, "c"), workspace, output)
 		return output, err
 	}
@@ -135,7 +149,12 @@ int main(void) {
 
 		port := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[1]
 		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
-			Language: "c", Template: &db.Tpl{MaxMemory: 512, Timeout: 60, InternetAccess: true},
+			Language: "c",
+			Template: &db.Tpl{
+				MaxMemory:      512,
+				Timeout:        60,
+				InternetAccess: true,
+			},
 			Code: []byte(wasmCHTTPClient("127.0.0.1", port)),
 		})
 		if err != nil {
@@ -207,10 +226,19 @@ int main(void) { return 0; }`, command)
 			t.Fatal("compilation executed a command")
 		}
 
-		output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
-		task := &WASMTask{template: &db.Tpl{MaxMemory: 512}}
+		output := &wasmOutputBuffer{
+			limit:  wasmOutputLimit,
+			cancel: cancel,
+		}
+		task := &WASMTask{
+			template: &db.Tpl{
+				MaxMemory: 512,
+			},
+		}
 		err := task.runWASMModule(ctx, nil, wasmModuleOptions{
-			path: filepath.Join(workspace, "main.wasm"), args: []string{"main"}, dir: workspace,
+			path: filepath.Join(workspace, "main.wasm"),
+			args: []string{"main"},
+			dir:  workspace,
 		}, output, output)
 		if err == nil || !strings.Contains(err.Error(), "env") {
 			t.Fatalf("host command import was not rejected: %v", err)
@@ -264,8 +292,16 @@ int main(void) {
 			t.Fatal(err)
 		}
 
-		output := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
-		task := &WASMTask{template: &db.Tpl{MaxMemory: 512, InternetAccess: true}}
+		output := &wasmOutputBuffer{
+			limit:  wasmOutputLimit,
+			cancel: cancel,
+		}
+		task := &WASMTask{
+			template: &db.Tpl{
+				MaxMemory:      512,
+				InternetAccess: true,
+			},
+		}
 		err = task.compileCWASM(ctx, cache, compiler, workspace, output)
 		if err == nil || !strings.Contains(output.buffer.String(), "compiler-network-denied") {
 			t.Fatalf("compiler network gate: %v %s", err, output.buffer.String())

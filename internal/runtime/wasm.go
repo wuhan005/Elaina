@@ -63,7 +63,11 @@ func NewWASMTask(_ context.Context, options NewWASMTaskOptions) (*WASMTask, erro
 		return nil, errors.New("WASM timeout must be between 0 and 60 seconds")
 	}
 
-	return &WASMTask{runner: runner, template: options.Template, code: options.Code}, nil
+	return &WASMTask{
+		runner:   runner,
+		template: options.Template,
+		code:     options.Code,
+	}, nil
 }
 
 func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
@@ -98,12 +102,22 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 		return nil, errors.Wrap(err, "write WASM source")
 	}
 
-	stdout := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
-	stderr := &wasmOutputBuffer{limit: wasmOutputLimit, cancel: cancel}
+	stdout := &wasmOutputBuffer{
+		limit:  wasmOutputLimit,
+		cancel: cancel,
+	}
+	stderr := &wasmOutputBuffer{
+		limit:  wasmOutputLimit,
+		cancel: cancel,
+	}
 
 	startAt := time.Now()
 	runErr := t.runWASM(execCtx, runtimeDir, cacheDir, dir, stdout, stderr)
-	output := &ExecOutput{Stdout: stdout.buffer.String(), Stderr: stderr.buffer.String(), Duration: time.Since(startAt).Nanoseconds()}
+	output := &ExecOutput{
+		Stdout:   stdout.buffer.String(),
+		Stderr:   stderr.buffer.String(),
+		Duration: time.Since(startAt).Nanoseconds(),
+	}
 
 	var exitErr *sys.ExitError
 	switch {

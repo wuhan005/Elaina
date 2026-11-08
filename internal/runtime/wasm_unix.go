@@ -50,13 +50,18 @@ func (t *WASMTask) runWASM(ctx context.Context, runtimeDir, cacheDir, dir string
 		}
 
 		return t.runWASMModule(ctx, nil, wasmModuleOptions{
-			path: filepath.Join(dir, "main.wasm"), args: []string{"main"}, dir: dir, internet: t.template.InternetAccess,
+			path:     filepath.Join(dir, "main.wasm"),
+			args:     []string{"main"},
+			dir:      dir,
+			internet: t.template.InternetAccess,
 		}, stdout, stderr)
 	}
 
 	return t.runWASMModule(ctx, cache, wasmModuleOptions{
-		path: filepath.Join(runtimeDir, t.runner.WASMModule), args: []string{t.runner.Name, "/" + t.runner.FileName},
-		dir: dir, internet: t.template.InternetAccess,
+		path:     filepath.Join(runtimeDir, t.runner.WASMModule),
+		args:     []string{t.runner.Name, "/" + t.runner.FileName},
+		dir:      dir,
+		internet: t.template.InternetAccess,
 	}, stdout, stderr)
 }
 
@@ -107,8 +112,14 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		WithDecorators(wazergo.DecoratorFunc(wasmSocketABI)).
 		WithWrappers(func(system wasi.System) wasi.System {
 			host = system.(*wasmunix.System)
-			return &wasmSystem{System: &wasmNetworkSystem{System: host}, internet: options.internet, preopens: preopens,
-				outputs: map[wasi.FD]*wasmOutputBuffer{1: stdout, 2: stderr}}
+			return &wasmSystem{
+				System: &wasmNetworkSystem{
+					System: host,
+				},
+				internet: options.internet,
+				preopens: preopens,
+				outputs:  map[wasi.FD]*wasmOutputBuffer{1: stdout, 2: stderr},
+			}
 		}).Instantiate(ctx, r)
 	if err != nil {
 		return errors.Wrap(err, "instantiate WASI host")

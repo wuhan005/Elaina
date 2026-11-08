@@ -59,7 +59,11 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 	env := []string{"GOOS=wasip1", "GOARCH=wasm", "GOROOT=/toolchain", "GOMAXPROCS=1", "TMPDIR=/"}
 	for _, args := range [][]string{args, {"link", "-s", "-w", "-linkmode=internal", "-importcfg", "/toolchain/importcfg", "-o", "/main.wasm", "/main.a"}} {
 		if err := t.runWASMModule(ctx, cache, wasmModuleOptions{
-			path: filepath.Join(toolchain, args[0]+".wasm"), args: args, env: env, dir: dir, toolchain: toolchain,
+			path:      filepath.Join(toolchain, args[0]+".wasm"),
+			args:      args,
+			env:       env,
+			dir:       dir,
+			toolchain: toolchain,
 		}, stderr, stderr); err != nil {
 			return errors.Wrapf(err, "Go %s", args[0])
 		}
@@ -81,8 +85,11 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 
 	// Request-specific programs must not accumulate in the persistent toolchain cache.
 	return t.runWASMModule(ctx, nil, wasmModuleOptions{
-		path: filepath.Join(dir, "main.wasm"), args: []string{"main"}, dir: dir, internet: t.template.InternetAccess,
-		env: runtimeEnv,
+		path:     filepath.Join(dir, "main.wasm"),
+		args:     []string{"main"},
+		dir:      dir,
+		internet: t.template.InternetAccess,
+		env:      runtimeEnv,
 	}, stdout, stderr)
 }
 

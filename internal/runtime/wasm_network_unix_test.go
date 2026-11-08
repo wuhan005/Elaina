@@ -19,7 +19,9 @@ import (
 func newWASMTestSocket(t *testing.T, kind wasi.SocketType) (*wasmNetworkSystem, wasi.FD) {
 	t.Helper()
 
-	s := &wasmNetworkSystem{System: &wasmunix.System{}}
+	s := &wasmNetworkSystem{
+		System: &wasmunix.System{},
+	}
 	t.Cleanup(func() { _ = s.Close(context.Background()) })
 
 	fd, errno := s.SockOpen(context.Background(), wasi.InetFamily, kind, wasi.IPProtocol,
@@ -43,7 +45,10 @@ func connectWASMTestSocket(t *testing.T) (*wasmNetworkSystem, wasi.FD, net.Conn)
 	s, fd := newWASMTestSocket(t, wasi.StreamSocket)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if _, errno := s.SockConnect(ctx, fd, &wasi.Inet4Address{Addr: [4]byte{127, 0, 0, 1}, Port: listener.Addr().(*net.TCPAddr).Port}); errno != wasi.ESUCCESS {
+	if _, errno := s.SockConnect(ctx, fd, &wasi.Inet4Address{
+		Addr: [4]byte{127, 0, 0, 1},
+		Port: listener.Addr().(*net.TCPAddr).Port,
+	}); errno != wasi.ESUCCESS {
 		t.Fatal(errno)
 	}
 
@@ -68,7 +73,9 @@ func TestWASMNetworkCancellation(t *testing.T) {
 					kind = wasi.DatagramSocket
 				}
 				s, fd = newWASMTestSocket(t, kind)
-				if _, errno := s.SockBind(context.Background(), fd, &wasi.Inet4Address{Addr: [4]byte{127, 0, 0, 1}}); errno != wasi.ESUCCESS {
+				if _, errno := s.SockBind(context.Background(), fd, &wasi.Inet4Address{
+					Addr: [4]byte{127, 0, 0, 1},
+				}); errno != wasi.ESUCCESS {
 					t.Fatal(errno)
 				}
 				if operation == "accept" {

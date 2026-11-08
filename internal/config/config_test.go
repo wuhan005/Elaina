@@ -26,18 +26,19 @@ func TestInit(t *testing.T) {
 		name, content, runtimeDir, cacheDir, dsn string
 	}{
 		{
-			"file values", `app:
+			"file values",
+			`app:
   password_hash: "` + testPasswordHash + `"
   wasm_runtime_dir: /opt/elaina/wasm
   wasm_cache_dir: /var/cache/elaina
 postgres:
   dsn: "postgres://user:password@localhost/elaina?sslmode=disable"
-`, "/opt/elaina/wasm", "/var/cache/elaina", "postgres://user:password@localhost/elaina?sslmode=disable",
+`,
+			"/opt/elaina/wasm",
+			"/var/cache/elaina",
+			"postgres://user:password@localhost/elaina?sslmode=disable",
 		},
-		{
-			"default directories", "app:\n  password_hash: " + testPasswordHash + "\npostgres:\n  dsn: file-dsn\n",
-			".wasm", ".wasm/cache", "file-dsn",
-		},
+		{"default directories", "app:\n  password_hash: " + testPasswordHash + "\npostgres:\n  dsn: file-dsn\n", ".wasm", ".wasm/cache", "file-dsn"},
 		{"app only", "app:\n  password_hash: " + testPasswordHash + "\n  wasm_runtime_dir: ./local-wasm\n", "./local-wasm", ".wasm/cache", ""},
 	} {
 		t.Run(test.name, func(t *testing.T) {

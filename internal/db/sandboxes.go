@@ -32,7 +32,9 @@ type SandboxStore interface {
 }
 
 func NewSandboxStore(db *gorm.DB) SandboxStore {
-	return &sandboxes{db}
+	return &sandboxes{
+		db,
+	}
 }
 
 type sandboxes struct {

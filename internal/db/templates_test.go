@@ -23,7 +23,11 @@ func TestTemplateSettings(t *testing.T) {
 		t.Skip("set TEST_POSTGRES_DSN to run template storage tests")
 	}
 	namespace := fmt.Sprintf("elaina_template_test_%d", time.Now().UnixNano())
-	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{TablePrefix: namespace + "."}})
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix: namespace + ".",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +53,13 @@ func TestTemplateSettings(t *testing.T) {
 	}
 	store := NewTplStore(database)
 	ctx := context.Background()
-	tpl, err := store.Create(ctx, CreateTplOptions{Name: "WASM", Language: []string{"python"}, Timeout: 60, MaxMemory: 512, InternetAccess: true})
+	tpl, err := store.Create(ctx, CreateTplOptions{
+		Name:           "WASM",
+		Language:       []string{"python"},
+		Timeout:        60,
+		MaxMemory:      512,
+		InternetAccess: true,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +89,13 @@ func TestTemplateSettings(t *testing.T) {
 			t.Fatalf("retired setting still exposed: %s", key)
 		}
 	}
-	if err := store.Update(ctx, tpl.ID, UpdateTplOptions{Name: "Updated", Language: []string{"c", "go"}, Timeout: 0, MaxMemory: 0, InternetAccess: false}); err != nil {
+	if err := store.Update(ctx, tpl.ID, UpdateTplOptions{
+		Name:           "Updated",
+		Language:       []string{"c", "go"},
+		Timeout:        0,
+		MaxMemory:      0,
+		InternetAccess: false,
+	}); err != nil {
 		t.Fatal(err)
 	}
 	tpl, err = store.GetByID(ctx, tpl.ID)

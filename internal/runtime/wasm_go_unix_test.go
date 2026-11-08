@@ -44,7 +44,13 @@ func TestWASMGo(t *testing.T) {
 		t.Helper()
 
 		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
-			Language: "go", Template: &db.Tpl{MaxMemory: memory, Timeout: timeout, InternetAccess: internet}, Code: []byte(code),
+			Language: "go",
+			Template: &db.Tpl{
+				MaxMemory:      memory,
+				Timeout:        timeout,
+				InternetAccess: internet,
+			},
+			Code: []byte(code),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -107,7 +113,10 @@ func main() { r, err := http.Get(%q); if err != nil { fmt.Fprintln(os.Stderr, er
 		}))
 		defer server.Close()
 
-		cert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.Certificate().Raw})
+		cert := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: server.Certificate().Raw,
+		})
 		certificates, err := wasmGoRootCertificates()
 		if err != nil {
 			t.Fatal(err)
@@ -165,7 +174,13 @@ func main() {
 
 		code := fmt.Sprintf("package main; import \"net/http\"; func main() { _, _ = http.Get(%q) }", server.URL)
 		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
-			Language: "go", Template: &db.Tpl{MaxMemory: 512, Timeout: 60, InternetAccess: true}, Code: []byte(code),
+			Language: "go",
+			Template: &db.Tpl{
+				MaxMemory:      512,
+				Timeout:        60,
+				InternetAccess: true,
+			},
+			Code: []byte(code),
 		})
 		if err != nil {
 			t.Fatal(err)

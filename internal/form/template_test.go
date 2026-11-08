@@ -58,13 +58,22 @@ func TestTemplateBinding(t *testing.T) {
 					t.Fatal(err)
 				}
 				f := flamego.New()
-				f.Use(func(c flamego.Context) { c.Map(appcontext.Context{Context: c}) })
+				f.Use(func(c flamego.Context) {
+					c.Map(appcontext.Context{
+						Context: c,
+					})
+				})
 				called := false
 				accept := func(c appcontext.Context, value CreateTemplate) {
 					called = true
 					for _, language := range value.Language {
 						_, err := runtime.NewTask(context.Background(), runtime.NewTaskOptions{
-							Language: language, Template: &db.Tpl{Timeout: value.Timeout, MaxMemory: value.MaxMemory, InternetAccess: value.InternetAccess},
+							Language: language,
+							Template: &db.Tpl{
+								Timeout:        value.Timeout,
+								MaxMemory:      value.MaxMemory,
+								InternetAccess: value.InternetAccess,
+							},
 						})
 						if err != nil {
 							t.Errorf("accepted settings rejected by runtime: %v", err)

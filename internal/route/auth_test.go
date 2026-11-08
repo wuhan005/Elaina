@@ -58,7 +58,9 @@ func TestSignIn(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			config.App.PasswordHash = test.hash
-			body, err := json.Marshal(form.SignIn{Password: test.password})
+			body, err := json.Marshal(form.SignIn{
+				Password: test.password,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
