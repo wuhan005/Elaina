@@ -11,9 +11,6 @@ export interface Template {
     maxCpus: number;
     maxMemory: number;
     internetAccess: boolean;
-    dns: { [key: string]: string };
-    maxContainer: number;
-    maxContainerPerIp: number;
 }
 
 export interface ListTemplatesResp {
@@ -33,12 +30,8 @@ export interface CreateTemplateReq {
     name: string;
     language: string[];
     timeout: number;
-    maxCpus: number;
     maxMemory: number;
     internetAccess: boolean;
-    dns: { [key: string]: string };
-    maxContainer: number;
-    maxContainerPerIp: number;
 }
 
 export function createTemplate(data: CreateTemplateReq) {
@@ -53,12 +46,8 @@ export interface UpdateTemplateReq {
     name: string;
     language: string[];
     timeout: number;
-    maxCpus: number;
     maxMemory: number;
     internetAccess: boolean;
-    dns: { [key: string]: string };
-    maxContainer: number;
-    maxContainerPerIp: number;
 }
 
 export function updateTemplate(id: string, data: UpdateTemplateReq) {

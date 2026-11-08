@@ -2,11 +2,9 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
 	"github.com/wuhan005/Elaina/internal/dbutil"
@@ -45,14 +43,12 @@ type Tpl struct {
 	Name     string         `json:"name"`
 	Language pq.StringArray `gorm:"type:text[]" json:"language"`
 
-	// Limit
-	Timeout           int            `json:"timeout"`
-	MaxCPUs           int64          `json:"maxCpus"`
-	MaxMemory         int64          `json:"maxMemory"`
-	InternetAccess    bool           `json:"internetAccess"`
-	DNS               datatypes.JSON `gorm:"type:jsonb" json:"dns"`
-	MaxContainer      int64          `json:"maxContainer"`
-	MaxContainerPerIP int64          `json:"maxContainerPerIp"`
+	Timeout        int   `json:"timeout"`
+	MaxMemory      int64 `json:"maxMemory"`
+	InternetAccess bool  `json:"internetAccess"`
+
+	// Retain legacy CPU quotas until the user saves the template without them.
+	MaxCPUs int64 `json:"maxCpus"`
 }
 
 var ErrTemplateNotFound = errors.New("template dose not exist")
@@ -100,37 +96,20 @@ func (db *tpls) List(ctx context.Context, options ListTplOptions) ([]*Tpl, int64
 }
 
 type CreateTplOptions struct {
-	Name              string
-	Language          []string
-	Timeout           int
-	MaxCPUs           int64
-	MaxMemory         int64
-	InternetAccess    bool
-	DNS               map[string]string
-	MaxContainer      int64
-	MaxContainerPerIP int64
+	Name           string
+	Language       []string
+	Timeout        int
+	MaxMemory      int64
+	InternetAccess bool
 }
 
 func (db *tpls) Create(ctx context.Context, options CreateTplOptions) (*Tpl, error) {
-	dnsValue, err := json.Marshal(options.DNS)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshal dns")
-	}
-	dns := datatypes.JSON{}
-	if err := dns.Scan(dnsValue); err != nil {
-		return nil, errors.Wrap(err, "marshal DNS JSONs")
-	}
-
 	tpl := &Tpl{
-		Name:              options.Name,
-		Language:          pq.StringArray(options.Language),
-		Timeout:           options.Timeout,
-		MaxCPUs:           options.MaxCPUs,
-		MaxMemory:         options.MaxMemory,
-		InternetAccess:    options.InternetAccess,
-		DNS:               dns,
-		MaxContainer:      options.MaxContainer,
-		MaxContainerPerIP: options.MaxContainerPerIP,
+		Name:           options.Name,
+		Language:       pq.StringArray(options.Language),
+		Timeout:        options.Timeout,
+		MaxMemory:      options.MaxMemory,
+		InternetAccess: options.InternetAccess,
 	}
 
 	if err := db.WithContext(ctx).Create(tpl).Error; err != nil {
@@ -140,16 +119,12 @@ func (db *tpls) Create(ctx context.Context, options CreateTplOptions) (*Tpl, err
 }
 
 type UpdateTplOptions struct {
-	ID                uint
-	Name              string
-	Language          []string
-	Timeout           int
-	MaxCPUs           int64
-	MaxMemory         int64
-	InternetAccess    bool
-	DNS               map[string]string
-	MaxContainer      int64
-	MaxContainerPerIP int64
+	ID             uint
+	Name           string
+	Language       []string
+	Timeout        int
+	MaxMemory      int64
+	InternetAccess bool
 }
 
 func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) error {
@@ -158,24 +133,12 @@ func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) e
 		return errors.Wrap(err, "get by ID")
 	}
 
-	dnsValue, err := json.Marshal(options.DNS)
-	if err != nil {
-		return errors.Wrap(err, "marshal dns")
-	}
-	dns := datatypes.JSON{}
-	if err := dns.Scan(dnsValue); err != nil {
-		return errors.Wrap(err, "marshal DNS JSONs")
-	}
-
 	template.Name = options.Name
 	template.Language = options.Language
 	template.Timeout = options.Timeout
-	template.MaxCPUs = options.MaxCPUs
+	template.MaxCPUs = 0
 	template.MaxMemory = options.MaxMemory
 	template.InternetAccess = options.InternetAccess
-	template.DNS = dns
-	template.MaxContainer = options.MaxContainer
-	template.MaxContainerPerIP = options.MaxContainerPerIP
 
 	if err := db.WithContext(ctx).Save(template).Error; err != nil {
 		return errors.Wrap(err, "save")

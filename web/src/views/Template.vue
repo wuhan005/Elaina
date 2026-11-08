@@ -16,6 +16,12 @@
           :loading="isLoading"
           @page-change="pagination = $event; getTemplates()"
       >
+        <template #name="{row}">
+          <t-space direction="vertical" :size="4">
+            <span>{{ row.name }}</span>
+            <t-tag v-if="row.maxCpus !== 0" theme="warning" variant="outline">Legacy CPU quota: edit required</t-tag>
+          </t-space>
+        </template>
         <template #language="{row}">
           <t-space :size="2">
             <t-tag variant="outline" v-for="item in row.language" v-bind:key="item">
@@ -23,9 +29,15 @@
             </t-tag>
           </t-space>
         </template>
+        <template #timeout="{row}">
+          {{ row.timeout === 0 ? '10 (default)' : row.timeout }}
+        </template>
+        <template #maxMemory="{row}">
+          {{ row.maxMemory === 0 ? '4096 (WASM maximum)' : row.maxMemory }}
+        </template>
         <template #internetAccess="{row}">
           <t-tag :theme="row.internetAccess ? 'primary' : 'danger'" variant="outline">
-            {{ row.internetAccess ? 'Yes' : 'No' }}
+            {{ row.internetAccess ? 'Allowed' : 'Denied' }}
           </t-tag>
         </template>
         <template #createdAt="{row}">
@@ -56,12 +68,9 @@ const COLUMNS: PrimaryTableCol<TableRowData>[] = [
   {title: 'ID', colKey: 'id',},
   {title: 'Name', colKey: 'name',},
   {title: 'Programming Languages', colKey: 'language'},
-  {title: 'Time Limit (s)', colKey: 'timeout'},
-  {title: 'Maximum CPUs', colKey: 'maxCpus'},
-  {title: 'Maximum Memory (MB)', colKey: 'maxMemory'},
-  {title: 'Internet Access', colKey: 'internetAccess'},
-  {title: 'Maximum Number of Containers', colKey: 'maxContainer'},
-  {title: 'Maximum Number of Containers per IP', colKey: 'maxContainerPerIp'},
+  {title: 'Execution Timeout (s)', colKey: 'timeout'},
+  {title: 'WASM Linear Memory (MiB)', colKey: 'maxMemory'},
+  {title: 'Network Permission', colKey: 'internetAccess'},
   {title: 'Created At', ellipsis: true, width: 180, colKey: 'createdAt'},
   {title: 'Operators', align: 'left', fixed: 'right', width: 160, colKey: 'op'},
 ];

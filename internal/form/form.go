@@ -38,6 +38,12 @@ func Bind(model interface{}) flamego.Handler {
 			_ = ctx.Error(http.StatusBadRequest, "%s", errors[0].Error())
 			return
 		}
+		if validator, ok := obj.Interface().(interface{ Validate() error }); ok {
+			if err := validator.Validate(); err != nil {
+				_ = ctx.Error(http.StatusBadRequest, "%s", err.Error())
+				return
+			}
+		}
 
 		// Validation passed.
 		ctx.Map(obj.Elem().Interface())

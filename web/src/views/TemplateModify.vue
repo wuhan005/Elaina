@@ -7,6 +7,12 @@
 
           <t-row class="row-gap" :gutter="[32,24]">
             <t-col :span="12">
+              <t-alert theme="info" message="Templates control execution time, WASM linear memory and network permission. Per-task CPU quotas, concurrency limits and custom DNS are unavailable."/>
+            </t-col>
+            <t-col v-if="legacyMaxCpus !== 0" :span="12">
+              <t-alert theme="warning" :message="`This template has a legacy CPU quota of ${legacyMaxCpus} and cannot run in WASM. Saving removes this unsupported quota; no per-task CPU quota will be enforced.`"/>
+            </t-col>
+            <t-col :span="12">
               <t-form-item label="Name" name="name">
                 <t-input v-model="formData.name"/>
               </t-form-item>
@@ -21,33 +27,18 @@
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Time Limit (s)" name="timeout" help="Includes compilation and startup. Start with 60 seconds for C/Go compiler cold starts.">
-                <t-input-number v-model="formData.timeout" :min="0" :max="60"/>
+              <t-form-item label="Execution Timeout (s)" name="timeout" help="0 uses the 10-second default. Includes compilation and startup; 60 seconds is recommended for C/Go cold starts.">
+                <t-input-number v-model="formData.timeout" :min="0" :max="60" :decimal-places="0"/>
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Maximum CPUs" name="maxCpus" help="Set to 0 for all languages. WASM has no per-task CPU quota.">
-                <t-input-number v-model="formData.maxCpus" :min="0" :max="10"/>
+              <t-form-item label="WASM Linear Memory (MiB)" name="maxMemory" help="0 uses the 4096 MiB WASM maximum. Applies separately to each compile, link and execution stage, not total process memory. Start with 512 MiB for C/Go, 128 MiB for interpreters.">
+                <t-input-number v-model="formData.maxMemory" :min="0" :max="4096" :decimal-places="0"/>
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="Maximum Memory (MiB)" name="maxMemory" help="For WASM this limits linear memory only, not total process memory. Start with 512 MiB for C/Go, 128 MiB for interpreters.">
-                <t-input-number v-model="formData.maxMemory" :min="6" :max="1024"/>
-              </t-form-item>
-            </t-col>
-            <t-col :span="12">
-              <t-form-item label="Internet Access" name="internetAccess" help="Go's default HTTP client supports DNS/HTTPS. C supports IPv4 TCP/DNS; TLS libraries are not bundled. PHP supports IPv4 TCP/HTTP only. Python/JavaScript networking is unavailable.">
+              <t-form-item label="Network Permission" name="internetAccess" help="Off blocks sockets and DNS. On permits supported networking: Go HTTP/DNS/HTTPS, C IPv4 TCP/DNS without bundled TLS, PHP IPv4 TCP/HTTP. Python/JavaScript networking is unavailable. Compilation is always offline.">
                 <t-switch v-model="formData.internetAccess"></t-switch>
-              </t-form-item>
-            </t-col>
-            <t-col :span="12">
-              <t-form-item label="Maximum Number of Containers" name="maxContainer">
-                <t-input-number v-model="formData.maxContainer" :min="0" :max="1000"/>
-              </t-form-item>
-            </t-col>
-            <t-col :span="12">
-              <t-form-item label="Maximum Number of Containers per IP" name="maxContainerPerIp">
-                <t-input-number v-model="formData.maxContainerPerIp" :min="0" :max="100"/>
               </t-form-item>
             </t-col>
           </t-row>
@@ -89,18 +80,20 @@ const route = useRoute()
 const router = useRouter()
 const mode = ref<'create' | 'edit'>(route.name === 'createTemplate' ? 'create' : 'edit')
 const id = ref<string | undefined>(route.params.id as string | undefined)
+const legacyMaxCpus = ref(0)
 
 const FORM_RULES: FormProps['rules'] = {
   name: [{required: true, message: 'Name is required'}],
   language: [{required: true, message: 'Programming Languages are required'}],
-  timeout: [{required: true, message: 'Time Limit is required'}],
-  maxCpus: [{required: true, message: 'Maximum CPUs is required'}],
-  maxMemory: [{required: true, message: 'Maximum Memory is required'}],
-  maxContainer: [{required: true, message: 'Maximum Number of Containers is required'}],
-  maxContainerPerIp: [{required: true, message: 'Maximum Number of Containers per IP is required'}],
+  timeout: [{required: true, message: 'Execution Timeout is required'},
+    {validator: value => Number.isInteger(value) && value >= 0 && value <= 60, message: 'Use a whole number from 0 to 60'}],
+  maxMemory: [{required: true, message: 'WASM Linear Memory is required'},
+    {validator: value => Number.isInteger(value) && value >= 0 && value <= 4096, message: 'Use a whole number from 0 to 4096'}],
 };
 
-const formData = ref<CreateTemplateReq | UpdateTemplateReq>({language: [] as string[]} as CreateTemplateReq)
+const formData = ref<CreateTemplateReq | UpdateTemplateReq>({
+  name: '', language: [], timeout: 60, maxMemory: 512, internetAccess: false,
+})
 const onSubmit = (ctx: SubmitContext) => {
   if (ctx.validateResult === true) {
     if (mode.value === 'create') {
@@ -110,6 +103,7 @@ const onSubmit = (ctx: SubmitContext) => {
       })
     } else {
       updateTemplate(id.value, formData.value).then(res => {
+        legacyMaxCpus.value = 0
         MessagePlugin.success(res)
       })
     }
@@ -123,16 +117,13 @@ const onCancel = () => {
 onMounted(() => {
   if (mode.value === 'edit') {
     getTemplate(id.value).then((res: Template) => {
+      legacyMaxCpus.value = res.maxCpus
       formData.value = {
         name: res.name,
         language: res.language,
         timeout: res.timeout,
-        maxCpus: res.maxCpus,
         maxMemory: res.maxMemory,
         internetAccess: res.internetAccess,
-        dns: res.dns,
-        maxContainer: res.maxContainer,
-        maxContainerPerIp: res.maxContainerPerIp,
       }
     })
   }

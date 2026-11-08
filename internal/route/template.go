@@ -70,15 +70,11 @@ func (h *TemplateHandler) Get(ctx context.Context, template *db.Tpl) error {
 
 func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) error {
 	template, err := db.Tpls.Create(ctx.Request().Context(), db.CreateTplOptions{
-		Name:              f.Name,
-		Language:          f.Language,
-		Timeout:           f.Timeout,
-		MaxCPUs:           f.MaxCPUs,
-		MaxMemory:         f.MaxMemory,
-		InternetAccess:    f.InternetAccess,
-		DNS:               f.DNS,
-		MaxContainer:      f.MaxContainer,
-		MaxContainerPerIP: f.MaxContainerPerIP,
+		Name:           f.Name,
+		Language:       f.Language,
+		Timeout:        f.Timeout,
+		MaxMemory:      f.MaxMemory,
+		InternetAccess: f.InternetAccess,
 	})
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create template")
@@ -91,15 +87,11 @@ func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.U
 	templateID := template.ID
 
 	if err := db.Tpls.Update(ctx.Request().Context(), templateID, db.UpdateTplOptions{
-		Name:              f.Name,
-		Language:          f.Language,
-		Timeout:           f.Timeout,
-		MaxCPUs:           f.MaxCPUs,
-		MaxMemory:         f.MaxMemory,
-		InternetAccess:    f.InternetAccess,
-		DNS:               f.DNS,
-		MaxContainer:      f.MaxContainer,
-		MaxContainerPerIP: f.MaxContainerPerIP,
+		Name:           f.Name,
+		Language:       f.Language,
+		Timeout:        f.Timeout,
+		MaxMemory:      f.MaxMemory,
+		InternetAccess: f.InternetAccess,
 	}); err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
 			return ctx.Error(http.StatusNotFound, "Template dose not exist")
