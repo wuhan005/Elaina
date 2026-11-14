@@ -1,0 +1,9 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "./styles/globals.css";
+
+/* BoardUI 主题从这两个变量读取字体族。 */
+:root {
+  --font-inter: "Inter Variable";
+  --font-mono-source: "JetBrains Mono Variable";
+}

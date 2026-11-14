@@ -1,26 +1,27 @@
 import {defineConfig} from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'node:path';
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'node:path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [vue()],
-
-    css: {
-        preprocessorOptions: {
-            less: {
-                modifyVars: {
-                    hack: `true; @import (reference) "${path.resolve('src/style/variables.less')}";`,
-                },
-                math: 'strict',
-                javascriptEnabled: true,
-            },
-        },
-    },
+    plugins: [react(), tailwindcss()],
 
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+        },
+    },
+
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    react: ['react', 'react-dom', 'react-router'],
+                    'react-aria': ['react-aria-components'],
+                    motion: ['motion'],
+                },
+            },
         },
     },
 
