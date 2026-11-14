@@ -30,7 +30,7 @@ func (f CreateTemplate) Validate() error {
 		return errors.New("WASM does not support per-task CPU quotas; omit maxCpus or set it to 0")
 	}
 	if f.MaxContainer != 0 || f.MaxContainerPerIP != 0 {
-		return errors.New("container count limits are no longer supported; concurrency limits are not enforced")
+		return errors.New("container count limits are no longer supported; configure global concurrency limits in app.wasm_limits")
 	}
 	if len(f.DNS) != 0 {
 		return errors.New("custom DNS settings are not supported; omit dns or use an empty object")

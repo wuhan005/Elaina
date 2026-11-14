@@ -19,7 +19,7 @@
         <template #name="{row}">
           <t-space direction="vertical" :size="4">
             <span>{{ row.name }}</span>
-            <t-tag v-if="row.maxCpus !== 0" theme="warning" variant="outline">Legacy CPU quota: edit required</t-tag>
+            <t-tag v-if="row.maxCpu !== 0" theme="warning" variant="outline">Legacy CPU quota: edit required</t-tag>
           </t-space>
         </template>
         <template #language="{row}">
@@ -33,7 +33,7 @@
           {{ row.timeout === 0 ? '10 (default)' : row.timeout }}
         </template>
         <template #maxMemory="{row}">
-          {{ row.maxMemory === 0 ? '4096 (WASM maximum)' : row.maxMemory }}
+          {{ row.maxMemory === 0 ? 'Server ceiling' : `${row.maxMemory} (capped by server)` }}
         </template>
         <template #internetAccess="{row}">
           <t-tag :theme="row.internetAccess ? 'primary' : 'danger'" variant="outline">

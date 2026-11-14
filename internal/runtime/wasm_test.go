@@ -118,6 +118,7 @@ func TestWASMInterpreters(t *testing.T) {
 	original := config.App
 	t.Cleanup(func() { config.App = original })
 	config.App.WASMRuntimeDir = dir
+	config.App.WASMLimits.MaxConcurrentTasks = 2
 	config.App.WASMCacheDir = t.TempDir()
 	if cache := os.Getenv("WASM_TEST_CACHE"); cache != "" {
 		config.App.WASMCacheDir = cache
@@ -217,6 +218,29 @@ os.setTimeout(() => { console.log(std.loadFile('data.txt')); std.err.puts('stder
 			}
 		})
 	}
+
+	t.Run("Python file quota", func(t *testing.T) {
+		limits := config.App.WASMLimits
+		t.Cleanup(func() { config.App.WASMLimits = limits })
+		config.App.WASMLimits.MaxFileBytes = 4096
+		config.App.WASMLimits.MaxFiles = 2
+		output := run(t, "python", `import os
+with open('data', 'wb', buffering=0) as f:
+    assert f.write(b'x' * 4096) == 4096
+    try:
+        f.write(b'x')
+        raise AssertionError('file quota bypassed')
+    except OSError: pass
+try:
+    open('extra', 'wb')
+    raise AssertionError('file count bypassed')
+except OSError: pass
+assert os.stat('data').st_size == 4096
+print('quota-ok')`, false, 128, 60)
+		if output.Error != "" || strings.TrimSpace(output.Stdout) != "quota-ok" {
+			t.Fatalf("Python file quotas: %+v", output)
+		}
+	})
 
 	t.Run("PHP networking", func(t *testing.T) {
 		var requests atomic.Int64

@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/flamego/template"
+	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 
+	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/dto"
@@ -42,17 +44,22 @@ func (h *RunnerHandler) Runner(ctx context.Context) error {
 	return nil
 }
 
-func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t template.Template, data template.Data) {
+func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t template.Template, data template.Data) error {
 	languages := sandbox.Template.Language
 	selectedLanguage := ctx.Query("l")
 	if !lo.Contains(languages, selectedLanguage) {
 		selectedLanguage = languages[0]
 	}
 
-	_ = ctx.Request().ParseForm()
+	if err := ctx.Request().ParseForm(); err != nil {
+		return ctx.Error(http.StatusBadRequest, "Failed to parse form")
+	}
 	code := ctx.Request().PostForm.Get("c")
 	if code == "" {
 		code = sandbox.Placeholder
+	}
+	if int64(len(code)) > config.App.WASMLimits.MaxSourceBytes {
+		return ctx.Error(http.StatusRequestEntityTooLarge, "%s", runtime.ErrSourceLimit)
 	}
 
 	data["Sandbox"] = dto.ToSandbox(sandbox)
@@ -61,6 +68,7 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 	data["Code"] = code
 
 	t.HTML(http.StatusOK, "sandbox")
+	return nil
 }
 
 // Execute execute code in a sandbox.
@@ -74,6 +82,8 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 // @Param code formData string false "Source code"
 // @Success 200 {object} dto.Response[ExecutionResult]
 // @Failure 400 {object} dto.ErrorResponse "Invalid request"
+// @Failure 413 {object} dto.ErrorResponse "Request body or source exceeds configured limits"
+// @Failure 503 {object} dto.ErrorResponse "Global task limit reached"
 // @Success 302 "Sandbox not found; redirect to /"
 // @Failure 500 {object} dto.ErrorResponse "Internal server error"
 // @ID executeCode
@@ -91,8 +101,6 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 	}
 	code := ctx.Request().PostForm.Get("code")
 
-	// TODO: Rate limit
-
 	startAt := time.Now().UnixNano()
 
 	r, err := runtime.NewTask(ctx.Request().Context(), runtime.NewTaskOptions{
@@ -101,12 +109,18 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 		Code:     []byte(code),
 	})
 	if err != nil {
+		if errors.Is(err, runtime.ErrSourceLimit) {
+			return ctx.Error(http.StatusRequestEntityTooLarge, "%s", err)
+		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to create task: %v", err)
 	}
 
 	output, err := r.Run(ctx.Request().Context())
 	if err != nil {
+		if errors.Is(err, runtime.ErrTaskLimit) {
+			return ctx.Error(http.StatusServiceUnavailable, "%s", err)
+		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to run task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to run task: %v", err)
 	}

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -22,6 +23,12 @@ import (
 )
 
 const wasmOutputLimit = 1024 * 1024
+
+var (
+	ErrTaskLimit    = errors.New("WASM task limit reached; try again later")
+	ErrSourceLimit  = errors.New("source code exceeds the configured size limit")
+	activeWASMTasks atomic.Int64
+)
 
 var _ ExecRuntime = (*WASMTask)(nil)
 
@@ -48,6 +55,10 @@ func NewWASMTask(_ context.Context, options NewWASMTaskOptions) (*WASMTask, erro
 		return nil, errors.New("missing template")
 	}
 
+	if int64(len(options.Code)) > config.App.WASMLimits.MaxSourceBytes {
+		return nil, ErrSourceLimit
+	}
+
 	if options.Template.MaxMemory < 0 || options.Template.MaxMemory > 4096 {
 		return nil, errors.New("WASM memory limit must be between 0 and 4096 MiB")
 	}
@@ -71,6 +82,24 @@ func NewWASMTask(_ context.Context, options NewWASMTaskOptions) (*WASMTask, erro
 }
 
 func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if int64(len(t.code)) > config.App.WASMLimits.MaxSourceBytes {
+		return nil, ErrSourceLimit
+	}
+
+	for {
+		active := activeWASMTasks.Load()
+		if active >= int64(config.App.WASMLimits.MaxConcurrentTasks) {
+			return nil, ErrTaskLimit
+		}
+		if activeWASMTasks.CompareAndSwap(active, active+1) {
+			break
+		}
+	}
+	defer activeWASMTasks.Add(-1)
+
 	timeout := t.template.Timeout
 	if timeout == 0 {
 		timeout = 10

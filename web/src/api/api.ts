@@ -79,8 +79,7 @@ export interface Template {
   id: number;
   internetAccess: boolean;
   language?: string[] | null;
-  /** Keep the legacy CPU quota visible until the template is migrated. */
-  maxCpus: number;
+  maxCpu: number;
   maxMemory: number;
   name: string;
   timeout: number;
@@ -432,7 +431,7 @@ export class HttpClient<SecurityDataType = unknown> {
  * @baseUrl /
  * @contact
  *
- * Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg.
+ * Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg. All HTTP bodies are capped by app.wasm_limits.max_request_bytes; oversized bodies return HTTP 413.
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -615,7 +614,7 @@ export class Api<
       }),
 
     /**
-     * @description Zero timeout uses 10 seconds; zero memory uses 4096 MiB of WASM linear memory. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+     * @description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.
      *
      * @tags Templates
      * @name UpdateTemplate
@@ -682,7 +681,7 @@ export class Api<
       }),
 
     /**
-     * @description Zero timeout uses 10 seconds; zero memory uses 4096 MiB of WASM linear memory. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+     * @description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.
      *
      * @tags Templates
      * @name CreateTemplate

@@ -50,7 +50,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 	if http {
 		// Install the WASI dialer for the standard HTTP client's default transport.
 		bridge := []byte("package main\nimport _ \"github.com/stealthrocket/net/http\"\n")
-		if err := os.WriteFile(filepath.Join(dir, "http_bridge.go"), bridge, 0600); err != nil {
+		if err := writeWASMWorkspaceFile(dir, "http_bridge.go", bridge); err != nil {
 			return errors.Wrap(err, "write Go HTTP bridge")
 		}
 		args = append(args, "/http_bridge.go")
@@ -76,7 +76,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 			return err
 		}
 		if len(certificates) > 0 {
-			if err := os.WriteFile(filepath.Join(dir, ".elaina-ca.pem"), certificates, 0600); err != nil {
+			if err := writeWASMWorkspaceFile(dir, ".elaina-ca.pem", certificates); err != nil {
 				return errors.Wrap(err, "write Go root certificates")
 			}
 			runtimeEnv = []string{"SSL_CERT_FILE=/.elaina-ca.pem"}

@@ -115,6 +115,29 @@ int main(void) {
 		}
 	})
 
+	t.Run("compiler file quota", func(t *testing.T) {
+		limits := config.App.WASMLimits
+		t.Cleanup(func() { config.App.WASMLimits = limits })
+		config.App.WASMLimits.MaxFileBytes = 128
+		workspace := t.TempDir()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		output, err := compile(t, ctx, workspace, "int main(void) { return 0; }", 512)
+		if err == nil || !strings.Contains(err.Error(), "C clang") {
+			t.Fatalf("compiler file quota was not enforced: %v, %s", err, output.buffer.String())
+		}
+		entries, err := os.ReadDir(workspace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil || info.Size() > 128 {
+				t.Fatalf("compiler exceeded file quota: %s, %v", entry.Name(), err)
+			}
+		}
+	})
+
 	t.Run("HTTP and DNS", func(t *testing.T) {
 		var requests atomic.Int64
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

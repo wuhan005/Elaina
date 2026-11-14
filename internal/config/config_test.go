@@ -5,6 +5,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,6 +51,52 @@ postgres:
 				t.Fatal("configuration does not match the file and defaults")
 			}
 		})
+	}
+}
+
+func TestWASMLimits(t *testing.T) {
+	previous := App
+	t.Cleanup(func() { App = previous })
+	base := "app:\n  password_hash: " + testPasswordHash + "\n"
+	for _, test := range []struct{ name, settings string }{
+		{"zero concurrency", "max_concurrent_tasks: 0"},
+		{"negative concurrency", "max_concurrent_tasks: -1"},
+		{"zero memory", "max_memory_mib: 0"},
+		{"excessive memory", "max_memory_mib: 4097"},
+		{"zero files", "max_files: 0"},
+		{"zero body", "max_request_bytes: 0"},
+		{"overflow body", "max_request_bytes: 9223372036854775807"},
+		{"zero source", "max_source_bytes: 0"},
+		{"negative workspace", "max_workspace_bytes: -1"},
+		{"zero file", "max_file_bytes: 0"},
+		{"source exceeds body", "max_request_bytes: 1"},
+		{"source exceeds file", "max_file_bytes: 1"},
+		{"file exceeds workspace", "max_workspace_bytes: 1"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			err := Init(writeConfig(t, base+"  wasm_limits:\n    "+test.settings+"\n"))
+			if err == nil || !strings.Contains(err.Error(), "app.wasm_limits") {
+				t.Fatalf("expected limits validation error, got %v", err)
+			}
+		})
+	}
+
+	custom := WASMLimits{
+		MaxConcurrentTasks: 3,
+		MaxMemoryMiB:       128,
+		MaxRequestBytes:    4096,
+		MaxSourceBytes:     1024,
+		MaxWorkspaceBytes:  8192,
+		MaxFileBytes:       2048,
+		MaxFiles:           16,
+	}
+	settings := fmt.Sprintf("  wasm_limits:\n    max_concurrent_tasks: %d\n    max_memory_mib: %d\n    max_request_bytes: %d\n    max_source_bytes: %d\n    max_workspace_bytes: %d\n    max_file_bytes: %d\n    max_files: %d\n",
+		custom.MaxConcurrentTasks, custom.MaxMemoryMiB, custom.MaxRequestBytes, custom.MaxSourceBytes, custom.MaxWorkspaceBytes, custom.MaxFileBytes, custom.MaxFiles)
+	if err := Init(writeConfig(t, base+settings)); err != nil || App.WASMLimits != custom {
+		t.Fatalf("custom limits: %+v, %v", App.WASMLimits, err)
+	}
+	if err := Init(writeConfig(t, base)); err != nil || App.WASMLimits != defaultWASMLimits {
+		t.Fatalf("default limits: %+v, %v", App.WASMLimits, err)
 	}
 }
 

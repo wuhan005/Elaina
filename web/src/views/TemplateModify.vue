@@ -7,7 +7,7 @@
 
           <t-row class="row-gap" :gutter="[32,24]">
             <t-col :span="12">
-              <t-alert theme="info" message="Templates control execution time, WASM linear memory and network permission. Per-task CPU quotas, concurrency limits and custom DNS are unavailable."/>
+              <t-alert theme="info" message="Templates control execution time, WASM linear memory and network permission. Server configuration caps memory, global concurrency, input and workspace usage. Per-task CPU quotas and custom DNS are unavailable."/>
             </t-col>
             <t-col v-if="legacyMaxCpus !== 0" :span="12">
               <t-alert theme="warning" :message="`This template has a legacy CPU quota of ${legacyMaxCpus} and cannot run in WASM. Saving removes this unsupported quota; no per-task CPU quota will be enforced.`"/>
@@ -32,7 +32,7 @@
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item label="WASM Linear Memory (MiB)" name="maxMemory" help="0 uses the 4096 MiB WASM maximum. Applies separately to each compile, link and execution stage, not total process memory. Start with 512 MiB for C/Go, 128 MiB for interpreters.">
+              <t-form-item label="WASM Linear Memory (MiB)" name="maxMemory" help="0 inherits the server ceiling; nonzero values are capped by it. Applies separately to each compile, link and execution stage, not total process memory. Start with 512 MiB for C/Go, 128 MiB for interpreters.">
                 <t-input-number v-model="formData.maxMemory" :min="0" :max="4096" :decimal-places="0"/>
               </t-form-item>
             </t-col>
@@ -116,7 +116,7 @@ onMounted(() => {
       id: Number(id.value),
     }).then(res => {
       const template = res.data.data
-      legacyMaxCpus.value = template.maxCpus
+      legacyMaxCpus.value = template.maxCpu
 
       formData.value = {
         name: template.name,

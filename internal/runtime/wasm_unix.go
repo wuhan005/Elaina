@@ -20,6 +20,8 @@ import (
 	"github.com/stealthrocket/wazergo/types"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
+
+	"github.com/wuhan005/Elaina/internal/config"
 )
 
 type wasmModuleOptions struct {
@@ -66,8 +68,13 @@ func (t *WASMTask) runWASM(ctx context.Context, runtimeDir, dir string, stdout, 
 
 func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCache, options wasmModuleOptions, stdout, stderr *wasmOutputBuffer) error {
 	memory := t.template.MaxMemory
-	if memory == 0 {
-		memory = 4096
+	if memory == 0 || memory > config.App.WASMLimits.MaxMemoryMiB {
+		memory = config.App.WASMLimits.MaxMemoryMiB
+	}
+
+	quota, err := newWASMQuotaSystem(options.dir)
+	if err != nil {
+		return err
 	}
 
 	r := &wasmRuntime{
@@ -108,10 +115,12 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		WithDecorators(wazergo.DecoratorFunc(wasmSocketABI)).
 		WithWrappers(func(system wasi.System) wasi.System {
 			host = system.(*wasmunix.System)
+			quota.host = host
+			quota.System = &wasmNetworkSystem{
+				System: host,
+			}
 			return &wasmSystem{
-				System: &wasmNetworkSystem{
-					System: host,
-				},
+				System:   quota,
 				internet: options.internet,
 				preopens: preopens,
 				outputs:  map[wasi.FD]*wasmOutputBuffer{1: stdout, 2: stderr},

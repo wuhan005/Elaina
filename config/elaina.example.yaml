@@ -6,6 +6,19 @@ app:
   wasm_runtime_dir: .wasm
   # Installed interpreters and compilers are warmed before the server starts listening.
   wasm_cache_dir: .wasm/cache # Must be writable by the server.
+  wasm_limits:
+    # Shared by all sandboxes, including compilation; excess tasks receive HTTP 503.
+    max_concurrent_tasks: 1
+    # Per-stage WASM linear memory ceiling, not total process memory. Zero templates inherit it.
+    max_memory_mib: 512
+    # HTTP body limit includes form/JSON encoding; source bytes are checked after decoding.
+    max_request_bytes: 4194304
+    max_source_bytes: 1048576
+    # Per-task workspace quotas include source, compiler output and runtime files.
+    max_workspace_bytes: 67108864
+    max_file_bytes: 33554432
+    # Count files, hard links and directories; open unlinked files remain charged until closed.
+    max_files: 256
 
 postgres:
   dsn: "postgres://postgres:change-me@127.0.0.1:5432/elaina?sslmode=disable"

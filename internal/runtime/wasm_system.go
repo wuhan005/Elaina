@@ -59,6 +59,28 @@ func (s *wasmSystem) FDClose(ctx context.Context, fd wasi.FD) wasi.Errno {
 	return errno
 }
 
+func (s *wasmSystem) FDRenumber(ctx context.Context, from, to wasi.FD) wasi.Errno {
+	// wasi-go grows its descriptor table to the requested index without a bound.
+	if to < 0 || to >= 256 {
+		return wasi.EBADF
+	}
+	if from == to {
+		_, errno := s.FDStatGet(ctx, from)
+		return errno
+	}
+
+	errno := s.System.FDRenumber(ctx, from, to)
+	if errno == wasi.ESUCCESS {
+		output := s.outputs[from]
+		delete(s.outputs, from)
+		delete(s.outputs, to)
+		if output != nil {
+			s.outputs[to] = output
+		}
+	}
+	return errno
+}
+
 func validWASMPath(path string) bool {
 	if path == "" || strings.HasPrefix(path, "/") || strings.ContainsRune(path, 0) {
 		return false

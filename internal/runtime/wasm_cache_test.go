@@ -123,6 +123,7 @@ func TestWASMCacheInitializationFailure(t *testing.T) {
 
 func TestWASMWarmCacheIsolation(t *testing.T) {
 	configureWASMCacheTest(t)
+	config.App.WASMLimits.MaxConcurrentTasks = 8
 	// Assert fresh memory and globals, mutate the global, then grow past the one-MiB limit.
 	body := []byte{
 		0x3f, 0, 0x41, 1, 0x47, 0x04, 0x40, 0x00, 0x0b,
