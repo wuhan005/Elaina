@@ -95,6 +95,7 @@ body.is-resizing {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     height: 100%;
+    border: 1px solid var(--border);
 }
 
 /* Toolbar */
@@ -151,8 +152,12 @@ body.is-resizing {
     white-space: nowrap;
 }
 
+.badge-language,
+.btn {
+    height: 34px;
+}
+
 .badge-language {
-    height: 28px;
     padding: 0 10px;
     font-size: 13px;
 }
@@ -193,7 +198,6 @@ body.is-resizing {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 34px;
     padding: 0 12px;
     border: 1px solid transparent;
     border-radius: 10px;
@@ -327,8 +331,9 @@ body.is-resizing .splitter::after {
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 40px;
-    padding: 0 16px;
+    height: 32px;
+    /* Balance the space under the splitter above the header. */
+    padding: 0 16px 8px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -465,7 +470,7 @@ body.is-resizing .splitter::after {
     color: var(--text);
     font-family: var(--font-mono);
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.4;
 }
 
 .cm-s-elaina .CodeMirror-gutters {
@@ -491,7 +496,7 @@ body.is-resizing .splitter::after {
 }
 
 .cm-s-elaina .CodeMirror-lines {
-    padding: 12px 0;
+    padding: 0 0 12px;
 }
 
 .cm-s-elaina .cm-keyword { color: var(--syn-keyword); }
