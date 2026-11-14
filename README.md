@@ -1,62 +1,20 @@
-# Elaina ![Go](https://github.com/wuhan005/Elaina/workflows/Go/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/wuhan005/Elaina)](https://goreportcard.com/report/github.com/wuhan005/Elaina) ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/wuhan005/elaina) ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/wuhan005/elaina)
+<p align="center"><img src="web/public/logo.png" alt="Elaina logo" width="96" /></p>
+<h1 align="center">Elaina</h1>
+<p align="center">A WebAssembly-powered remote code runner for C, Go, PHP, Python, and JavaScript.</p>
+<p align="center"><a href="README_zh.md">简体中文</a></p>
 
-<img align="right" src="elaina.gif" width="40%"/>
-Container-based remote code runner.
+Create a sandbox and share its link. Anyone with the link can run code in the browser or call `POST /r/{uid}/execute`. See the [API spec](docs/swagger.yaml).
 
-[简体中文](https://github.com/wuhan005/Elaina/blob/master/README_zh.md)
+## Quick start
 
-## Start
+Send this to your agent.
 
-### Step 1: Install dependencies
+```text
+Set up and run Elaina on this machine (https://github.com/wuhan005/Elaina). If the repository is already open, use the current checkout.
 
-* [Docker](https://docs.docker.com/get-docker/) (v20.10.0 or higher)
-* [Postgres](https://www.postgresql.org/download/) (v13.1 or higher)
+Check the build dependencies and PostgreSQL. Run scripts/download-wasm.sh and scripts/build-wasm-go.sh to set up the runtimes, then build the frontend with pnpm and the server with Go. If there's no config yet, use config/elaina.example.yaml to set the database connection and the bcrypt hash for the initial admin password.
 
-### Step 2: Pull internal docker images
-
-Use `docker pull` command to pull the images from DockerHub before you start running the Elaina. This operation only
-needs to be performed once.
-
-```bash
-docker pull glot/php:latest
-docker pull glot/python:latest
-docker pull glot/golang:latest
-docker pull glot/javascript:latest
-docker pull glot/c:latest
+Start Elaina, check that the page loads, then tell me where to open it and how to sign in.
 ```
 
-### Step 3: Build and start the Elaina server
-
-#### Build Elaina
-
-```bash
-git clone git@github.com:wuhan005/Elaina.git
-
-# Build frontend
-cd frontend/ && yarn install && yarn build
-
-# Build backend
-go build .
-```
-
-#### Set environment variables.
-
-```bash
-export APP_PASSWORD=<REDACTED>
-export RUNTIME_MODE=docker
-export POSTGRES_DSN=postgres://postgres:<REDACTED>@127.0.0.1:5432/elaina
-```
-
-#### Run the Elaina server.
-
-```bash
-./Elaina
-```
-
-### Step 4: Have fun!
-
-Visit `http://<your-host>:8080/` to login to the manager panel.
-
-## License
-
-MIT License
+[MIT License](LICENSE)

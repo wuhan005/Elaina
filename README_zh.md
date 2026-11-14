@@ -1,59 +1,18 @@
-# Elaina ![Go](https://github.com/wuhan005/Elaina/workflows/Go/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/wuhan005/Elaina)](https://goreportcard.com/report/github.com/wuhan005/Elaina) ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/wuhan005/elaina) ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/wuhan005/elaina)
+<p align="center"><img src="web/public/logo.png" alt="Elaina Logo" width="96" /></p>
+<h1 align="center">Elaina</h1>
+<p align="center">基于 WebAssembly 的远程代码运行器。</p>
+<p align="center"><a href="README.md">English</a></p>
 
-<img align="right" src="elaina.gif" width="40%"/>
-基于容器的远程代码运行器。
+## 快速开始
 
-## 开始使用
+把下面这段话发给你的 Agent。
 
-### 步骤 1: 安装依赖
+```text
+帮我在本机装好并启动 Elaina（https://github.com/wuhan005/Elaina）。如果已经在项目目录里，就用当前版本。
 
-* [Docker](https://docs.docker.com/get-docker/) (v20.10.0 或更高)
-* [Postgres](https://www.postgresql.org/download/) (v13.1 或更高)
+检查构建依赖和 PostgreSQL。用 scripts/download-wasm.sh 和 scripts/build-wasm-go.sh 准备运行时，再用 pnpm 构建前端、用 Go 构建服务。如果还没有配置，按 config/elaina.example.yaml 填好数据库连接和初始管理员密码的 bcrypt 哈希。
 
-### 步骤 2: 拉取内置 Docker 镜像
-
-在运行 Elaina 前，请使用 `docker pull` 命令从 DockerHub 拉取这些镜像。该操作只需执行一次即可。
-
-```bash
-docker pull glot/php:latest
-docker pull glot/python:latest
-docker pull glot/golang:latest
-docker pull glot/javascript:latest
-docker pull glot/c:latest
+启动服务，确认页面能打开，然后告诉我访问地址和怎么登录。
 ```
 
-### Step 3: 编译并启动 Elaina
-
-#### 编译 Elaina
-
-```bash
-git clone git@github.com:wuhan005/Elaina.git
-
-# 编译前端
-cd frontend/ && yarn install && yarn build
-
-# 编译后端
-go build .
-```
-
-#### 设置环境变量
-
-```bash
-export APP_PASSWORD=<REDACTED>
-export RUNTIME_MODE=docker
-export POSTGRES_DSN=postgres://postgres:<REDACTED>@127.0.0.1:5432/elaina
-```
-
-#### 运行 Elaina
-
-```bash
-./Elaina
-```
-
-### 步骤 4: 走你！
-
-浏览器访问 `http://<your-host>:8080/` 来登录管理员面板。
-
-## 开源协议
-
-MIT License
+[MIT 许可证](LICENSE)
