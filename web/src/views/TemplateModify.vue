@@ -7,10 +7,7 @@
 
           <t-row class="row-gap" :gutter="[32,24]">
             <t-col :span="12">
-              <t-alert theme="info" message="Templates control execution time, WASM linear memory and network permission. Server configuration caps memory, global concurrency, input and workspace usage. Per-task CPU quotas and custom DNS are unavailable."/>
-            </t-col>
-            <t-col v-if="legacyMaxCpus !== 0" :span="12">
-              <t-alert theme="warning" :message="`This template has a legacy CPU quota of ${legacyMaxCpus} and cannot run in WASM. Saving removes this unsupported quota; no per-task CPU quota will be enforced.`"/>
+              <t-alert theme="info" message="Server configuration caps memory, global concurrency, input and workspace usage."/>
             </t-col>
             <t-col :span="12">
               <t-form-item label="Name" name="name">
@@ -74,7 +71,6 @@ const route = useRoute()
 const router = useRouter()
 const mode = route.name === 'createTemplate' ? 'create' : 'edit'
 const id = Number(route.params.id)
-const legacyMaxCpus = ref(0)
 
 const FORM_RULES: FormProps['rules'] = {
   name: [{required: true, message: 'Name is required'}],
@@ -100,7 +96,6 @@ const onSubmit = (ctx: SubmitContext) => {
     })
   } else {
     client.templates.updateTemplate({id}, formData.value).then(res => {
-      legacyMaxCpus.value = 0
       MessagePlugin.success(res.data.data)
     })
   }
@@ -117,7 +112,6 @@ onMounted(() => {
 
   client.templates.getTemplate({id}).then(res => {
     const template = res.data.data
-    legacyMaxCpus.value = template.maxCpu
     formData.value = {
       name: template.name,
       language: template.language,

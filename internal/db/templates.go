@@ -46,7 +46,6 @@ type Tpl struct {
 	Language pq.StringArray `gorm:"type:text[]"`
 
 	Timeout        int
-	MaxCPU         int64
 	MaxMemory      int64
 	InternetAccess bool
 }
@@ -121,7 +120,6 @@ type UpdateTplOptions struct {
 	Name           string
 	Language       []string
 	Timeout        int
-	MaxCPU         int64
 	MaxMemory      int64
 	InternetAccess bool
 }
@@ -129,12 +127,11 @@ type UpdateTplOptions struct {
 func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) error {
 	// Select explicitly so zero values are written too.
 	result := db.WithContext(ctx).Model(&Tpl{}).Where("id = ?", id).
-		Select("Name", "Language", "Timeout", "MaxCPU", "MaxMemory", "InternetAccess").
+		Select("Name", "Language", "Timeout", "MaxMemory", "InternetAccess").
 		Updates(&Tpl{
 			Name:           options.Name,
 			Language:       options.Language,
 			Timeout:        options.Timeout,
-			MaxCPU:         options.MaxCPU,
 			MaxMemory:      options.MaxMemory,
 			InternetAccess: options.InternetAccess,
 		})

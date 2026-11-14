@@ -107,3 +107,57 @@ func TestInit(t *testing.T) {
 		t.Fatal("sandbox template association was not loaded")
 	}
 }
+
+func TestInitDropsRetiredTemplateColumns(t *testing.T) {
+	database := newTestDatabase(t)
+	ctx := context.Background()
+	template, err := Tpls.Create(ctx, CreateTplOptions{
+		Name:           "Existing template",
+		Language:       []string{"go"},
+		Timeout:        60,
+		MaxMemory:      512,
+		InternetAccess: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sandbox, err := Sandboxes.Create(ctx, CreateSandboxOptions{Name: "Existing sandbox", TemplateID: template.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := database.Exec(`ALTER TABLE tpls
+		ADD COLUMN max_cpu bigint DEFAULT 2,
+		ADD COLUMN max_cpus bigint DEFAULT 4,
+		ADD COLUMN max_container bigint DEFAULT 5,
+		ADD COLUMN max_container_per_ip bigint DEFAULT 3,
+		ADD COLUMN dns jsonb DEFAULT '{"example.com":"127.0.0.1"}'`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	for range 2 {
+		upgraded, err := Init()
+		if err != nil {
+			t.Fatal(err)
+		}
+		connection, err := upgraded.DB()
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = connection.Close() })
+		for _, column := range []string{"max_cpu", "max_cpus", "max_container", "max_container_per_ip", "dns"} {
+			if upgraded.Migrator().HasColumn(&Tpl{}, column) {
+				t.Errorf("retired column %s still exists", column)
+			}
+		}
+	}
+
+	storedSandbox, err := Sandboxes.GetByID(ctx, sandbox.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored := storedSandbox.Template
+	if stored == nil || stored.ID != template.ID || stored.Name != template.Name || len(stored.Language) != 1 ||
+		stored.Language[0] != "go" || stored.Timeout != 60 || stored.MaxMemory != 512 || !stored.InternetAccess {
+		t.Fatalf("migration changed the sandbox's template: %+v", stored)
+	}
+}

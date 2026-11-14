@@ -39,6 +39,14 @@ func Init() (*gorm.DB, error) {
 	); err != nil {
 		return nil, errors.Wrap(err, "auto migrate")
 	}
+	if err := db.Exec(`ALTER TABLE tpls
+		DROP COLUMN IF EXISTS max_cpu,
+		DROP COLUMN IF EXISTS max_cpus,
+		DROP COLUMN IF EXISTS max_container,
+		DROP COLUMN IF EXISTS max_container_per_ip,
+		DROP COLUMN IF EXISTS dns`).Error; err != nil {
+		return nil, errors.Wrap(err, "drop retired template columns")
+	}
 
 	Tpls = NewTplStore(db)
 	Sandboxes = NewSandboxStore(db)

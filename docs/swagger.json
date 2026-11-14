@@ -452,7 +452,7 @@
                         "SessionAuth": []
                     }
                 ],
-                "description": "Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.",
+                "description": "Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage.",
                 "consumes": [
                     "application/json"
                 ],
@@ -624,7 +624,7 @@
                         "SessionAuth": []
                     }
                 ],
-                "description": "Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.",
+                "description": "Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage.",
                 "consumes": [
                     "application/json"
                 ],
@@ -975,7 +975,6 @@
                 "id",
                 "internetAccess",
                 "language",
-                "maxCpu",
                 "maxMemory",
                 "name",
                 "timeout",
@@ -997,9 +996,6 @@
                         "type": "string"
                     },
                     "x-nullable": true
-                },
-                "maxCpu": {
-                    "type": "integer"
                 },
                 "maxMemory": {
                     "type": "integer"

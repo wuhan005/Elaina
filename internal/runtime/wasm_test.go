@@ -54,9 +54,6 @@ func TestNewWASMTaskValidation(t *testing.T) {
 		nil,
 		{MaxMemory: -1},
 		{MaxMemory: 4097},
-		{MaxCPU: -1},
-		{MaxCPU: 11},
-		{MaxCPU: 1},
 		{Timeout: -1},
 		{Timeout: 61},
 	} {

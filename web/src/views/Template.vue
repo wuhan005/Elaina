@@ -16,12 +16,6 @@
           :loading="isLoading"
           @page-change="pagination = $event; getTemplates()"
       >
-        <template #name="{row}">
-          <t-space direction="vertical" :size="4">
-            <span>{{ row.name }}</span>
-            <t-tag v-if="row.maxCpu !== 0" theme="warning" variant="outline">Legacy CPU quota: edit required</t-tag>
-          </t-space>
-        </template>
         <template #language="{row}">
           <t-space :size="2">
             <t-tag variant="outline" v-for="item in row.language" v-bind:key="item">

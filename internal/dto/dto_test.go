@@ -34,7 +34,6 @@ func TestResponses(t *testing.T) {
 		Timeout:        60,
 		MaxMemory:      512,
 		InternetAccess: true,
-		MaxCPU:         2,
 	}
 	sandbox := &db.Sandbox{
 		Model: dbutil.Model{
@@ -53,7 +52,7 @@ func TestResponses(t *testing.T) {
 		Placeholder: "print('hello')",
 		Editable:    true,
 	}
-	wantTemplate := `{"id":7,"createdAt":"2026-01-02T03:04:05.123456Z","updatedAt":"2026-01-02T04:04:05.123456Z","name":"WASM","language":["python","go"],"timeout":60,"maxMemory":512,"internetAccess":true,"maxCpu":2}`
+	wantTemplate := `{"id":7,"createdAt":"2026-01-02T03:04:05.123456Z","updatedAt":"2026-01-02T04:04:05.123456Z","name":"WASM","language":["python","go"],"timeout":60,"maxMemory":512,"internetAccess":true}`
 	wantSandbox := `{"id":9,"createdAt":"2026-01-02T03:04:05.123456Z","updatedAt":"2026-01-02T04:04:05.123456Z","uid":"sandbox-uid","name":"Example","templateID":7,"template":` + wantTemplate + `,"placeholder":"print('hello')","editable":true}`
 
 	for _, test := range []struct {
@@ -65,7 +64,7 @@ func TestResponses(t *testing.T) {
 		{"sandbox with template", ToSandbox(sandbox), wantSandbox},
 		{"nil template", ToTemplate(nil), `null`},
 		{"nil sandbox", ToSandbox(nil), `null`},
-		{"zero template", ToTemplate(&db.Tpl{}), `{"id":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","name":"","language":null,"timeout":0,"maxMemory":0,"internetAccess":false,"maxCpu":0}`},
+		{"zero template", ToTemplate(&db.Tpl{}), `{"id":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","name":"","language":null,"timeout":0,"maxMemory":0,"internetAccess":false}`},
 		{"unloaded template", ToSandbox(&db.Sandbox{}), `{"id":0,"createdAt":"0001-01-01T00:00:00Z","updatedAt":"0001-01-01T00:00:00Z","uid":"","name":"","templateID":0,"template":null,"placeholder":"","editable":false}`},
 		{"template list", ListTemplatesResp{Templates: []*Template{ToTemplate(template)}, Total: 1}, `{"templates":[` + wantTemplate + `],"total":1}`},
 		{"sandbox list", ListSandboxesResp{Sandboxes: []*Sandbox{ToSandbox(sandbox)}, Total: 1}, `{"sandboxes":[` + wantSandbox + `],"total":1}`},

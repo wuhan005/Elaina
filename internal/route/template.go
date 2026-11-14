@@ -107,7 +107,7 @@ func (h *TemplateHandler) Get(ctx context.Context, template *db.Tpl) error {
 // Create create a template.
 // @Summary Create a template
 // @Tags Templates
-// @Description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+// @Description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage.
 // @Accept json
 // @Produce json
 // @Security SessionAuth
@@ -137,7 +137,7 @@ func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) err
 // Update update a template.
 // @Summary Update a template
 // @Tags Templates
-// @Description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+// @Description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage.
 // @Accept json
 // @Produce json
 // @Security SessionAuth

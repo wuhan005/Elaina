@@ -79,7 +79,6 @@ export interface Template {
   id: number;
   internetAccess: boolean;
   language?: string[] | null;
-  maxCpu: number;
   maxMemory: number;
   name: string;
   timeout: number;
@@ -614,7 +613,7 @@ export class Api<
       }),
 
     /**
-     * @description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+     * @description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage.
      *
      * @tags Templates
      * @name UpdateTemplate
@@ -681,7 +680,7 @@ export class Api<
       }),
 
     /**
-     * @description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS fields are accepted only when zero or empty.
+     * @description Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib; nonzero memory is capped by that ceiling for each stage.
      *
      * @tags Templates
      * @name CreateTemplate

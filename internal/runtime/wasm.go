@@ -57,13 +57,6 @@ func NewWASMTask(_ context.Context, options NewTaskOptions) (*WASMTask, error) {
 		return nil, errors.New("WASM memory limit must be between 0 and 4096 MiB")
 	}
 
-	if options.Template.MaxCPU < 0 || options.Template.MaxCPU > 10 {
-		return nil, errors.New("WASM CPU limit must be between 0 and 10")
-	}
-	if options.Template.MaxCPU != 0 {
-		return nil, errors.New("wazero does not support per-task CPU quotas; set MaxCPU to 0 and configure the deployment CPU limit")
-	}
-
 	if options.Template.Timeout < 0 || options.Template.Timeout > 60 {
 		return nil, errors.New("WASM timeout must be between 0 and 60 seconds")
 	}

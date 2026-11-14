@@ -138,8 +138,6 @@ definitions:
           type: string
         type: array
         x-nullable: true
-      maxCpu:
-        type: integer
       maxMemory:
         type: integer
       name:
@@ -153,7 +151,6 @@ definitions:
     - id
     - internetAccess
     - language
-    - maxCpu
     - maxMemory
     - name
     - timeout
@@ -596,8 +593,7 @@ paths:
       consumes:
       - application/json
       description: Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib;
-        nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS
-        fields are accepted only when zero or empty.
+        nonzero memory is capped by that ceiling for each stage.
       operationId: updateTemplate
       parameters:
       - description: ID
@@ -677,8 +673,7 @@ paths:
       consumes:
       - application/json
       description: Zero timeout uses 10 seconds. Zero memory inherits app.wasm_limits.max_memory_mib;
-        nonzero memory is capped by that ceiling for each stage. Legacy CPU/container/DNS
-        fields are accepted only when zero or empty.
+        nonzero memory is capped by that ceiling for each stage.
       operationId: createTemplate
       parameters:
       - description: Request body
