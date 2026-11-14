@@ -18,6 +18,7 @@ import (
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/dto"
+	"github.com/wuhan005/Elaina/internal/languages"
 	"github.com/wuhan005/Elaina/internal/runtime"
 )
 
@@ -103,14 +104,61 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 		return ctx.Error(http.StatusRequestEntityTooLarge, "runner::source_too_large")
 	}
 
-	languages := sandbox.Template.Language
+	names := sandbox.Template.Language
+	language := selectLanguage(names, ctx.Query("l"))
+	options := make([]languageOption, 0, len(names))
+	for _, name := range names {
+		label := name
+		if runner, ok := languages.Get(name); ok {
+			label = runner.Label
+		}
+		options = append(options, languageOption{Value: name, Label: label})
+	}
+	text := runnerPageText(ctx)
+
+	data["Lang"] = ctx.Tr("runner_page::html_lang")
 	data["Sandbox"] = dto.ToSandbox(sandbox)
-	data["Language"] = selectLanguage(languages, ctx.Query("l"))
-	data["Languages"] = languages
+	data["Language"] = language
+	data["LanguageOptions"] = options
+	data["Editable"] = sandbox.Editable
 	data["Code"] = code
+	data["Text"] = text
+	data["Config"] = map[string]any{
+		"language": language,
+		"editable": sandbox.Editable,
+		"text":     text,
+	}
 
 	t.HTML(http.StatusOK, "sandbox")
 	return nil
+}
+
+type languageOption struct {
+	Value string
+	Label string
+}
+
+// runnerPageText is the copy of the runner page in the request locale; the page script uses it too.
+func runnerPageText(ctx context.Context) map[string]string {
+	return map[string]string{
+		"run":                ctx.Tr("runner_page::run"),
+		"running":            ctx.Tr("runner_page::running"),
+		"open_in_new_window": ctx.Tr("runner_page::open_in_new_window"),
+		"output":             ctx.Tr("runner_page::output"),
+		"clear":              ctx.Tr("runner_page::clear"),
+		"idle":               ctx.Tr("runner_page::idle"),
+		"read_only":          ctx.Tr("runner_page::read_only"),
+		"success":            ctx.Tr("runner_page::success"),
+		"failed":             ctx.Tr("runner_page::failed"),
+		"timed_out":          ctx.Tr("runner_page::timed_out"),
+		"request_failed":     ctx.Tr("runner_page::request_failed"),
+		"no_output":          ctx.Tr("runner_page::no_output"),
+		"stderr":             ctx.Tr("runner_page::stderr"),
+		"error":              ctx.Tr("runner_page::error"),
+		"language":           ctx.Tr("runner_page::language"),
+		"resize":             ctx.Tr("runner_page::resize"),
+		"powered_by":         ctx.Tr("runner_page::powered_by"),
+	}
 }
 
 // Execute execute code in a sandbox.

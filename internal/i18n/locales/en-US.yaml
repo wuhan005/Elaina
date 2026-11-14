@@ -59,3 +59,23 @@ validation:
   password_length: Password must contain %d-%d UTF-8 bytes
   unsupported_language: "Unsupported WASM language: %q"
   placeholder_too_large: Placeholder exceeds the configured source size limit
+
+runner_page:
+  html_lang: en
+  run: Run
+  running: Running…
+  open_in_new_window: Open in new window
+  output: Output
+  clear: Clear
+  idle: Press Run to see the output here.
+  read_only: Read-only
+  success: Success
+  failed: Failed
+  timed_out: Timed out
+  request_failed: Request failed
+  no_output: The program finished without output.
+  stderr: Stderr
+  error: Error
+  language: Language
+  resize: Resize panels
+  powered_by: Powered by Elaina

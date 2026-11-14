@@ -58,3 +58,23 @@ validation:
   password_length: 密码长度须为 %d-%d 个 UTF-8 字节
   unsupported_language: 不支持的 WASM 语言：%q
   placeholder_too_large: 预置代码超过了配置的源代码大小上限
+
+runner_page:
+  html_lang: zh-CN
+  run: 运行
+  running: 运行中…
+  open_in_new_window: 在新窗口打开
+  output: 输出
+  clear: 清空
+  idle: 点击「运行」后，输出会显示在这里。
+  read_only: 只读
+  success: 成功
+  failed: 失败
+  timed_out: 超时
+  request_failed: 请求失败
+  no_output: 程序已结束，没有输出。
+  stderr: 标准错误
+  error: 错误
+  language: 语言
+  resize: 调整面板大小
+  powered_by: 由 Elaina 驱动

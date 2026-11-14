@@ -5,7 +5,9 @@
 package languages
 
 type Runner struct {
-	Name       string
+	Name string
+	// Label is the display name shown on the runner page.
+	Label      string
 	FileName   string
 	WASMModule string
 }
@@ -13,26 +15,31 @@ type Runner struct {
 var runners = []Runner{
 	{
 		Name:       "php",
+		Label:      "PHP",
 		FileName:   "main.php",
 		WASMModule: "php.wasm",
 	},
 	{
 		Name:       "python",
+		Label:      "Python",
 		FileName:   "main.py",
 		WASMModule: "python.wasm",
 	},
 	{
 		Name:       "go",
+		Label:      "Go",
 		FileName:   "main.go",
 		WASMModule: "go/compile.wasm",
 	},
 	{
 		Name:       "javascript",
+		Label:      "JavaScript",
 		FileName:   "main.js",
 		WASMModule: "javascript.wasm",
 	},
 	{
 		Name:       "c",
+		Label:      "C",
 		FileName:   "main.c",
 		WASMModule: "c/clang.wasm",
 	},
