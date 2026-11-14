@@ -71,12 +71,37 @@ func New() (*flamego.Flame, error) {
 	f.Group("/api", func() {
 		authHandler := NewAuthHandler()
 		f.Post("/auth/sign-in", form.Bind(form.SignIn{}), authHandler.SignIn)
+		f.Post("/auth/sign-in/2fa", form.Bind(form.SignInTwoFactor{}), authHandler.SignInTwoFactor)
 
 		f.Group("", func() {
 			f.Group("/auth", func() {
 				f.Post("/sign-out", authHandler.SignOut)
 				f.Get("/profile", authHandler.Profile)
 			})
+
+			accountHandler := NewAccountHandler()
+			f.Group("/account", func() {
+				f.Put("/password", form.Bind(form.ChangePassword{}), accountHandler.ChangePassword)
+				f.Post("/2fa/setup", accountHandler.SetupTwoFactor)
+				f.Post("/2fa/enable", form.Bind(form.EnableTwoFactor{}), accountHandler.EnableTwoFactor)
+				f.Post("/2fa/disable", form.Bind(form.ConfirmPassword{}), accountHandler.DisableTwoFactor)
+				f.Post("/2fa/recovery-codes", form.Bind(form.ConfirmPassword{}), accountHandler.RegenerateRecoveryCodes)
+			})
+
+			executionHandler := NewExecutionHandler()
+			f.Get("/executions", executionHandler.List)
+			f.Get("/executions/stats", executionHandler.Stats)
+			f.Get("/execution/{id}", executionHandler.Executioner, executionHandler.Get)
+
+			userHandler := NewUserHandler()
+			f.Combo("/users").
+				Get(userHandler.List).
+				Post(form.Bind(form.CreateUser{}), userHandler.Create)
+			f.Group("/user/{id}", func() {
+				f.Delete("", userHandler.Delete)
+				f.Put("/password", form.Bind(form.ResetPassword{}), userHandler.ResetPassword)
+				f.Delete("/2fa", userHandler.ResetTwoFactor)
+			}, userHandler.Userer)
 
 			templateHandler := NewTemplateHandler()
 			f.Combo("/templates").

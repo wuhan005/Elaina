@@ -6,7 +6,7 @@ import { cx } from "@/utils/cx";
 
 type IconComponent = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
 
-// RowAction 是表格行内带 Tooltip 的图标操作按钮，传 href 时渲染为链接。
+// RowAction is an icon button with a tooltip for table rows; it renders a link when href is set.
 export function RowAction({
   icon,
   label,

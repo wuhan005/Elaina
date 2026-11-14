@@ -10,6 +10,9 @@ import (
 	"github.com/wuhan005/Elaina/internal/db"
 )
 
+// ExecErrorTimeout is the ExecOutput.Error of a task that ran past its timeout.
+const ExecErrorTimeout = "execution timed out"
+
 // ExecOutput contains the program output and execution duration.
 type ExecOutput struct {
 	Stdout   string `json:"stdout"`

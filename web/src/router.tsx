@@ -1,14 +1,17 @@
 import type { ComponentType } from "react";
 import { createBrowserRouter, Navigate, useParams } from "react-router";
 import { AppLayout } from "@/components/application/layout/app-layout";
+import Account from "@/views/account";
 import Dashboard from "@/views/dashboard";
+import Executions from "@/views/executions";
 import SandboxForm from "@/views/sandbox-form";
 import Sandboxes from "@/views/sandboxes";
 import SignIn from "@/views/sign-in";
 import TemplateForm from "@/views/template-form";
 import Templates from "@/views/templates";
+import Users from "@/views/users";
 
-// 新建与编辑共用同一表单组件，按 id 设置 key 以便切换时重置表单状态。
+// Create and edit share one form component; keying by id resets its state when switching.
 function keyedById(Page: ComponentType) {
   return function KeyedPage() {
     const { id } = useParams();
@@ -32,6 +35,9 @@ export const router = createBrowserRouter([
       { path: "sandbox", Component: Sandboxes },
       { path: "sandbox/new", Component: SandboxFormPage },
       { path: "sandbox/:id", Component: SandboxFormPage },
+      { path: "execution", Component: Executions },
+      { path: "users", Component: Users },
+      { path: "account", Component: Account },
       { path: "*", element: <Navigate to="/dashboard" replace /> },
     ],
   },

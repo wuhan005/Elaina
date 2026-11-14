@@ -129,7 +129,7 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 	case stdout.exceeded || stderr.exceeded:
 		output.Error = "output limit exceeded"
 	case execCtx.Err() != nil:
-		output.Error = "execution timed out"
+		output.Error = ExecErrorTimeout
 	case errors.As(runErr, &exitErr):
 		if exitErr.ExitCode() != 0 {
 			output.Error = fmt.Sprintf("exit status %d", exitErr.ExitCode())

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cx } from "@/utils/cx";
 
-// Panel 是页面内的通用卡片容器，可选标题栏。
+// Panel is a card container with an optional header.
 export function Panel({
   title,
   description,
@@ -39,7 +39,7 @@ export function Panel({
   );
 }
 
-// FormSection 是表单页的分组行：左侧为说明，右侧为字段。
+// FormSection is a form row with the title on the left and fields on the right.
 export function FormSection({
   title,
   description,
@@ -60,7 +60,7 @@ export function FormSection({
   );
 }
 
-// EmptyState 用于列表无数据时的占位。
+// EmptyState is the placeholder for an empty list.
 export function EmptyState({
   icon,
   title,

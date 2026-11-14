@@ -161,6 +161,7 @@ func TestInitErrors(t *testing.T) {
 		{"plaintext hash", "app:\n  password_hash: plaintext-password\n", "app.password_hash"},
 		{"truncated hash", "app:\n  password_hash: " + testPasswordHash[:30] + "\n", "app.password_hash"},
 		{"invalid cost", "app:\n  password_hash: " + strings.Replace(testPasswordHash, "$04$", "$99$", 1) + "\n", "app.password_hash"},
+		{"negative retention", "app:\n  password_hash: " + testPasswordHash + "\n  execution_retention_days: -1\n", "app.execution_retention_days"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			App.PasswordHash, Postgres.DSN = "", ""
@@ -171,6 +172,28 @@ func TestInitErrors(t *testing.T) {
 			err := Init(path)
 			if err == nil || !strings.Contains(err.Error(), test.error) {
 				t.Fatalf("expected %q, got %v", test.error, err)
+			}
+		})
+	}
+}
+
+func TestExecutionRetention(t *testing.T) {
+	app, postgres := App, Postgres
+	t.Cleanup(func() { App, Postgres = app, postgres })
+	for _, test := range []struct {
+		name, content string
+		want          int
+	}{
+		{"default", "", 30},
+		{"custom", "  execution_retention_days: 7\n", 7},
+		{"forever", "  execution_retention_days: 0\n", 0},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if err := Init(writeConfig(t, "app:\n  password_hash: "+testPasswordHash+"\n"+test.content)); err != nil {
+				t.Fatal(err)
+			}
+			if App.ExecutionRetentionDays != test.want {
+				t.Fatalf("expected %d days, got %d", test.want, App.ExecutionRetentionDays)
 			}
 		})
 	}

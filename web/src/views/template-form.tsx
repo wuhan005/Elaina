@@ -9,7 +9,6 @@ import { Button } from "@/components/base/buttons/button";
 import { CheckboxCard } from "@/components/base/checkbox/checkbox-card";
 import { HintText } from "@/components/base/input/hint-text";
 import { Input } from "@/components/base/input/input";
-import { Label } from "@/components/base/input/label";
 import { NumberField } from "@/components/base/number-field/number-field";
 import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { SpinnerGlyph } from "@/components/base/spinner/spinner";
@@ -107,15 +106,14 @@ export default function TemplateForm() {
     <>
       <PageHeader
         title={title}
-        description={isEdit ? `Update the runtime settings of ${form.name || "this template"}.` : "Choose the languages and limits sandboxes built on this template run with."}
         breadcrumbs={[{ label: "Templates", href: "/template", icon: RiStackLine }, { label: title }]}
       />
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-        <div className="flex items-start gap-3 rounded-2xl bg-notification-information-background px-4 py-3 text-notification-information-foreground">
-          <RiInformationLine className="mt-0.5 size-5 shrink-0" aria-hidden />
+        <div className="flex items-start gap-3 rounded-2xl bg-background-secondary-default px-4 py-3 text-text-secondary">
+          <RiInformationLine className="mt-0.5 size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
           <p className="text-body-regular">
-            Server configuration caps memory, global concurrency, input and workspace usage. Values here can only tighten those limits.
+            Server configuration caps memory, global concurrency, input and workspace usage.
           </p>
         </div>
 
@@ -134,7 +132,7 @@ export default function TemplateForm() {
             </div>
           ) : (
             <>
-              <FormSection title="General" description="A recognizable name shown when picking a template for a sandbox.">
+              <FormSection title="General">
                 <Input
                   label="Name"
                   placeholder="e.g. Python playground"
@@ -148,11 +146,10 @@ export default function TemplateForm() {
               </FormSection>
 
               <FormSection
-                title="Programming languages"
-                description="Code is compiled and executed inside WebAssembly. Native extensions and subprocesses are unavailable."
+                title="Languages"
+                description="Code runs as WebAssembly. Native extensions and subprocesses are unavailable."
               >
                 <div className="flex flex-col gap-1">
-                  <Label isRequired>Languages</Label>
                   <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="Programming languages">
                     {LANGUAGES.map((language) => (
                       <CheckboxCard
@@ -168,7 +165,7 @@ export default function TemplateForm() {
                 </div>
               </FormSection>
 
-              <FormSection title="Limits" description="Per-run resource limits. Keep them low for public-facing sandboxes.">
+              <FormSection title="Limits">
                 <div className="grid gap-5 lg:grid-cols-2">
                   <NumberField
                     label="Execution timeout (s)"
@@ -198,18 +195,18 @@ export default function TemplateForm() {
               </FormSection>
 
               <FormSection
-                title="Permissions"
-                description="Compilation is always offline. Python and JavaScript networking is unavailable."
+                title="Network"
+                description="Compilation is always offline."
               >
                 <SwitchCard
                   icon={RiGlobalLine}
                   title="Network access"
-                  description={form.internetAccess ? "Supported networking is permitted" : "Sockets and DNS are blocked"}
+                  description={form.internetAccess ? "Supported networking is allowed" : "Sockets and DNS are blocked"}
                   isSelected={form.internetAccess}
                   onChange={(value) => update("internetAccess", value)}
                 />
                 <p className="-mt-2 text-caption-1-medium text-text-secondary">
-                  When on: Go HTTP/DNS/HTTPS, C IPv4 TCP/DNS without bundled TLS, and PHP IPv4 TCP/HTTP.
+                  Supported: Go HTTP/DNS/HTTPS, C IPv4 TCP/DNS without bundled TLS, PHP IPv4 TCP/HTTP. Python and JavaScript have no networking.
                 </p>
               </FormSection>
             </>

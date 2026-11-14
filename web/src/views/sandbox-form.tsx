@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { RiCodeBoxLine, RiExternalLinkLine, RiFileCopyLine, RiPencilLine } from "@remixicon/react";
+import { RiCodeBoxLine, RiExternalLinkLine, RiFileCopyLine, RiHistoryLine, RiPencilLine } from "@remixicon/react";
 import type { CreateSandboxReq, Template } from "@/api/api";
 import { client } from "@/api/client";
 import { PageHeader } from "@/components/application/layout/page-header";
@@ -100,11 +100,13 @@ export default function SandboxForm() {
     <>
       <PageHeader
         title={title}
-        description={isEdit ? `Update the runner page of ${form.name || "this sandbox"}.` : "Create a runner page with preset code on top of a template."}
         breadcrumbs={[{ label: "Sandboxes", href: "/sandbox", icon: RiCodeBoxLine }, { label: title }]}
         actions={
           isEdit && uid ? (
             <>
+              <Button variant="secondary" leadingIcon={RiHistoryLine} onClick={() => navigate(`/execution?sandbox=${id}`)}>
+                Runs
+              </Button>
               <Button variant="secondary" leadingIcon={RiFileCopyLine} onClick={() => copyRunnerUrl(uid)}>
                 Copy link
               </Button>
@@ -132,7 +134,7 @@ export default function SandboxForm() {
             </div>
           ) : (
             <>
-              <FormSection title="General" description="The name is only shown in this console.">
+              <FormSection title="General">
                 <Input
                   label="Name"
                   placeholder="e.g. Hello world in Go"
@@ -150,7 +152,7 @@ export default function SandboxForm() {
 
               <FormSection
                 title="Template"
-                description="Languages, limits and network permission all come from the template."
+                description="Languages, limits and network access come from the template."
               >
                 <div className="flex flex-col gap-1">
                   <Select
@@ -189,7 +191,7 @@ export default function SandboxForm() {
 
               <FormSection
                 title="Code"
-                description="Preset source code shown on the runner page. Its size is capped by the server's source limit."
+                description="Shown on the runner page when it opens."
               >
                 <Textarea
                   label="Source code"
@@ -204,7 +206,7 @@ export default function SandboxForm() {
                 <SwitchCard
                   icon={RiPencilLine}
                   title="Editable"
-                  description={form.editable ? "Visitors can modify the code before running it" : "Visitors can only run the preset code"}
+                  description={form.editable ? "Visitors can change the code before running it" : "Visitors can only run the code as is"}
                   isSelected={form.editable}
                   onChange={(value) => update("editable", value)}
                 />

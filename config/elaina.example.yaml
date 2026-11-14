@@ -1,11 +1,14 @@
 # Copy to config/elaina.yaml and set the administrator password hash and PostgreSQL DSN.
 app:
   # Generate with: htpasswd -nB -C 12 admin (password must be 8-72 UTF-8 bytes).
+  # Password of the "admin" account created on first start, while the users table is empty.
   password_hash: "" # Required bcrypt hash; omit the "admin:" prefix from the output.
   # Relative paths are resolved from the server's working directory.
   wasm_runtime_dir: .wasm
   # Installed interpreters and compilers are warmed before the server starts listening.
   wasm_cache_dir: .wasm/cache # Must be writable by the server.
+  # Days to keep sandbox execution records; 0 keeps them forever.
+  execution_retention_days: 30
   # Reverse proxies whose X-Forwarded-For header identifies clients, e.g. [127.0.0.1/32, 10.0.0.0/8].
   # Without it, every request through a proxy counts as the same client for per-client limits.
   trusted_proxies: []

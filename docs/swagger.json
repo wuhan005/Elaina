@@ -8,40 +8,13 @@
     },
     "basePath": "/",
     "paths": {
-        "/api/auth/profile": {
-            "get": {
+        "/api/account/2fa/disable": {
+            "post": {
                 "security": [
                     {
                         "SessionAuth": []
                     }
                 ],
-                "description": "Returns data: null when the session is authenticated.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Check the current session",
-                "operationId": "profile",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/auth/sign-in": {
-            "post": {
                 "consumes": [
                     "application/json"
                 ],
@@ -49,10 +22,10 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Account"
                 ],
-                "summary": "Sign in with the administrator password",
-                "operationId": "signIn",
+                "summary": "Disable two-factor authentication",
+                "operationId": "disableTwoFactor",
                 "parameters": [
                     {
                         "description": "Request body",
@@ -60,7 +33,249 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SignInForm"
+                            "$ref": "#/definitions/ConfirmPasswordForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Not enabled",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Password is incorrect",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/2fa/enable": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Confirms the secret from setupTwoFactor and returns new recovery codes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Enable two-factor authentication",
+                "operationId": "enableTwoFactor",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/EnableTwoFactorForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-RecoveryCodesResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Setup not started",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid verification code",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Already enabled",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/2fa/recovery-codes": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Replaces all existing recovery codes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Regenerate recovery codes",
+                "operationId": "regenerateRecoveryCodes",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ConfirmPasswordForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-RecoveryCodesResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Not enabled",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Password is incorrect",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/2fa/setup": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Generates a new TOTP secret. Two-factor authentication stays disabled until enableTwoFactor confirms a code.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Start two-factor authentication setup",
+                "operationId": "setupTwoFactor",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-TwoFactorSetupResp"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Already enabled",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account/password": {
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Other sessions of the user are signed out; the current session stays valid.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Change the password of the signed-in user",
+                "operationId": "changePassword",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ChangePasswordForm"
                         }
                     }
                 ],
@@ -77,8 +292,168 @@
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "403": {
-                        "description": "Invalid password",
+                        "description": "Current password is incorrect",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/profile": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get the signed-in user",
+                "operationId": "profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-User"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/sign-in": {
+            "post": {
+                "description": "When the user has two-factor authentication enabled, twoFactorRequired is true and the returned token must be sent with signInTwoFactor within 5 minutes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Sign in with a username and password",
+                "operationId": "signIn",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SignInForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-SignInResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid username or password",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/sign-in/2fa": {
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Accepts a TOTP code or an unused recovery code. After 5 wrong codes or 5 minutes the pending sign-in is discarded and the client must sign in again.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Complete sign-in with a verification code",
+                "operationId": "signInTwoFactor",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SignInTwoFactorForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-SignInResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid verification code",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "410": {
+                        "description": "No pending sign-in, or it expired",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -110,6 +485,196 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/execution/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "Get a sandbox execution",
+                "operationId": "getExecution",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-ExecutionDetail"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/executions": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Newest first. Code and output are only included in getExecution.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "List sandbox executions",
+                "operationId": "listExecutions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number; values below 1 use 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size; values below 1 use 20",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Only executions of this sandbox",
+                        "name": "sandboxID",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "success",
+                            "failed",
+                            "timeout",
+                            "rejected",
+                            "error"
+                        ],
+                        "type": "string",
+                        "description": "Only executions with this status",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-ListExecutionsResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid status",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/executions/stats": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "Get execution statistics",
+                "operationId": "executionStats",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 14,
+                        "description": "Number of days in daily, including today (1-90)",
+                        "name": "days",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "UTC",
+                        "description": "IANA time zone used to split days",
+                        "name": "timezone",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-ExecutionStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid time zone or days",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -712,6 +1277,292 @@
                 }
             }
         },
+        "/api/user/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete a user",
+                "operationId": "deleteUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Cannot delete yourself",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user/{id}/2fa": {
+            "delete": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "For users who lost their authenticator and recovery codes. Signs the user out of all sessions.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Turn off two-factor authentication for a user",
+                "operationId": "resetUserTwoFactor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user/{id}/password": {
+            "put": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "description": "Signs the user out of all sessions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Set a new password for a user",
+                "operationId": "resetUserPassword",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ResetPasswordReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users": {
+            "get": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List users",
+                "operationId": "listUsers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-array_User"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create a user",
+                "operationId": "createUser",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateUserReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response-User"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Username already exists",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/r/{uid}/execute": {
             "post": {
                 "description": "Uses the sandbox template permissions and limits. Missing or unsupported lang selects the first configured language. Unknown sandbox UIDs redirect to /.",
@@ -792,6 +1643,34 @@
         }
     },
     "definitions": {
+        "ChangePasswordForm": {
+            "type": "object",
+            "required": [
+                "currentPassword",
+                "newPassword"
+            ],
+            "properties": {
+                "currentPassword": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "description": "Password must contain 8-72 UTF-8 bytes.",
+                    "type": "string"
+                }
+            }
+        },
+        "ConfirmPasswordForm": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "description": "The current password of the signed-in user.",
+                    "type": "string"
+                }
+            }
+        },
         "CreateSandboxReq": {
             "type": "object",
             "required": [
@@ -848,6 +1727,35 @@
                 }
             }
         },
+        "CreateUserReq": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "Password must contain 8-72 UTF-8 bytes.",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "2-32 letters, digits, '_', '.' or '-', starting with a letter or digit.",
+                    "type": "string"
+                }
+            }
+        },
+        "EnableTwoFactorForm": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "description": "A 6-digit code from the authenticator app.",
+                    "type": "string"
+                }
+            }
+        },
         "ErrorResponse": {
             "type": "object",
             "required": [
@@ -855,6 +1763,109 @@
             ],
             "properties": {
                 "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ExecutionDailyCount": {
+            "type": "object",
+            "required": [
+                "date",
+                "failed",
+                "total"
+            ],
+            "properties": {
+                "date": {
+                    "description": "Local day in YYYY-MM-DD.",
+                    "type": "string"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ExecutionDetail": {
+            "type": "object",
+            "required": [
+                "clientAddress",
+                "code",
+                "codeBytes",
+                "createdAt",
+                "duration",
+                "error",
+                "id",
+                "language",
+                "sandbox",
+                "sandboxID",
+                "status",
+                "stderr",
+                "stdout",
+                "truncated",
+                "userAgent"
+            ],
+            "properties": {
+                "clientAddress": {
+                    "type": "string"
+                },
+                "code": {
+                    "description": "Empty for rejected requests.",
+                    "type": "string"
+                },
+                "codeBytes": {
+                    "description": "Size of the submitted source code in bytes.",
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "WASM run time in nanoseconds; 0 when the task did not run.",
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "sandbox": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ExecutionSandbox"
+                        }
+                    ],
+                    "x-nullable": true
+                },
+                "sandboxID": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "success",
+                        "failed",
+                        "timeout",
+                        "rejected",
+                        "error"
+                    ]
+                },
+                "stderr": {
+                    "type": "string"
+                },
+                "stdout": {
+                    "type": "string"
+                },
+                "truncated": {
+                    "description": "True when code or output was cut to 64 KiB.",
+                    "type": "boolean"
+                },
+                "userAgent": {
                     "type": "string"
                 }
             }
@@ -874,6 +1885,139 @@
                     "$ref": "#/definitions/runtime.ExecOutput"
                 },
                 "start_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ExecutionSandbox": {
+            "type": "object",
+            "required": [
+                "deleted",
+                "id",
+                "name",
+                "uid"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "ExecutionStats": {
+            "type": "object",
+            "required": [
+                "daily",
+                "failed24h",
+                "last24h",
+                "total"
+            ],
+            "properties": {
+                "daily": {
+                    "description": "One entry per day, oldest first.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExecutionDailyCount"
+                    }
+                },
+                "failed24h": {
+                    "type": "integer"
+                },
+                "last24h": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ExecutionSummary": {
+            "type": "object",
+            "required": [
+                "clientAddress",
+                "codeBytes",
+                "createdAt",
+                "duration",
+                "error",
+                "id",
+                "language",
+                "sandbox",
+                "sandboxID",
+                "status",
+                "userAgent"
+            ],
+            "properties": {
+                "clientAddress": {
+                    "type": "string"
+                },
+                "codeBytes": {
+                    "description": "Size of the submitted source code in bytes.",
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "WASM run time in nanoseconds; 0 when the task did not run.",
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "sandbox": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ExecutionSandbox"
+                        }
+                    ],
+                    "x-nullable": true
+                },
+                "sandboxID": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "success",
+                        "failed",
+                        "timeout",
+                        "rejected",
+                        "error"
+                    ]
+                },
+                "userAgent": {
+                    "type": "string"
+                }
+            }
+        },
+        "ListExecutionsResp": {
+            "type": "object",
+            "required": [
+                "executions",
+                "total"
+            ],
+            "properties": {
+                "executions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ExecutionSummary"
+                    }
+                },
+                "total": {
                     "type": "integer"
                 }
             }
@@ -911,6 +2055,33 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "RecoveryCodesResp": {
+            "type": "object",
+            "required": [
+                "codes"
+            ],
+            "properties": {
+                "codes": {
+                    "description": "One-time recovery codes. They are only shown once.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "ResetPasswordReq": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "description": "Password must contain 8-72 UTF-8 bytes.",
+                    "type": "string"
                 }
             }
         },
@@ -965,11 +2136,44 @@
         "SignInForm": {
             "type": "object",
             "required": [
-                "password"
+                "password",
+                "username"
             ],
             "properties": {
                 "password": {
                     "description": "Password must contain 8-72 UTF-8 bytes.",
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "SignInResp": {
+            "type": "object",
+            "required": [
+                "token",
+                "twoFactorRequired"
+            ],
+            "properties": {
+                "token": {
+                    "description": "Session token for the Authorization header (\"Token \u003ctoken\u003e\").",
+                    "type": "string"
+                },
+                "twoFactorRequired": {
+                    "description": "When true, the token can only be used to submit a verification code to signInTwoFactor.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "SignInTwoFactorForm": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "description": "A 6-digit TOTP code or an unused recovery code.",
                     "type": "string"
                 }
             }
@@ -1013,6 +2217,28 @@
                     "type": "integer"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "TwoFactorSetupResp": {
+            "type": "object",
+            "required": [
+                "qrCode",
+                "secret",
+                "url"
+            ],
+            "properties": {
+                "qrCode": {
+                    "description": "PNG QR code as a data URL.",
+                    "type": "string"
+                },
+                "secret": {
+                    "description": "Base32 TOTP secret for manual entry.",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "otpauth:// URL encoded in the QR code.",
                     "type": "string"
                 }
             }
@@ -1073,6 +2299,53 @@
                 }
             }
         },
+        "User": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "id",
+                "lastSignInAt",
+                "recoveryCodesRemaining",
+                "twoFactorEnabled",
+                "updatedAt",
+                "username"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastSignInAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "recoveryCodesRemaining": {
+                    "type": "integer"
+                },
+                "twoFactorEnabled": {
+                    "type": "boolean"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Response-ExecutionDetail": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ExecutionDetail"
+                }
+            }
+        },
         "dto.Response-ExecutionResult": {
             "type": "object",
             "required": [
@@ -1081,6 +2354,28 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/ExecutionResult"
+                }
+            }
+        },
+        "dto.Response-ExecutionStats": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ExecutionStats"
+                }
+            }
+        },
+        "dto.Response-ListExecutionsResp": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ListExecutionsResp"
                 }
             }
         },
@@ -1106,6 +2401,17 @@
                 }
             }
         },
+        "dto.Response-RecoveryCodesResp": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RecoveryCodesResp"
+                }
+            }
+        },
         "dto.Response-Sandbox": {
             "type": "object",
             "required": [
@@ -1114,6 +2420,17 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/Sandbox"
+                }
+            }
+        },
+        "dto.Response-SignInResp": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SignInResp"
                 }
             }
         },
@@ -1128,13 +2445,26 @@
                 }
             }
         },
-        "dto.Response-any": {
+        "dto.Response-TwoFactorSetupResp": {
             "type": "object",
             "required": [
                 "data"
             ],
             "properties": {
-                "data": {}
+                "data": {
+                    "$ref": "#/definitions/TwoFactorSetupResp"
+                }
+            }
+        },
+        "dto.Response-User": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/User"
+                }
             }
         },
         "dto.Response-array_Template": {
@@ -1147,6 +2477,20 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/Template"
+                    }
+                }
+            }
+        },
+        "dto.Response-array_User": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/User"
                     }
                 }
             }

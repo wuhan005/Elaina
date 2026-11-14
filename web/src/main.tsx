@@ -6,7 +6,7 @@ import { Toaster } from "@/components/base/toast/toast";
 import { router } from "./router";
 import "./index.css";
 
-// 首帧前应用已保存的主题，避免深色模式闪烁。
+// Apply the saved theme before the first paint to avoid a dark mode flash.
 applyTheme(window.localStorage.getItem(THEME_STORAGE_KEY) === "dark" ? "dark" : "light", { persist: false });
 
 createRoot(document.getElementById("root")!).render(

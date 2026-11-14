@@ -10,6 +10,17 @@
  * ---------------------------------------------------------------
  */
 
+export interface ChangePasswordForm {
+  currentPassword: string;
+  /** Password must contain 8-72 UTF-8 bytes. */
+  newPassword: string;
+}
+
+export interface ConfirmPasswordForm {
+  /** The current password of the signed-in user. */
+  password: string;
+}
+
 export interface CreateSandboxReq {
   editable?: boolean;
   name: string;
@@ -37,14 +48,91 @@ export interface CreateTemplateReq {
   timeout?: number;
 }
 
+export interface CreateUserReq {
+  /** Password must contain 8-72 UTF-8 bytes. */
+  password: string;
+  /** 2-32 letters, digits, '_', '.' or '-', starting with a letter or digit. */
+  username: string;
+}
+
+export interface EnableTwoFactorForm {
+  /** A 6-digit code from the authenticator app. */
+  code: string;
+}
+
 export interface ErrorResponse {
   msg: string;
+}
+
+export interface ExecutionDailyCount {
+  /** Local day in YYYY-MM-DD. */
+  date: string;
+  failed: number;
+  total: number;
+}
+
+export interface ExecutionDetail {
+  clientAddress: string;
+  /** Empty for rejected requests. */
+  code: string;
+  /** Size of the submitted source code in bytes. */
+  codeBytes: number;
+  createdAt: string;
+  /** WASM run time in nanoseconds; 0 when the task did not run. */
+  duration: number;
+  error: string;
+  id: number;
+  language: string;
+  sandbox?: ExecutionSandbox | null;
+  sandboxID: number;
+  status: "success" | "failed" | "timeout" | "rejected" | "error";
+  stderr: string;
+  stdout: string;
+  /** True when code or output was cut to 64 KiB. */
+  truncated: boolean;
+  userAgent: string;
 }
 
 export interface ExecutionResult {
   end_at: number;
   result: RuntimeExecOutput;
   start_at: number;
+}
+
+export interface ExecutionSandbox {
+  deleted: boolean;
+  id: number;
+  name: string;
+  uid: string;
+}
+
+export interface ExecutionStats {
+  /** One entry per day, oldest first. */
+  daily: ExecutionDailyCount[];
+  failed24h: number;
+  last24h: number;
+  total: number;
+}
+
+export interface ExecutionSummary {
+  clientAddress: string;
+  /** Size of the submitted source code in bytes. */
+  codeBytes: number;
+  createdAt: string;
+  /** WASM run time in nanoseconds; 0 when the task did not run. */
+  duration: number;
+  error: string;
+  id: number;
+  language: string;
+  sandbox?: ExecutionSandbox | null;
+  sandboxID: number;
+  status: "success" | "failed" | "timeout" | "rejected" | "error";
+  userAgent: string;
+}
+
+export interface ListExecutionsResp {
+  executions: ExecutionSummary[];
+  total: number;
 }
 
 export interface ListSandboxesResp {
@@ -55,6 +143,16 @@ export interface ListSandboxesResp {
 export interface ListTemplatesResp {
   templates: Template[];
   total: number;
+}
+
+export interface RecoveryCodesResp {
+  /** One-time recovery codes. They are only shown once. */
+  codes: string[];
+}
+
+export interface ResetPasswordReq {
+  /** Password must contain 8-72 UTF-8 bytes. */
+  password: string;
 }
 
 export interface Sandbox {
@@ -72,6 +170,19 @@ export interface Sandbox {
 export interface SignInForm {
   /** Password must contain 8-72 UTF-8 bytes. */
   password: string;
+  username: string;
+}
+
+export interface SignInResp {
+  /** Session token for the Authorization header ("Token <token>"). */
+  token: string;
+  /** When true, the token can only be used to submit a verification code to signInTwoFactor. */
+  twoFactorRequired: boolean;
+}
+
+export interface SignInTwoFactorForm {
+  /** A 6-digit TOTP code or an unused recovery code. */
+  code: string;
 }
 
 export interface Template {
@@ -83,6 +194,15 @@ export interface Template {
   name: string;
   timeout: number;
   updatedAt: string;
+}
+
+export interface TwoFactorSetupResp {
+  /** PNG QR code as a data URL. */
+  qrCode: string;
+  /** Base32 TOTP secret for manual entry. */
+  secret: string;
+  /** otpauth:// URL encoded in the QR code. */
+  url: string;
 }
 
 export interface UpdateSandboxReq {
@@ -112,8 +232,30 @@ export interface UpdateTemplateReq {
   timeout?: number;
 }
 
+export interface User {
+  createdAt: string;
+  id: number;
+  lastSignInAt?: string | null;
+  recoveryCodesRemaining: number;
+  twoFactorEnabled: boolean;
+  updatedAt: string;
+  username: string;
+}
+
+export interface DtoResponseExecutionDetail {
+  data: ExecutionDetail;
+}
+
 export interface DtoResponseExecutionResult {
   data: ExecutionResult;
+}
+
+export interface DtoResponseExecutionStats {
+  data: ExecutionStats;
+}
+
+export interface DtoResponseListExecutionsResp {
+  data: ListExecutionsResp;
 }
 
 export interface DtoResponseListSandboxesResp {
@@ -124,20 +266,36 @@ export interface DtoResponseListTemplatesResp {
   data: ListTemplatesResp;
 }
 
+export interface DtoResponseRecoveryCodesResp {
+  data: RecoveryCodesResp;
+}
+
 export interface DtoResponseSandbox {
   data: Sandbox;
+}
+
+export interface DtoResponseSignInResp {
+  data: SignInResp;
 }
 
 export interface DtoResponseTemplate {
   data: Template;
 }
 
-export interface DtoResponseAny {
-  data: any;
+export interface DtoResponseTwoFactorSetupResp {
+  data: TwoFactorSetupResp;
+}
+
+export interface DtoResponseUser {
+  data: User;
 }
 
 export interface DtoResponseArrayTemplate {
   data: Template[];
+}
+
+export interface DtoResponseArrayUser {
+  data: User[];
 }
 
 export interface DtoResponseString {
@@ -151,11 +309,64 @@ export interface RuntimeExecOutput {
   stdout: string;
 }
 
-export type ProfileData = DtoResponseAny;
+export type DisableTwoFactorData = DtoResponseString;
 
-export type SignInData = DtoResponseString;
+export type EnableTwoFactorData = DtoResponseRecoveryCodesResp;
+
+export type RegenerateRecoveryCodesData = DtoResponseRecoveryCodesResp;
+
+export type SetupTwoFactorData = DtoResponseTwoFactorSetupResp;
+
+export type ChangePasswordData = DtoResponseString;
+
+export type ProfileData = DtoResponseUser;
+
+export type SignInData = DtoResponseSignInResp;
+
+export type SignInTwoFactorData = DtoResponseSignInResp;
 
 export type SignOutData = DtoResponseString;
+
+export interface GetExecutionParams {
+  /** ID */
+  id: number;
+}
+
+export type GetExecutionData = DtoResponseExecutionDetail;
+
+export interface ListExecutionsParams {
+  /**
+   * Page number; values below 1 use 1
+   * @default 1
+   */
+  page?: number;
+  /**
+   * Page size; values below 1 use 20
+   * @default 20
+   */
+  pageSize?: number;
+  /** Only executions of this sandbox */
+  sandboxID?: number;
+  /** Only executions with this status */
+  status?: "success" | "failed" | "timeout" | "rejected" | "error";
+}
+
+export type ListExecutionsData = DtoResponseListExecutionsResp;
+
+export interface ExecutionStatsParams {
+  /**
+   * Number of days in daily, including today (1-90)
+   * @default 14
+   */
+  days?: number;
+  /**
+   * IANA time zone used to split days
+   * @default "UTC"
+   */
+  timezone?: string;
+}
+
+export type ExecutionStatsData = DtoResponseExecutionStats;
 
 export interface GetSandboxParams {
   /** ID */
@@ -234,6 +445,31 @@ export type ListTemplatesData = DtoResponseListTemplatesResp;
 export type CreateTemplateData = DtoResponseTemplate;
 
 export type AllTemplatesData = DtoResponseArrayTemplate;
+
+export interface DeleteUserParams {
+  /** ID */
+  id: number;
+}
+
+export type DeleteUserData = DtoResponseString;
+
+export interface ResetUserTwoFactorParams {
+  /** ID */
+  id: number;
+}
+
+export type ResetUserTwoFactorData = DtoResponseString;
+
+export interface ResetUserPasswordParams {
+  /** ID */
+  id: number;
+}
+
+export type ResetUserPasswordData = DtoResponseString;
+
+export type ListUsersData = DtoResponseArrayUser;
+
+export type CreateUserData = DtoResponseUser;
 
 export interface ExecuteCodePayload {
   /** Programming language */
@@ -430,18 +666,120 @@ export class HttpClient<SecurityDataType = unknown> {
  * @baseUrl /
  * @contact
  *
- * Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg. All HTTP bodies are capped by app.wasm_limits.max_request_bytes; oversized bodies return HTTP 413.
+ * Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg. All HTTP bodies are capped by app.wasm_limits.max_request_bytes; oversized bodies return HTTP 413. Buffered bodies share app.wasm_limits.max_buffered_request_bytes; requests that exceed it return HTTP 503.
  */
 export class Api<
   SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
+  account = {
+    /**
+     * No description
+     *
+     * @tags Account
+     * @name DisableTwoFactor
+     * @summary Disable two-factor authentication
+     * @request POST:/api/account/2fa/disable
+     * @secure
+     */
+    disableTwoFactor: (data: ConfirmPasswordForm, params: RequestParams = {}) =>
+      this.request<DisableTwoFactorData, ErrorResponse>({
+        path: `/api/account/2fa/disable`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Confirms the secret from setupTwoFactor and returns new recovery codes.
+     *
+     * @tags Account
+     * @name EnableTwoFactor
+     * @summary Enable two-factor authentication
+     * @request POST:/api/account/2fa/enable
+     * @secure
+     */
+    enableTwoFactor: (data: EnableTwoFactorForm, params: RequestParams = {}) =>
+      this.request<EnableTwoFactorData, ErrorResponse>({
+        path: `/api/account/2fa/enable`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Replaces all existing recovery codes.
+     *
+     * @tags Account
+     * @name RegenerateRecoveryCodes
+     * @summary Regenerate recovery codes
+     * @request POST:/api/account/2fa/recovery-codes
+     * @secure
+     */
+    regenerateRecoveryCodes: (
+      data: ConfirmPasswordForm,
+      params: RequestParams = {},
+    ) =>
+      this.request<RegenerateRecoveryCodesData, ErrorResponse>({
+        path: `/api/account/2fa/recovery-codes`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Generates a new TOTP secret. Two-factor authentication stays disabled until enableTwoFactor confirms a code.
+     *
+     * @tags Account
+     * @name SetupTwoFactor
+     * @summary Start two-factor authentication setup
+     * @request POST:/api/account/2fa/setup
+     * @secure
+     */
+    setupTwoFactor: (params: RequestParams = {}) =>
+      this.request<SetupTwoFactorData, ErrorResponse>({
+        path: `/api/account/2fa/setup`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Other sessions of the user are signed out; the current session stays valid.
+     *
+     * @tags Account
+     * @name ChangePassword
+     * @summary Change the password of the signed-in user
+     * @request PUT:/api/account/password
+     * @secure
+     */
+    changePassword: (data: ChangePasswordForm, params: RequestParams = {}) =>
+      this.request<ChangePasswordData, ErrorResponse>({
+        path: `/api/account/password`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
   auth = {
     /**
-     * @description Returns data: null when the session is authenticated.
+     * No description
      *
      * @tags Auth
      * @name Profile
-     * @summary Check the current session
+     * @summary Get the signed-in user
      * @request GET:/api/auth/profile
      * @secure
      */
@@ -455,11 +793,11 @@ export class Api<
       }),
 
     /**
-     * No description
+     * @description When the user has two-factor authentication enabled, twoFactorRequired is true and the returned token must be sent with signInTwoFactor within 5 minutes.
      *
      * @tags Auth
      * @name SignIn
-     * @summary Sign in with the administrator password
+     * @summary Sign in with a username and password
      * @request POST:/api/auth/sign-in
      */
     signIn: (data: SignInForm, params: RequestParams = {}) =>
@@ -467,6 +805,26 @@ export class Api<
         path: `/api/auth/sign-in`,
         method: "POST",
         body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Accepts a TOTP code or an unused recovery code. After 5 wrong codes or 5 minutes the pending sign-in is discarded and the client must sign in again.
+     *
+     * @tags Auth
+     * @name SignInTwoFactor
+     * @summary Complete sign-in with a verification code
+     * @request POST:/api/auth/sign-in/2fa
+     * @secure
+     */
+    signInTwoFactor: (data: SignInTwoFactorForm, params: RequestParams = {}) =>
+      this.request<SignInTwoFactorData, ErrorResponse>({
+        path: `/api/auth/sign-in/2fa`,
+        method: "POST",
+        body: data,
+        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
@@ -485,6 +843,69 @@ export class Api<
       this.request<SignOutData, ErrorResponse>({
         path: `/api/auth/sign-out`,
         method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  executions = {
+    /**
+     * No description
+     *
+     * @tags Executions
+     * @name GetExecution
+     * @summary Get a sandbox execution
+     * @request GET:/api/execution/{id}
+     * @secure
+     */
+    getExecution: ({ id }: GetExecutionParams, params: RequestParams = {}) =>
+      this.request<GetExecutionData, ErrorResponse>({
+        path: `/api/execution/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Newest first. Code and output are only included in getExecution.
+     *
+     * @tags Executions
+     * @name ListExecutions
+     * @summary List sandbox executions
+     * @request GET:/api/executions
+     * @secure
+     */
+    listExecutions: (
+      query: ListExecutionsParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<ListExecutionsData, ErrorResponse>({
+        path: `/api/executions`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Executions
+     * @name ExecutionStats
+     * @summary Get execution statistics
+     * @request GET:/api/executions/stats
+     * @secure
+     */
+    executionStats: (
+      query: ExecutionStatsParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<ExecutionStatsData, ErrorResponse>({
+        path: `/api/executions/stats`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -713,6 +1134,108 @@ export class Api<
         path: `/api/templates/all`,
         method: "GET",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  users = {
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name DeleteUser
+     * @summary Delete a user
+     * @request DELETE:/api/user/{id}
+     * @secure
+     */
+    deleteUser: ({ id }: DeleteUserParams, params: RequestParams = {}) =>
+      this.request<DeleteUserData, ErrorResponse>({
+        path: `/api/user/${id}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description For users who lost their authenticator and recovery codes. Signs the user out of all sessions.
+     *
+     * @tags Users
+     * @name ResetUserTwoFactor
+     * @summary Turn off two-factor authentication for a user
+     * @request DELETE:/api/user/{id}/2fa
+     * @secure
+     */
+    resetUserTwoFactor: (
+      { id }: ResetUserTwoFactorParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<ResetUserTwoFactorData, ErrorResponse>({
+        path: `/api/user/${id}/2fa`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Signs the user out of all sessions.
+     *
+     * @tags Users
+     * @name ResetUserPassword
+     * @summary Set a new password for a user
+     * @request PUT:/api/user/{id}/password
+     * @secure
+     */
+    resetUserPassword: (
+      { id }: ResetUserPasswordParams,
+      data: ResetPasswordReq,
+      params: RequestParams = {},
+    ) =>
+      this.request<ResetUserPasswordData, ErrorResponse>({
+        path: `/api/user/${id}/password`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name ListUsers
+     * @summary List users
+     * @request GET:/api/users
+     * @secure
+     */
+    listUsers: (params: RequestParams = {}) =>
+      this.request<ListUsersData, ErrorResponse>({
+        path: `/api/users`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name CreateUser
+     * @summary Create a user
+     * @request POST:/api/users
+     * @secure
+     */
+    createUser: (data: CreateUserReq, params: RequestParams = {}) =>
+      this.request<CreateUserData, ErrorResponse>({
+        path: `/api/users`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

@@ -61,7 +61,7 @@ export default function Templates() {
   const [total, setTotal] = useState(0);
   const [data, setData] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
-  // 关闭弹窗时保留 deleteTarget，避免退场动画期间名称消失。
+  // Keep deleteTarget while the dialog closes so the name stays during the exit animation.
   const [deleteTarget, setDeleteTarget] = useState<Template | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -71,7 +71,7 @@ export default function Templates() {
       .listTemplates({ page, pageSize: PAGE_SIZE })
       .then((res) => {
         const { templates, total } = res.data.data;
-        // 删除最后一页的最后一条后回退到上一页。
+        // Step back a page after deleting the last item on the last page.
         if (templates.length === 0 && page > 1) {
           setPage(page - 1);
           return;
@@ -101,7 +101,6 @@ export default function Templates() {
     <>
       <PageHeader
         title="Templates"
-        description="Templates define the languages, limits and permissions a sandbox runs with."
         actions={
           <Button leadingIcon={RiAddLine} onClick={() => navigate("/template/new")}>
             New template
@@ -112,11 +111,10 @@ export default function Templates() {
       <section className="flex w-full flex-col rounded-2xl border border-border-table bg-background-full pt-2">
         <div className="flex items-center justify-between gap-3 px-4 py-2">
           <div className="flex flex-col">
-            <p className="text-body-medium text-text-tertiary">Total results</p>
             {loading && data.length === 0 ? (
               <Skeleton shape="text" className="my-1 h-3.5 w-24" />
             ) : (
-              <p className="text-body-medium text-text-primary">
+              <p className="text-body-medium text-text-secondary tabular-nums">
                 {total.toLocaleString()} {total === 1 ? "template" : "templates"}
               </p>
             )}
@@ -127,8 +125,8 @@ export default function Templates() {
           <div className="border-t border-separator-border">
             <EmptyState
               icon={<RiStackLine className="size-6" aria-hidden />}
-              title="No templates yet"
-              description="Create a template to choose which languages are available and how much time and memory each run gets."
+              title="No templates"
+              description="A sandbox needs a template for its languages and limits."
               action={
                 <Button leadingIcon={RiAddLine} onClick={() => navigate("/template/new")}>
                   New template
@@ -215,11 +213,10 @@ export default function Templates() {
       <AlertDialog
         isOpen={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete template?"
+        title={`Delete ${deleteTarget?.name ?? "template"}?`}
         description={
           <>
-            <span className="text-body-medium text-text-primary">{deleteTarget?.name}</span> will be removed permanently.
-            Sandboxes using it will no longer be able to run code.
+            Sandboxes using <span className="text-body-medium text-text-primary">{deleteTarget?.name}</span> will stop running code. This can't be undone.
           </>
         }
         confirmLabel="Delete"

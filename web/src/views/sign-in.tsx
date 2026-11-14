@@ -1,58 +1,197 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
-import { RiEyeLine, RiEyeOffLine, RiGithubFill, RiLockPasswordLine } from "@remixicon/react";
+import axios from "axios";
+import { RiArrowLeftLine, RiGithubFill } from "@remixicon/react";
 import { client } from "@/api/client";
-import { ElainaMark } from "@/components/application/layout/elaina-mark";
+import { PasswordField } from "@/components/application/auth/password-field";
+import { Logo } from "@/components/application/layout/logo";
 import { ThemeToggle } from "@/components/application/theme/theme-toggle";
 import { Button } from "@/components/base/buttons/button";
+import { LinkButton } from "@/components/base/buttons/link-button";
 import { HintText } from "@/components/base/input/hint-text";
-import { InputBase, TextField } from "@/components/base/input/input";
+import { Input } from "@/components/base/input/input";
+import { InputOtp } from "@/components/base/input-otp/input-otp";
 import { Label } from "@/components/base/input/label";
 import { SpinnerGlyph } from "@/components/base/spinner/spinner";
-import { toast } from "@/components/base/toast/toast";
 import { authStore, useIsAuthenticated } from "@/store/auth";
 
 const PendingGlyph = ({ className }: { className?: string }) => <SpinnerGlyph size="sm" className={className} />;
 
-// 后端按 UTF-8 字节数校验密码长度（8-72）。
-function validatePassword(password: string): string | null {
-  const bytes = new TextEncoder().encode(password).length;
-  if (bytes === 0) return "Password is required.";
-  if (bytes < 8 || bytes > 72) return "Password must contain 8-72 UTF-8 bytes.";
-  return null;
+function PasswordStep({ onPending, onSuccess }: { onPending: (token: string) => void; onSuccess: (token: string) => void }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
+  const [pending, setPending] = useState(false);
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const next = {
+      username: username.trim() === "" ? "Enter your username." : undefined,
+      password: password === "" ? "Enter your password." : undefined,
+    };
+    setErrors(next);
+    if (next.username || next.password) return;
+
+    setPending(true);
+    client.auth
+      .signIn({ username: username.trim(), password })
+      .then((res) => {
+        const { token, twoFactorRequired } = res.data.data;
+        if (twoFactorRequired) onPending(token);
+        else onSuccess(token);
+      })
+      .catch(() => setPassword(""))
+      .finally(() => setPending(false));
+  };
+
+  return (
+    <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
+      <Input
+        label="Username"
+        value={username}
+        onChange={(value) => {
+          setUsername(value);
+          setErrors((current) => ({ ...current, username: undefined }));
+        }}
+        isRequired
+        isInvalid={!!errors.username}
+        errorMessage={errors.username}
+        autoComplete="username"
+        autoFocus
+        inputDir="ltr"
+      />
+      <PasswordField
+        label="Password"
+        value={password}
+        onChange={(value) => {
+          setPassword(value);
+          setErrors((current) => ({ ...current, password: undefined }));
+        }}
+        error={errors.password}
+        autoComplete="current-password"
+      />
+      <Button type="submit" className="mt-1 w-full" disabled={pending} aria-busy={pending || undefined} leadingIcon={pending ? PendingGlyph : undefined}>
+        Sign in
+      </Button>
+    </form>
+  );
+}
+
+function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: () => void; onSuccess: (token: string) => void }) {
+  const [mode, setMode] = useState<"totp" | "recovery">("totp");
+  const [code, setCode] = useState("");
+  const [invalid, setInvalid] = useState(false);
+  const [pending, setPending] = useState(false);
+  const otpRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mode === "totp") otpRef.current?.querySelector("input")?.focus();
+  }, [mode]);
+
+  const verify = (value: string) => {
+    if (value.trim() === "" || pending) return;
+    setPending(true);
+    client.auth
+      .signInTwoFactor({ code: value.trim() }, { headers: { Authorization: `Token ${token}` }, quietStatuses: [403] })
+      .then((res) => onSuccess(res.data.data.token))
+      .catch((error: unknown) => {
+        if (axios.isAxiosError(error) && error.response?.status === 410) {
+          onBack();
+          return;
+        }
+        setInvalid(true);
+        setCode("");
+        if (mode === "totp") otpRef.current?.querySelector("input")?.focus();
+      })
+      .finally(() => setPending(false));
+  };
+
+  return (
+    <form
+      className="flex flex-col gap-5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        verify(code);
+      }}
+      noValidate
+    >
+      {mode === "totp" ? (
+        <div className="flex flex-col gap-1.5">
+          <Label>Authentication code</Label>
+          <InputOtp
+            ref={otpRef}
+            value={code}
+            onChange={(value) => {
+              setCode(value);
+              setInvalid(false);
+            }}
+            onComplete={verify}
+            isInvalid={invalid}
+            isDisabled={pending}
+            groupEvery={3}
+            aria-label="Authentication code"
+          />
+          <HintText isInvalid={invalid}>
+            {invalid ? "That code didn't work. Try the current one." : "Open your authenticator app to view the code."}
+          </HintText>
+        </div>
+      ) : (
+        <Input
+          label="Recovery code"
+          placeholder="xxxxx-xxxxx"
+          value={code}
+          onChange={(value) => {
+            setCode(value);
+            setInvalid(false);
+          }}
+          isInvalid={invalid}
+          errorMessage="That recovery code didn't work."
+          hint="Each recovery code can be used once."
+          autoComplete="off"
+          autoFocus
+          inputDir="ltr"
+          inputClassName="font-mono"
+        />
+      )}
+
+      <Button type="submit" className="w-full" disabled={pending || code.trim() === ""} aria-busy={pending || undefined} leadingIcon={pending ? PendingGlyph : undefined}>
+        Verify
+      </Button>
+
+      <div className="flex items-center justify-between gap-3">
+        <LinkButton size="small" variant="secondary" leadingIcon={RiArrowLeftLine} onClick={onBack}>
+          Back
+        </LinkButton>
+        <LinkButton
+          size="small"
+          onClick={() => {
+            setMode(mode === "totp" ? "recovery" : "totp");
+            setCode("");
+            setInvalid(false);
+          }}
+        >
+          {mode === "totp" ? "Use a recovery code" : "Use authenticator app"}
+        </LinkButton>
+      </div>
+    </form>
+  );
 }
 
 export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useIsAuthenticated();
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
 
   const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
 
-  if (isAuthenticated && !pending) {
+  if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const message = validatePassword(password);
-    setError(message);
-    if (message) return;
-
-    setPending(true);
-    client.auth
-      .signIn({ password })
-      .then((res) => {
-        authStore.setToken(res.data.data);
-        toast.success("Signed in successfully");
-        navigate(from, { replace: true });
-      })
-      .catch(() => undefined)
-      .finally(() => setPending(false));
+  const onSuccess = (token: string) => {
+    authStore.setToken(token);
+    navigate(from, { replace: true });
   };
 
   return (
@@ -63,58 +202,16 @@ export default function SignIn() {
 
       <div className="flex w-full max-w-[400px] flex-col items-center gap-6">
         <section className="w-full rounded-3xl border border-border-button-default bg-background-full p-6 shadow-sm sm:p-8">
-          <div className="mb-6 flex flex-col gap-5">
-            <ElainaMark size="lg" />
-            <div className="flex flex-col gap-1.5">
-              <h1 className="text-title-2-medium text-text-primary">Welcome back</h1>
-              <p className="text-body-regular text-text-secondary">
-                Sign in with the administrator password to manage templates and sandboxes.
-              </p>
-            </div>
+          <div className="mb-6 flex flex-col gap-4">
+            <Logo className="size-11" />
+            <h1 className="text-title-2-medium text-text-primary">{pendingToken ? "Two-factor authentication" : "Sign in to Elaina"}</h1>
           </div>
 
-          <form className="flex flex-col gap-6" onSubmit={onSubmit} noValidate>
-            <TextField
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(value) => {
-                setPassword(value);
-                if (error) setError(null);
-              }}
-              isInvalid={error !== null}
-              isRequired
-              autoFocus
-              autoComplete="current-password"
-            >
-              <Label isRequired>Password</Label>
-              <InputBase
-                placeholder="Enter your password"
-                leadingIcon={RiLockPasswordLine}
-                trailingAddon={
-                  <button
-                    type="button"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    onClick={() => setShowPassword((value) => !value)}
-                    className="flex shrink-0 cursor-pointer items-center rounded-md text-foreground-icon-tertiary outline-none transition-colors hover:text-foreground-icon-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
-                  >
-                    {showPassword ? <RiEyeOffLine className="size-5" aria-hidden /> : <RiEyeLine className="size-5" aria-hidden />}
-                  </button>
-                }
-              />
-              {error ? <HintText isInvalid>{error}</HintText> : null}
-            </TextField>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={pending}
-              aria-busy={pending || undefined}
-              leadingIcon={pending ? PendingGlyph : undefined}
-            >
-              {pending ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
+          {pendingToken ? (
+            <TwoFactorStep token={pendingToken} onBack={() => setPendingToken(null)} onSuccess={onSuccess} />
+          ) : (
+            <PasswordStep onPending={setPendingToken} onSuccess={onSuccess} />
+          )}
         </section>
 
         <footer className="flex items-center gap-2 text-caption-1-medium text-text-tertiary">

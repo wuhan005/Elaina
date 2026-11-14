@@ -82,12 +82,24 @@ func limitRequestBody(ctx flamego.Context) {
 	ctx.Next()
 }
 
-// clientAddress returns the client key for rate limiting: behind trusted proxies it uses the rightmost untrusted
-// X-Forwarded-For address, and IPv6 addresses are grouped by /64.
+// clientAddress returns the client key for rate limiting: the client IP, with IPv6 addresses grouped by /64.
 func clientAddress(r *http.Request) string {
+	addr, ok := clientIP(r)
+	if !ok {
+		return "unknown"
+	}
+	if addr.Is6() {
+		prefix, _ := addr.WithZone("").Prefix(64)
+		return prefix.String()
+	}
+	return addr.String()
+}
+
+// clientIP returns the client IP; behind trusted proxies it uses the rightmost untrusted X-Forwarded-For address.
+func clientIP(r *http.Request) (netip.Addr, bool) {
 	remote, err := netip.ParseAddrPort(r.RemoteAddr)
 	if err != nil {
-		return "unknown"
+		return netip.Addr{}, false
 	}
 
 	addr := remote.Addr().Unmap()
@@ -104,12 +116,7 @@ func clientAddress(r *http.Request) string {
 			}
 		}
 	}
-
-	if addr.Is6() {
-		prefix, _ := addr.WithZone("").Prefix(64)
-		return prefix.String()
-	}
-	return addr.String()
+	return addr, true
 }
 
 func trustedProxy(addr netip.Addr) bool {

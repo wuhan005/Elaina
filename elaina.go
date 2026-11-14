@@ -39,6 +39,7 @@ func main() {
 	if _, err := db.Init(); err != nil {
 		logrus.WithError(err).Fatal("Failed to connect to database")
 	}
+	go db.RunExecutionRetention(ctx, config.App.ExecutionRetentionDays)
 
 	r, err := route.New()
 	if err != nil {

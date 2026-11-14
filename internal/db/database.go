@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,7 +19,8 @@ func Init() (*gorm.DB, error) {
 		DSN:                  config.Postgres.DSN,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{
-		NowFunc: dbutil.Now,
+		NowFunc:        dbutil.Now,
+		TranslateError: true,
 		Logger: logger.New(
 			logrus.New(),
 			logger.Config{
@@ -36,6 +38,8 @@ func Init() (*gorm.DB, error) {
 	if err := db.AutoMigrate(
 		&Tpl{},
 		&Sandbox{},
+		&User{},
+		&Execution{},
 	); err != nil {
 		return nil, errors.Wrap(err, "auto migrate")
 	}
@@ -50,6 +54,19 @@ func Init() (*gorm.DB, error) {
 
 	Tpls = NewTplStore(db)
 	Sandboxes = NewSandboxStore(db)
+	Users = NewUserStore(db)
+	Executions = NewExecutionStore(db)
+
+	// Create the initial "admin" user from app.password_hash while the users table is empty.
+	if config.App.PasswordHash != "" {
+		created, err := Users.EnsureAdmin(context.Background(), config.App.PasswordHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "create initial admin user")
+		}
+		if created {
+			logrus.WithField("username", BootstrapUsername).Info("Created the initial admin user from app.password_hash")
+		}
+	}
 
 	return db, nil
 }

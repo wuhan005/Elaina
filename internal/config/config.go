@@ -48,10 +48,14 @@ var App = struct {
 	WASMCacheDir    string         `mapstructure:"wasm_cache_dir"`
 	WASMLimits      WASMLimits     `mapstructure:"wasm_limits"`
 	WASMDeniedCIDRs []netip.Prefix `mapstructure:"wasm_denied_cidrs"`
+
+	// ExecutionRetentionDays is how long execution records are kept. Zero keeps them forever.
+	ExecutionRetentionDays int `mapstructure:"execution_retention_days"`
 }{
-	WASMRuntimeDir: ".wasm",
-	WASMCacheDir:   ".wasm/cache",
-	WASMLimits:     defaultWASMLimits,
+	WASMRuntimeDir:         ".wasm",
+	WASMCacheDir:           ".wasm/cache",
+	WASMLimits:             defaultWASMLimits,
+	ExecutionRetentionDays: 30,
 }
 
 var defaultApp = App
@@ -88,6 +92,9 @@ func Init(configFilePath string) error {
 
 	if _, err := bcrypt.Cost([]byte(App.PasswordHash)); err != nil {
 		return errors.New("app.password_hash must contain a bcrypt password hash")
+	}
+	if App.ExecutionRetentionDays < 0 {
+		return errors.New("app.execution_retention_days must not be negative")
 	}
 
 	return App.WASMLimits.Validate()

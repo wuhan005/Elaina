@@ -202,18 +202,28 @@ func TestRunnerLimits(t *testing.T) {
 		f.ServeHTTP(w, r)
 		return w
 	}
+	executions := useFakeExecutions(t)
 	for _, test := range []struct {
 		code   string
 		status int
+		record db.ExecutionStatus
 	}{
-		{"123456", http.StatusOK},
-		{"中文", http.StatusOK},
-		{"1234567", http.StatusRequestEntityTooLarge},
-		{"中文a", http.StatusRequestEntityTooLarge},
+		{"123456", http.StatusOK, db.ExecutionStatusSuccess},
+		{"中文", http.StatusOK, db.ExecutionStatusSuccess},
+		{"1234567", http.StatusRequestEntityTooLarge, db.ExecutionStatusRejected},
+		{"中文a", http.StatusRequestEntityTooLarge, db.ExecutionStatusRejected},
 	} {
 		w := request(context.Background(), other, "python", test.code)
 		if w.Code != test.status {
 			t.Fatalf("source %q: status=%d body=%s", test.code, w.Code, w.Body.String())
+		}
+		record := executions.last()
+		wantCode := test.code
+		if test.record == db.ExecutionStatusRejected {
+			wantCode = ""
+		}
+		if record.Status != test.record || record.Code != wantCode || record.CodeBytes != len(test.code) {
+			t.Fatalf("source %q: unexpected record %+v", test.code, record)
 		}
 	}
 

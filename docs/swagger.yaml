@@ -1,5 +1,24 @@
 basePath: /
 definitions:
+  ChangePasswordForm:
+    properties:
+      currentPassword:
+        type: string
+      newPassword:
+        description: Password must contain 8-72 UTF-8 bytes.
+        type: string
+    required:
+    - currentPassword
+    - newPassword
+    type: object
+  ConfirmPasswordForm:
+    properties:
+      password:
+        description: The current password of the signed-in user.
+        type: string
+    required:
+    - password
+    type: object
   CreateSandboxReq:
     properties:
       editable:
@@ -40,12 +59,108 @@ definitions:
     - language
     - name
     type: object
+  CreateUserReq:
+    properties:
+      password:
+        description: Password must contain 8-72 UTF-8 bytes.
+        type: string
+      username:
+        description: 2-32 letters, digits, '_', '.' or '-', starting with a letter
+          or digit.
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  EnableTwoFactorForm:
+    properties:
+      code:
+        description: A 6-digit code from the authenticator app.
+        type: string
+    required:
+    - code
+    type: object
   ErrorResponse:
     properties:
       msg:
         type: string
     required:
     - msg
+    type: object
+  ExecutionDailyCount:
+    properties:
+      date:
+        description: Local day in YYYY-MM-DD.
+        type: string
+      failed:
+        type: integer
+      total:
+        type: integer
+    required:
+    - date
+    - failed
+    - total
+    type: object
+  ExecutionDetail:
+    properties:
+      clientAddress:
+        type: string
+      code:
+        description: Empty for rejected requests.
+        type: string
+      codeBytes:
+        description: Size of the submitted source code in bytes.
+        type: integer
+      createdAt:
+        type: string
+      duration:
+        description: WASM run time in nanoseconds; 0 when the task did not run.
+        type: integer
+      error:
+        type: string
+      id:
+        type: integer
+      language:
+        type: string
+      sandbox:
+        allOf:
+        - $ref: '#/definitions/ExecutionSandbox'
+        x-nullable: true
+      sandboxID:
+        type: integer
+      status:
+        enum:
+        - success
+        - failed
+        - timeout
+        - rejected
+        - error
+        type: string
+      stderr:
+        type: string
+      stdout:
+        type: string
+      truncated:
+        description: True when code or output was cut to 64 KiB.
+        type: boolean
+      userAgent:
+        type: string
+    required:
+    - clientAddress
+    - code
+    - codeBytes
+    - createdAt
+    - duration
+    - error
+    - id
+    - language
+    - sandbox
+    - sandboxID
+    - status
+    - stderr
+    - stdout
+    - truncated
+    - userAgent
     type: object
   ExecutionResult:
     properties:
@@ -59,6 +174,100 @@ definitions:
     - end_at
     - result
     - start_at
+    type: object
+  ExecutionSandbox:
+    properties:
+      deleted:
+        type: boolean
+      id:
+        type: integer
+      name:
+        type: string
+      uid:
+        type: string
+    required:
+    - deleted
+    - id
+    - name
+    - uid
+    type: object
+  ExecutionStats:
+    properties:
+      daily:
+        description: One entry per day, oldest first.
+        items:
+          $ref: '#/definitions/ExecutionDailyCount'
+        type: array
+      failed24h:
+        type: integer
+      last24h:
+        type: integer
+      total:
+        type: integer
+    required:
+    - daily
+    - failed24h
+    - last24h
+    - total
+    type: object
+  ExecutionSummary:
+    properties:
+      clientAddress:
+        type: string
+      codeBytes:
+        description: Size of the submitted source code in bytes.
+        type: integer
+      createdAt:
+        type: string
+      duration:
+        description: WASM run time in nanoseconds; 0 when the task did not run.
+        type: integer
+      error:
+        type: string
+      id:
+        type: integer
+      language:
+        type: string
+      sandbox:
+        allOf:
+        - $ref: '#/definitions/ExecutionSandbox'
+        x-nullable: true
+      sandboxID:
+        type: integer
+      status:
+        enum:
+        - success
+        - failed
+        - timeout
+        - rejected
+        - error
+        type: string
+      userAgent:
+        type: string
+    required:
+    - clientAddress
+    - codeBytes
+    - createdAt
+    - duration
+    - error
+    - id
+    - language
+    - sandbox
+    - sandboxID
+    - status
+    - userAgent
+    type: object
+  ListExecutionsResp:
+    properties:
+      executions:
+        items:
+          $ref: '#/definitions/ExecutionSummary'
+        type: array
+      total:
+        type: integer
+    required:
+    - executions
+    - total
     type: object
   ListSandboxesResp:
     properties:
@@ -83,6 +292,24 @@ definitions:
     required:
     - templates
     - total
+    type: object
+  RecoveryCodesResp:
+    properties:
+      codes:
+        description: One-time recovery codes. They are only shown once.
+        items:
+          type: string
+        type: array
+    required:
+    - codes
+    type: object
+  ResetPasswordReq:
+    properties:
+      password:
+        description: Password must contain 8-72 UTF-8 bytes.
+        type: string
+    required:
+    - password
     type: object
   Sandbox:
     properties:
@@ -122,8 +349,32 @@ definitions:
       password:
         description: Password must contain 8-72 UTF-8 bytes.
         type: string
+      username:
+        type: string
     required:
     - password
+    - username
+    type: object
+  SignInResp:
+    properties:
+      token:
+        description: Session token for the Authorization header ("Token <token>").
+        type: string
+      twoFactorRequired:
+        description: When true, the token can only be used to submit a verification
+          code to signInTwoFactor.
+        type: boolean
+    required:
+    - token
+    - twoFactorRequired
+    type: object
+  SignInTwoFactorForm:
+    properties:
+      code:
+        description: A 6-digit TOTP code or an unused recovery code.
+        type: string
+    required:
+    - code
     type: object
   Template:
     properties:
@@ -155,6 +406,22 @@ definitions:
     - name
     - timeout
     - updatedAt
+    type: object
+  TwoFactorSetupResp:
+    properties:
+      qrCode:
+        description: PNG QR code as a data URL.
+        type: string
+      secret:
+        description: Base32 TOTP secret for manual entry.
+        type: string
+      url:
+        description: otpauth:// URL encoded in the QR code.
+        type: string
+    required:
+    - qrCode
+    - secret
+    - url
     type: object
   UpdateSandboxReq:
     properties:
@@ -196,10 +463,57 @@ definitions:
     - language
     - name
     type: object
+  User:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      lastSignInAt:
+        type: string
+        x-nullable: true
+      recoveryCodesRemaining:
+        type: integer
+      twoFactorEnabled:
+        type: boolean
+      updatedAt:
+        type: string
+      username:
+        type: string
+    required:
+    - createdAt
+    - id
+    - lastSignInAt
+    - recoveryCodesRemaining
+    - twoFactorEnabled
+    - updatedAt
+    - username
+    type: object
+  dto.Response-ExecutionDetail:
+    properties:
+      data:
+        $ref: '#/definitions/ExecutionDetail'
+    required:
+    - data
+    type: object
   dto.Response-ExecutionResult:
     properties:
       data:
         $ref: '#/definitions/ExecutionResult'
+    required:
+    - data
+    type: object
+  dto.Response-ExecutionStats:
+    properties:
+      data:
+        $ref: '#/definitions/ExecutionStats'
+    required:
+    - data
+    type: object
+  dto.Response-ListExecutionsResp:
+    properties:
+      data:
+        $ref: '#/definitions/ListExecutionsResp'
     required:
     - data
     type: object
@@ -217,10 +531,24 @@ definitions:
     required:
     - data
     type: object
+  dto.Response-RecoveryCodesResp:
+    properties:
+      data:
+        $ref: '#/definitions/RecoveryCodesResp'
+    required:
+    - data
+    type: object
   dto.Response-Sandbox:
     properties:
       data:
         $ref: '#/definitions/Sandbox'
+    required:
+    - data
+    type: object
+  dto.Response-SignInResp:
+    properties:
+      data:
+        $ref: '#/definitions/SignInResp'
     required:
     - data
     type: object
@@ -231,9 +559,17 @@ definitions:
     required:
     - data
     type: object
-  dto.Response-any:
+  dto.Response-TwoFactorSetupResp:
     properties:
-      data: {}
+      data:
+        $ref: '#/definitions/TwoFactorSetupResp'
+    required:
+    - data
+    type: object
+  dto.Response-User:
+    properties:
+      data:
+        $ref: '#/definitions/User'
     required:
     - data
     type: object
@@ -242,6 +578,15 @@ definitions:
       data:
         items:
           $ref: '#/definitions/Template'
+        type: array
+    required:
+    - data
+    type: object
+  dto.Response-array_User:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/User'
         type: array
     required:
     - data
@@ -278,9 +623,206 @@ info:
   title: Elaina API
   version: "1.0"
 paths:
+  /api/account/2fa/disable:
+    post:
+      consumes:
+      - application/json
+      operationId: disableTwoFactor
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/ConfirmPasswordForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Password is incorrect
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Disable two-factor authentication
+      tags:
+      - Account
+  /api/account/2fa/enable:
+    post:
+      consumes:
+      - application/json
+      description: Confirms the secret from setupTwoFactor and returns new recovery
+        codes.
+      operationId: enableTwoFactor
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/EnableTwoFactorForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-RecoveryCodesResp'
+        "400":
+          description: Setup not started
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Invalid verification code
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Already enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Enable two-factor authentication
+      tags:
+      - Account
+  /api/account/2fa/recovery-codes:
+    post:
+      consumes:
+      - application/json
+      description: Replaces all existing recovery codes.
+      operationId: regenerateRecoveryCodes
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/ConfirmPasswordForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-RecoveryCodesResp'
+        "400":
+          description: Not enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Password is incorrect
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Regenerate recovery codes
+      tags:
+      - Account
+  /api/account/2fa/setup:
+    post:
+      description: Generates a new TOTP secret. Two-factor authentication stays disabled
+        until enableTwoFactor confirms a code.
+      operationId: setupTwoFactor
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-TwoFactorSetupResp'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Already enabled
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Start two-factor authentication setup
+      tags:
+      - Account
+  /api/account/password:
+    put:
+      consumes:
+      - application/json
+      description: Other sessions of the user are signed out; the current session
+        stays valid.
+      operationId: changePassword
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/ChangePasswordForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Current password is incorrect
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Change the password of the signed-in user
+      tags:
+      - Account
   /api/auth/profile:
     get:
-      description: 'Returns data: null when the session is authenticated.'
       operationId: profile
       produces:
       - application/json
@@ -288,20 +830,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.Response-any'
+            $ref: '#/definitions/dto.Response-User'
         "401":
           description: Unauthorized
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
       - SessionAuth: []
-      summary: Check the current session
+      summary: Get the signed-in user
       tags:
       - Auth
   /api/auth/sign-in:
     post:
       consumes:
       - application/json
+      description: When the user has two-factor authentication enabled, twoFactorRequired
+        is true and the returned token must be sent with signInTwoFactor within 5
+        minutes.
       operationId: signIn
       parameters:
       - description: Request body
@@ -316,16 +861,63 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.Response-string'
+            $ref: '#/definitions/dto.Response-SignInResp'
         "400":
           description: Invalid request
           schema:
             $ref: '#/definitions/ErrorResponse'
         "403":
-          description: Invalid password
+          description: Invalid username or password
           schema:
             $ref: '#/definitions/ErrorResponse'
-      summary: Sign in with the administrator password
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Sign in with a username and password
+      tags:
+      - Auth
+  /api/auth/sign-in/2fa:
+    post:
+      consumes:
+      - application/json
+      description: Accepts a TOTP code or an unused recovery code. After 5 wrong codes
+        or 5 minutes the pending sign-in is discarded and the client must sign in
+        again.
+      operationId: signInTwoFactor
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/SignInTwoFactorForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-SignInResp'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Invalid verification code
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "410":
+          description: No pending sign-in, or it expired
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Complete sign-in with a verification code
       tags:
       - Auth
   /api/auth/sign-out:
@@ -347,6 +939,130 @@ paths:
       summary: Sign out the current session
       tags:
       - Auth
+  /api/execution/{id}:
+    get:
+      operationId: getExecution
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-ExecutionDetail'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get a sandbox execution
+      tags:
+      - Executions
+  /api/executions:
+    get:
+      description: Newest first. Code and output are only included in getExecution.
+      operationId: listExecutions
+      parameters:
+      - default: 1
+        description: Page number; values below 1 use 1
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size; values below 1 use 20
+        in: query
+        name: pageSize
+        type: integer
+      - description: Only executions of this sandbox
+        in: query
+        name: sandboxID
+        type: integer
+      - description: Only executions with this status
+        enum:
+        - success
+        - failed
+        - timeout
+        - rejected
+        - error
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-ListExecutionsResp'
+        "400":
+          description: Invalid status
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List sandbox executions
+      tags:
+      - Executions
+  /api/executions/stats:
+    get:
+      operationId: executionStats
+      parameters:
+      - default: 14
+        description: Number of days in daily, including today (1-90)
+        in: query
+        name: days
+        type: integer
+      - default: UTC
+        description: IANA time zone used to split days
+        in: query
+        name: timezone
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-ExecutionStats'
+        "400":
+          description: Invalid time zone or days
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Get execution statistics
+      tags:
+      - Executions
   /api/sandbox/{id}:
     delete:
       operationId: deleteSandbox
@@ -730,6 +1446,190 @@ paths:
       summary: Get all templates
       tags:
       - Templates
+  /api/user/{id}:
+    delete:
+      operationId: deleteUser
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Cannot delete yourself
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Delete a user
+      tags:
+      - Users
+  /api/user/{id}/2fa:
+    delete:
+      description: For users who lost their authenticator and recovery codes. Signs
+        the user out of all sessions.
+      operationId: resetUserTwoFactor
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Turn off two-factor authentication for a user
+      tags:
+      - Users
+  /api/user/{id}/password:
+    put:
+      consumes:
+      - application/json
+      description: Signs the user out of all sessions.
+      operationId: resetUserPassword
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/ResetPasswordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-string'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Set a new password for a user
+      tags:
+      - Users
+  /api/users:
+    get:
+      operationId: listUsers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-array_User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: List users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      operationId: createUser
+      parameters:
+      - description: Request body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/CreateUserReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response-User'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Username already exists
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - SessionAuth: []
+      summary: Create a user
+      tags:
+      - Users
   /r/{uid}/execute:
     post:
       consumes:
@@ -778,8 +1678,8 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
         "503":
-          description: Global task slots and queue are full, or the request body
-            memory budget is exhausted
+          description: Global task slots and queue are full, or the request body memory
+            budget is exhausted
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Execute code in a sandbox

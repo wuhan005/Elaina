@@ -7,6 +7,7 @@ import {
   RiEditLine,
   RiExternalLinkLine,
   RiFileCopyLine,
+  RiHistoryLine,
   RiLockLine,
   RiPencilLine,
 } from "@remixicon/react";
@@ -33,7 +34,7 @@ export function runnerUrl(uid: string): string {
 export function copyRunnerUrl(uid: string) {
   navigator.clipboard
     .writeText(runnerUrl(uid))
-    .then(() => toast.success("Runner link copied", { description: runnerUrl(uid) }))
+    .then(() => toast.success("Link copied"))
     .catch(() => toast.error("Could not copy the link"));
 }
 
@@ -79,7 +80,7 @@ export default function Sandboxes() {
   const [total, setTotal] = useState(0);
   const [data, setData] = useState<Sandbox[]>([]);
   const [loading, setLoading] = useState(true);
-  // 关闭弹窗时保留 deleteTarget，避免退场动画期间名称消失。
+  // Keep deleteTarget while the dialog closes so the name stays during the exit animation.
   const [deleteTarget, setDeleteTarget] = useState<Sandbox | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -118,7 +119,6 @@ export default function Sandboxes() {
     <>
       <PageHeader
         title="Sandboxes"
-        description="Each sandbox is a shareable runner page with preset code, backed by a template."
         actions={
           <Button leadingIcon={RiAddLine} onClick={() => navigate("/sandbox/new")}>
             New sandbox
@@ -129,11 +129,10 @@ export default function Sandboxes() {
       <section className="flex w-full flex-col rounded-2xl border border-border-table bg-background-full pt-2">
         <div className="flex items-center justify-between gap-3 px-4 py-2">
           <div className="flex flex-col">
-            <p className="text-body-medium text-text-tertiary">Total results</p>
             {loading && data.length === 0 ? (
               <Skeleton shape="text" className="my-1 h-3.5 w-24" />
             ) : (
-              <p className="text-body-medium text-text-primary">
+              <p className="text-body-medium text-text-secondary tabular-nums">
                 {total.toLocaleString()} {total === 1 ? "sandbox" : "sandboxes"}
               </p>
             )}
@@ -144,8 +143,8 @@ export default function Sandboxes() {
           <div className="border-t border-separator-border">
             <EmptyState
               icon={<RiCodeBoxLine className="size-6" aria-hidden />}
-              title="No sandboxes yet"
-              description="Create a sandbox from a template to get a runner page you can share or embed."
+              title="No sandboxes"
+              description="Each sandbox gets a runner page at /r/:uid."
               action={
                 <Button leadingIcon={RiAddLine} onClick={() => navigate("/sandbox/new")}>
                   New sandbox
@@ -162,7 +161,7 @@ export default function Sandboxes() {
                 <TableColumn className="w-[120px]">Mode</TableColumn>
                 <TableColumn>Code</TableColumn>
                 <TableColumn className="w-[180px]">Created at</TableColumn>
-                <TableColumn className="w-[170px]">
+                <TableColumn className="w-[210px]">
                   <span className="sr-only">Actions</span>
                 </TableColumn>
               </TableHeader>
@@ -202,6 +201,7 @@ export default function Sandboxes() {
                           <div className="flex items-center justify-end gap-2">
                             <RowAction icon={RiExternalLinkLine} label="Open runner" href={`/r/${sandbox.uid}`} />
                             <RowAction icon={RiFileCopyLine} label="Copy runner link" onClick={() => copyRunnerUrl(sandbox.uid)} />
+                            <RowAction icon={RiHistoryLine} label="Runs" onClick={() => navigate(`/execution?sandbox=${sandbox.id}`)} />
                             <RowAction icon={RiEditLine} label="Edit" onClick={() => navigate(`/sandbox/${sandbox.id}`)} />
                             <RowAction
                               icon={RiDeleteBin6Line}
@@ -233,11 +233,10 @@ export default function Sandboxes() {
       <AlertDialog
         isOpen={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete sandbox?"
+        title={`Delete ${deleteTarget?.name ?? "sandbox"}?`}
         description={
           <>
-            <span className="text-body-medium text-text-primary">{deleteTarget?.name}</span> and its runner link will be removed
-            permanently.
+            Its runner link will stop working. This can't be undone.
           </>
         }
         confirmLabel="Delete"

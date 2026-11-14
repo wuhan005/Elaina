@@ -1,10 +1,24 @@
+import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useIsAuthenticated } from "@/store/auth";
+import { client } from "@/api/client";
+import { authStore, useCurrentUser, useIsAuthenticated } from "@/store/auth";
 import { AppSidebar } from "./app-sidebar";
+
+export function refreshCurrentUser() {
+  return client.auth
+    .profile()
+    .then((res) => authStore.setUser(res.data.data))
+    .catch(() => undefined);
+}
 
 export function AppLayout() {
   const isAuthenticated = useIsAuthenticated();
+  const user = useCurrentUser();
   const location = useLocation();
+
+  useEffect(() => {
+    if (isAuthenticated && !user) void refreshCurrentUser();
+  }, [isAuthenticated, user]);
 
   if (!isAuthenticated) {
     return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;

@@ -2,8 +2,24 @@
 @import "@fontsource-variable/jetbrains-mono";
 @import "./styles/globals.css";
 
-/* BoardUI 主题从这两个变量读取字体族。 */
+/* The BoardUI theme reads its font families from these variables. */
 :root {
   --font-inter: "Inter Variable";
   --font-mono-source: "JetBrains Mono Variable";
+}
+
+/* Brand accent: slate blue #6A5ACD at 500. The other steps keep its OKLCH hue and follow
+ * Tailwind's lightness ladder; BoardUI derives buttons, focus rings and selection from them. */
+@theme {
+  --color-accent-50: #f4f4fc;
+  --color-accent-100: #eaebf9;
+  --color-accent-200: #d9d9f6;
+  --color-accent-300: #bcbbf1;
+  --color-accent-400: #918be1;
+  --color-accent-500: #6a5acd;
+  --color-accent-600: #5b42c4;
+  --color-accent-700: #5036b1;
+  --color-accent-800: #422d93;
+  --color-accent-900: #352777;
+  --color-accent-950: #21174e;
 }

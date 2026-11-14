@@ -13,6 +13,7 @@ import (
 	"github.com/flamego/session"
 	"github.com/sirupsen/logrus"
 
+	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/dto"
 )
 
@@ -20,7 +21,11 @@ import (
 type Context struct {
 	flamego.Context
 
+	// UserID is the fully signed-in user (including two-factor verification), or 0.
+	UserID          uint
 	IsAuthenticated bool
+	// User is loaded by Authenticator and only set on routes that require sign-in.
+	User *db.User
 }
 
 // WriteJSON writes v as a JSON response body; encoding errors are only logged.
@@ -59,16 +64,23 @@ func (c *Context) Status(statusCode int) {
 }
 
 const (
-	SessionIDIsAuthenticated = "elaina:authenticated"
+	SessionKeyUserID         = "elaina:user_id"
+	SessionKeySessionVersion = "elaina:session_version"
+
+	// Keys used after the password is verified while two-factor verification is pending.
+	SessionKeyPendingUserID    = "elaina:pending_user_id"
+	SessionKeyPendingExpiresAt = "elaina:pending_expires_at"
+	SessionKeyPendingAttempts  = "elaina:pending_attempts"
 )
 
 // Contexter initializes a classic context for a request.
 func Contexter() flamego.Handler {
 	return func(ctx flamego.Context, session session.Session) {
-		isAuthenticated, _ := session.Get(SessionIDIsAuthenticated).(bool)
+		userID, _ := session.Get(SessionKeyUserID).(uint)
 		ctx.Map(Context{
 			Context:         ctx,
-			IsAuthenticated: isAuthenticated,
+			UserID:          userID,
+			IsAuthenticated: userID != 0,
 		})
 	}
 }

@@ -1,4 +1,5 @@
 import {useSyncExternalStore} from 'react'
+import type {User} from '@/api/api'
 
 const STORAGE_KEY = 'elaina:token'
 
@@ -13,6 +14,7 @@ function readToken(): string {
 }
 
 let token = readToken()
+let user: User | null = null
 
 function emit() {
     for (const listener of listeners) listener()
@@ -33,23 +35,33 @@ export const authStore = {
         try {
             window.localStorage.setItem(STORAGE_KEY, next)
         } catch {
-            // 存储不可用时仅保留内存中的会话。
+            // Keep the session in memory only when storage is unavailable.
         }
+        emit()
+    },
+
+    setUser(next: User | null) {
+        user = next
         emit()
     },
 
     clear() {
         token = ''
+        user = null
         try {
             window.localStorage.removeItem(STORAGE_KEY)
         } catch {
-            // 同上。
+            // Same as above.
         }
         emit()
     },
 }
 
-// useIsAuthenticated 订阅登录状态，token 被清空（如 401）时触发重新渲染。
+// useIsAuthenticated re-renders when the token is cleared, e.g. after a 401.
 export function useIsAuthenticated(): boolean {
     return useSyncExternalStore(subscribe, () => token !== '', () => false)
+}
+
+export function useCurrentUser(): User | null {
+    return useSyncExternalStore(subscribe, () => user, () => null)
 }

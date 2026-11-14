@@ -46,8 +46,10 @@ func newTestDatabase(t *testing.T) *gorm.DB {
 		}
 	})
 
-	previousConfig, templates, sandboxes := config.Postgres, Tpls, Sandboxes
-	t.Cleanup(func() { config.Postgres, Tpls, Sandboxes = previousConfig, templates, sandboxes })
+	previousConfig, previousApp, templates, sandboxes, users, executions := config.Postgres, config.App, Tpls, Sandboxes, Users, Executions
+	t.Cleanup(func() {
+		config.Postgres, config.App, Tpls, Sandboxes, Users, Executions = previousConfig, previousApp, templates, sandboxes, users, executions
+	})
 	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
 		address, err := url.Parse(dsn)
 		if err != nil {

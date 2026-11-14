@@ -5,6 +5,7 @@
 package route
 
 import (
+	gocontext "context"
 	"net/http"
 	"time"
 
@@ -42,6 +43,44 @@ func (h *RunnerHandler) Runner(ctx context.Context) error {
 
 	ctx.Map(sandbox)
 	return nil
+}
+
+type executionRecord struct {
+	request  *http.Request
+	sandbox  *db.Sandbox
+	language string
+	code     string
+}
+
+// save stores the execution; rejected requests keep only the code size so floods cannot fill the database.
+func (e executionRecord) save(status db.ExecutionStatus, output *runtime.ExecOutput, runErr error) {
+	options := db.CreateExecutionOptions{
+		SandboxID:     e.sandbox.ID,
+		Language:      e.language,
+		Status:        status,
+		CodeBytes:     len(e.code),
+		ClientAddress: "unknown",
+		UserAgent:     e.request.UserAgent(),
+	}
+	if addr, ok := clientIP(e.request); ok {
+		options.ClientAddress = addr.WithZone("").String()
+	}
+	if status != db.ExecutionStatusRejected {
+		options.Code = e.code
+	}
+	if output != nil {
+		options.Stdout, options.Stderr, options.Error, options.Duration = output.Stdout, output.Stderr, output.Error, output.Duration
+	}
+	if runErr != nil {
+		options.Error = runErr.Error()
+	}
+
+	// Still save when the client has already disconnected.
+	ctx, cancel := gocontext.WithTimeout(gocontext.WithoutCancel(e.request.Context()), 5*time.Second)
+	defer cancel()
+	if _, err := db.Executions.Create(ctx, options); err != nil {
+		logrus.WithContext(ctx).WithError(err).Error("Failed to save execution")
+	}
 }
 
 // selectLanguage returns language if the template supports it, otherwise the first supported language.
@@ -99,17 +138,25 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 	}
 
 	startAt := time.Now().UnixNano()
+	execution := executionRecord{
+		request:  ctx.Request().Request,
+		sandbox:  sandbox,
+		language: selectLanguage(sandbox.Template.Language, ctx.Request().PostForm.Get("lang")),
+		code:     ctx.Request().PostForm.Get("code"),
+	}
 
 	r, err := runtime.NewTask(ctx.Request().Context(), runtime.NewTaskOptions{
-		Language: selectLanguage(sandbox.Template.Language, ctx.Request().PostForm.Get("lang")),
+		Language: execution.language,
 		Template: sandbox.Template,
-		Code:     []byte(ctx.Request().PostForm.Get("code")),
+		Code:     []byte(execution.code),
 		Client:   clientAddress(ctx.Request().Request),
 	})
 	if err != nil {
 		if errors.Is(err, runtime.ErrSourceLimit) {
+			execution.save(db.ExecutionStatusRejected, nil, err)
 			return ctx.Error(http.StatusRequestEntityTooLarge, "%s", err)
 		}
+		execution.save(db.ExecutionStatusError, nil, err)
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to create task: %v", err)
 	}
@@ -117,13 +164,25 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 	output, err := r.Run(ctx.Request().Context())
 	if err != nil {
 		if errors.Is(err, runtime.ErrClientTaskLimit) {
+			execution.save(db.ExecutionStatusRejected, nil, err)
 			return ctx.Error(http.StatusTooManyRequests, "%s", err)
 		}
 		if errors.Is(err, runtime.ErrTaskLimit) {
+			execution.save(db.ExecutionStatusRejected, nil, err)
 			return ctx.Error(http.StatusServiceUnavailable, "%s", err)
 		}
+		execution.save(db.ExecutionStatusError, nil, err)
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to run task")
 		return ctx.Error(http.StatusInternalServerError, "Failed to run task: %v", err)
+	}
+
+	switch output.Error {
+	case "":
+		execution.save(db.ExecutionStatusSuccess, output, nil)
+	case runtime.ExecErrorTimeout:
+		execution.save(db.ExecutionStatusTimeout, output, nil)
+	default:
+		execution.save(db.ExecutionStatusFailed, output, nil)
 	}
 
 	return ctx.Success(ExecutionResult{

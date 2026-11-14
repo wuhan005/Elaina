@@ -1,13 +1,16 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useNavigate } from "react-router";
 import {
   RiCodeBoxLine,
   RiDashboardHorizontalLine,
   RiExternalLinkLine,
   RiGithubLine,
   RiLogoutBoxRLine,
+  RiPulseLine,
+  RiShieldUserLine,
   RiSideBarFill,
   RiStackLine,
+  RiTeamLine,
 } from "@remixicon/react";
 import { client } from "@/api/client";
 import { ThemeToggle } from "@/components/application/theme/theme-toggle";
@@ -21,9 +24,9 @@ import {
 } from "@/components/base/dropdown/dropdown";
 import { toast } from "@/components/base/toast/toast";
 import { ChevronUpDownSmall } from "@/components/foundations/icons/chevrons";
-import { authStore } from "@/store/auth";
+import { authStore, useCurrentUser } from "@/store/auth";
 import { cx } from "@/utils/cx";
-import { ElainaMark } from "./elaina-mark";
+import { Logo } from "./logo";
 
 type IconComponent = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
 
@@ -37,12 +40,14 @@ const NAV: NavEntry[] = [
   { to: "/dashboard", label: "Dashboard", icon: RiDashboardHorizontalLine },
   { to: "/template", label: "Templates", icon: RiStackLine },
   { to: "/sandbox", label: "Sandboxes", icon: RiCodeBoxLine },
+  { to: "/execution", label: "Runs", icon: RiPulseLine },
+  { to: "/users", label: "Users", icon: RiTeamLine },
 ];
 
 const GITHUB_URL = "https://github.com/wuhan005/Elaina";
 const COLLAPSED_STORAGE_KEY = "elaina:sidebar-collapsed";
 
-// 侧边栏收起时标签以模糊 + 淡出的方式隐藏，图标位置保持不动。
+// Labels blur and fade out when the sidebar collapses; icons stay in place.
 function Collapsible({ collapsed, children, className }: { collapsed: boolean; children: ReactNode; className?: string }) {
   return (
     <span
@@ -121,6 +126,10 @@ function ExternalNavItem({ href, label, icon: Icon, collapsed }: { href: string;
 
 function AccountMenu({ collapsed }: { collapsed: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const user = useCurrentUser();
+  const username = user?.username ?? "";
+  const initials = username.slice(0, 1).toUpperCase();
 
   const signOut = () => {
     setIsOpen(false);
@@ -143,27 +152,27 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
         )}
       >
         <span className="flex min-w-0 items-center gap-2">
-          <Avatar size="md" color="blue" initials="A" />
+          <Avatar size="md" color="neutral" initials={initials} />
           <Collapsible collapsed={collapsed}>
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-body-medium text-text-primary">Administrator</span>
-              <span className="truncate text-caption-1-medium text-text-tertiary">Signed in</span>
-            </span>
+            <span className="truncate text-body-medium text-text-primary">{username}</span>
           </Collapsible>
         </span>
         <Collapsible collapsed={collapsed}>
           <ChevronUpDownSmall className="size-4 shrink-0 text-foreground-icon-tertiary" />
         </Collapsible>
       </DropdownTrigger>
-      <DropdownPopover aria-label="Account" placement={collapsed ? "right bottom" : "top start"} offset={8} className="w-[232px]">
-        <div className="flex items-center gap-2 px-2 pt-1 pb-0.5">
-          <Avatar size="sm" color="blue" initials="A" />
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-body-medium text-text-primary">Administrator</span>
-            <span className="truncate text-caption-1-medium text-text-tertiary">Elaina console</span>
-          </span>
-        </div>
+      <DropdownPopover aria-label="Account" placement={collapsed ? "right bottom" : "top start"} offset={8} className="w-[220px]">
+        <p className="truncate px-2 pt-1 text-caption-1-medium text-text-tertiary">Signed in as {username}</p>
         <DropdownDivider />
+        <DropdownItem
+          onSelect={() => {
+            setIsOpen(false);
+            navigate("/account");
+          }}
+        >
+          <RiShieldUserLine className="size-[18px] shrink-0 text-foreground-icon-secondary" aria-hidden />
+          <span className="text-body-medium text-text-primary">Account settings</span>
+        </DropdownItem>
         <DropdownItem onSelect={signOut}>
           <RiLogoutBoxRLine className="size-[18px] shrink-0 text-foreground-icon-secondary" aria-hidden />
           <span className="text-body-medium text-text-primary">Sign out</span>
@@ -173,7 +182,7 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// 小屏下强制收起为图标栏。
+// Force the icon rail on small screens.
 function useIsCompactViewport() {
   const query = "(max-width: 1023px)";
   const [compact, setCompact] = useState(() => window.matchMedia(query).matches);
@@ -208,7 +217,7 @@ export function AppSidebar({ className }: { className?: string }) {
       )}
     >
       <div className="-m-2 flex min-h-0 w-[calc(100%+16px)] flex-col gap-6 overflow-y-auto p-2 [scrollbar-width:none]">
-        {/* 品牌区与收起按钮 */}
+        {/* Brand and collapse toggle */}
         <div
           className={cx(
             "flex w-full transition-[gap] duration-300 ease-in-out",
@@ -216,12 +225,9 @@ export function AppSidebar({ className }: { className?: string }) {
           )}
         >
           <Link to="/dashboard" aria-label="Elaina home" className="flex min-w-0 items-center gap-2.5 rounded-2lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
-            <ElainaMark />
+            <Logo className="size-9" />
             <Collapsible collapsed={collapsed}>
-              <span className="flex min-w-0 flex-col">
-                <span className="text-headline-semibold whitespace-nowrap text-text-primary">Elaina</span>
-                <span className="text-caption-1-medium whitespace-nowrap text-text-tertiary">WASM code runner</span>
-              </span>
+              <span className="text-headline-semibold whitespace-nowrap text-text-primary">Elaina</span>
             </Collapsible>
           </Link>
           {!compactViewport && (
@@ -245,9 +251,6 @@ export function AppSidebar({ className }: { className?: string }) {
         </div>
 
         <nav className={cx("flex w-full flex-col gap-1", !collapsed && "px-0.5")}>
-          <Collapsible collapsed={collapsed} className="mb-1 ps-2">
-            <span className="text-caption-1-medium whitespace-nowrap text-text-tertiary">Workspace</span>
-          </Collapsible>
           {NAV.map((item) => (
             <NavItem key={item.to} {...item} collapsed={collapsed} />
           ))}
