@@ -28,7 +28,7 @@ func (h *TemplateHandler) Templater(ctx context.Context) error {
 	tpl, err := db.Tpls.GetByID(ctx.Request().Context(), templateID)
 	if err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
-			return ctx.Error(http.StatusNotFound, "Template dose not exist")
+			return ctx.Error(http.StatusNotFound, "Template does not exist")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get template")
 		return ctx.ServerError()
@@ -55,11 +55,7 @@ func (h *TemplateHandler) All(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	items := make([]*dto.Template, 0, len(templates))
-	for _, template := range templates {
-		items = append(items, dto.ToTemplate(template))
-	}
-	return ctx.Success(items)
+	return ctx.Success(dto.ToTemplates(templates))
 }
 
 // List list templates.
@@ -86,13 +82,8 @@ func (h *TemplateHandler) List(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	items := make([]*dto.Template, 0, len(templates))
-	for _, template := range templates {
-		items = append(items, dto.ToTemplate(template))
-	}
-
 	return ctx.Success(dto.ListTemplatesResp{
-		Templates: items,
+		Templates: dto.ToTemplates(templates),
 		Total:     total,
 	})
 }
@@ -160,9 +151,7 @@ func (h *TemplateHandler) Create(ctx context.Context, f form.CreateTemplate) err
 // @ID updateTemplate
 // @Router /api/template/{id} [put]
 func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.UpdateTemplate) error {
-	templateID := template.ID
-
-	if err := db.Tpls.Update(ctx.Request().Context(), templateID, db.UpdateTplOptions{
+	if err := db.Tpls.Update(ctx.Request().Context(), template.ID, db.UpdateTplOptions{
 		Name:           f.Name,
 		Language:       f.Language,
 		Timeout:        f.Timeout,
@@ -170,7 +159,7 @@ func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.U
 		InternetAccess: f.InternetAccess,
 	}); err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
-			return ctx.Error(http.StatusNotFound, "Template dose not exist")
+			return ctx.Error(http.StatusNotFound, "Template does not exist")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update template")
 		return ctx.ServerError()
@@ -191,11 +180,9 @@ func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.U
 // @ID deleteTemplate
 // @Router /api/template/{id} [delete]
 func (h *TemplateHandler) Delete(ctx context.Context, template *db.Tpl) error {
-	templateID := template.ID
-
-	if err := db.Tpls.Delete(ctx.Request().Context(), templateID); err != nil {
+	if err := db.Tpls.Delete(ctx.Request().Context(), template.ID); err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
-			return ctx.Error(http.StatusNotFound, "Template dose not exist")
+			return ctx.Error(http.StatusNotFound, "Template does not exist")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to delete template")
 		return ctx.ServerError()

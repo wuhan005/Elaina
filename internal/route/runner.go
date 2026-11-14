@@ -44,13 +44,15 @@ func (h *RunnerHandler) Runner(ctx context.Context) error {
 	return nil
 }
 
-func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t template.Template, data template.Data) error {
-	languages := sandbox.Template.Language
-	selectedLanguage := ctx.Query("l")
-	if !lo.Contains(languages, selectedLanguage) {
-		selectedLanguage = languages[0]
+// selectLanguage returns language if the template supports it, otherwise the first supported language.
+func selectLanguage(languages []string, language string) string {
+	if lo.Contains(languages, language) {
+		return language
 	}
+	return languages[0]
+}
 
+func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t template.Template, data template.Data) error {
 	if err := ctx.Request().ParseForm(); err != nil {
 		return ctx.Error(http.StatusBadRequest, "Failed to parse form")
 	}
@@ -62,8 +64,9 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 		return ctx.Error(http.StatusRequestEntityTooLarge, "%s", runtime.ErrSourceLimit)
 	}
 
+	languages := sandbox.Template.Language
 	data["Sandbox"] = dto.ToSandbox(sandbox)
-	data["Language"] = selectedLanguage
+	data["Language"] = selectLanguage(languages, ctx.Query("l"))
 	data["Languages"] = languages
 	data["Code"] = code
 
@@ -94,19 +97,12 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 		return ctx.Error(http.StatusBadRequest, "Failed to parse form: %v", err)
 	}
 
-	templateLanguages := sandbox.Template.Language
-	selectedLanguage := ctx.Request().PostForm.Get("lang")
-	if !lo.Contains(templateLanguages, selectedLanguage) {
-		selectedLanguage = templateLanguages[0]
-	}
-	code := ctx.Request().PostForm.Get("code")
-
 	startAt := time.Now().UnixNano()
 
 	r, err := runtime.NewTask(ctx.Request().Context(), runtime.NewTaskOptions{
-		Language: selectedLanguage,
+		Language: selectLanguage(sandbox.Template.Language, ctx.Request().PostForm.Get("lang")),
 		Template: sandbox.Template,
-		Code:     []byte(code),
+		Code:     []byte(ctx.Request().PostForm.Get("code")),
 	})
 	if err != nil {
 		if errors.Is(err, runtime.ErrSourceLimit) {
@@ -125,11 +121,9 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 		return ctx.Error(http.StatusInternalServerError, "Failed to run task: %v", err)
 	}
 
-	endAt := time.Now().UnixNano()
-
 	return ctx.Success(ExecutionResult{
 		Result:  output,
 		StartAt: startAt,
-		EndAt:   endAt,
+		EndAt:   time.Now().UnixNano(),
 	})
 }

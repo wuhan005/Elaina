@@ -59,8 +59,8 @@ import {client} from "@/api/client";
 
 const route = useRoute()
 const router = useRouter()
-const mode = ref<'create' | 'edit'>(route.name === 'createSandbox' ? 'create' : 'edit')
-const id = ref<string | undefined>(route.params.id as string | undefined)
+const mode = route.name === 'createSandbox' ? 'create' : 'edit'
+const id = Number(route.params.id)
 
 const FORM_RULES: FormProps['rules'] = {
   name: [{required: true, message: 'Name is required'}],
@@ -69,19 +69,19 @@ const FORM_RULES: FormProps['rules'] = {
 
 const formData = ref<CreateSandboxReq | UpdateSandboxReq>({} as CreateSandboxReq)
 const onSubmit = (ctx: SubmitContext) => {
-  if (ctx.validateResult === true) {
-    if (mode.value === 'create') {
-      client.sandboxes.createSandbox(formData.value).then(() => {
-        MessagePlugin.success('Create new sandbox successfully')
-        router.push({name: 'sandbox'})
-      })
-    } else {
-      client.sandboxes.updateSandbox({
-        id: Number(id.value),
-      }, formData.value).then(res => {
-        MessagePlugin.success(res.data.data)
-      })
-    }
+  if (ctx.validateResult !== true) {
+    return
+  }
+
+  if (mode === 'create') {
+    client.sandboxes.createSandbox(formData.value).then(() => {
+      MessagePlugin.success('Create new sandbox successfully')
+      router.push({name: 'sandbox'})
+    })
+  } else {
+    client.sandboxes.updateSandbox({id}, formData.value).then(res => {
+      MessagePlugin.success(res.data.data)
+    })
   }
 }
 
@@ -96,23 +96,18 @@ onMounted(() => {
     templates.value = res.data.data
   })
 
-  if (mode.value === 'edit') {
-    client.sandboxes.getSandbox({
-      id: Number(id.value),
-    }).then(res => {
-      const sandbox = res.data.data
-
-      formData.value = {
-        name: sandbox.name,
-        templateID: sandbox.templateID,
-        placeholder: sandbox.placeholder,
-        editable: sandbox.editable,
-      }
-    })
+  if (mode !== 'edit') {
+    return
   }
+
+  client.sandboxes.getSandbox({id}).then(res => {
+    const sandbox = res.data.data
+    formData.value = {
+      name: sandbox.name,
+      templateID: sandbox.templateID,
+      placeholder: sandbox.placeholder,
+      editable: sandbox.editable,
+    }
+  })
 })
 </script>
-
-<style scoped>
-
-</style>

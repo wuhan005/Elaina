@@ -32,12 +32,11 @@ func main() {
 	}
 	defer func() { _ = runtime.Close(context.Background()) }()
 
-	dbInstance, err := db.Init()
-	if err != nil {
+	if _, err := db.Init(); err != nil {
 		logrus.WithError(err).Fatal("Failed to connect to database")
 	}
 
-	r, err := route.New(dbInstance)
+	r, err := route.New()
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to create route")
 	}

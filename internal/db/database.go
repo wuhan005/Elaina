@@ -14,15 +14,11 @@ import (
 )
 
 func Init() (*gorm.DB, error) {
-	dsn := config.Postgres.DSN
-
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  dsn,
+		DSN:                  config.Postgres.DSN,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{
-		// Sandbox saves include associations and must remain atomic.
-		SkipDefaultTransaction: false,
-		NowFunc:                dbutil.Now,
+		NowFunc: dbutil.Now,
 		Logger: logger.New(
 			logrus.New(),
 			logger.Config{

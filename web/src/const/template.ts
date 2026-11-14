@@ -6,10 +6,6 @@ export const LANGUAGES = [
     {label: 'C', value: 'c'},
 ]
 
-export const LANGUAGES_MAP: { [key: string]: string } = {
-    'php': 'PHP',
-    'python': 'Python',
-    'go': 'Go',
-    'javascript': 'JavaScript',
-    'c': 'C',
-}
+export const LANGUAGES_MAP: Record<string, string> = Object.fromEntries(
+    LANGUAGES.map(({label, value}) => [value, label]),
+)

@@ -10,12 +10,11 @@ import (
 )
 
 func ReadIDFunc(r *http.Request) string {
-	authorizationHeader := r.Header.Get("Authorization")
-	groups := strings.SplitN(authorizationHeader, " ", 2)
-	if len(groups) != 2 {
+	_, token, ok := strings.Cut(r.Header.Get("Authorization"), " ")
+	if !ok {
 		return ""
 	}
-	return strings.TrimSpace(groups[1])
+	return strings.TrimSpace(token)
 }
 
 func WriteIDFunc(w http.ResponseWriter, r *http.Request, sid string, created bool) {

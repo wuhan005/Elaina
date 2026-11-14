@@ -81,7 +81,7 @@ func TestWASMCacheWarmup(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 2; i++ {
-		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		task, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: "python",
 			Template: &db.Tpl{
 				MaxMemory: 1,
@@ -144,7 +144,7 @@ func TestWASMWarmCacheIsolation(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			memory := int64(1 + i%2)
-			task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+			task, err := NewWASMTask(context.Background(), NewTaskOptions{
 				Language: "python",
 				Template: &db.Tpl{
 					MaxMemory: memory,
@@ -166,7 +166,7 @@ func TestWASMWarmCacheIsolation(t *testing.T) {
 	}
 	wg.Wait()
 
-	task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+	task, err := NewWASMTask(context.Background(), NewTaskOptions{
 		Language: "javascript",
 		Template: &db.Tpl{
 			MaxMemory: 1,

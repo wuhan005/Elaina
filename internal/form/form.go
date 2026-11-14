@@ -15,14 +15,14 @@ import (
 	"github.com/wuhan005/Elaina/internal/context"
 )
 
-func Bind(model interface{}) flamego.Handler {
-	// Ensure not pointer.
-	if reflect.TypeOf(model).Kind() == reflect.Pointer {
+func Bind(model any) flamego.Handler {
+	typ := reflect.TypeOf(model)
+	if typ.Kind() == reflect.Pointer {
 		panic("form: pointer can not be accepted as binding model")
 	}
 
 	return func(ctx context.Context) {
-		obj := reflect.New(reflect.TypeOf(model))
+		obj := reflect.New(typ)
 		r := ctx.Request().Request
 		if r.Body != nil {
 			defer func() { _ = r.Body.Close() }()
@@ -33,9 +33,8 @@ func Bind(model interface{}) flamego.Handler {
 			}
 		}
 
-		errors, ok := govalid.Check(obj.Interface())
-		if !ok {
-			_ = ctx.Error(http.StatusBadRequest, "%s", errors[0].Error())
+		if errs, ok := govalid.Check(obj.Interface()); !ok {
+			_ = ctx.Error(http.StatusBadRequest, "%s", errs[0].Error())
 			return
 		}
 		if validator, ok := obj.Interface().(interface{ Validate() error }); ok {

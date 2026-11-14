@@ -48,7 +48,7 @@ func TestWASMGo(t *testing.T) {
 	run := func(t *testing.T, code string, internet bool, memory int64, timeout int) *ExecOutput {
 		t.Helper()
 
-		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		task, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: "go",
 			Template: &db.Tpl{
 				MaxMemory:      memory,
@@ -228,7 +228,7 @@ func main() {
 		defer server.Close()
 
 		code := fmt.Sprintf("package main; import \"net/http\"; func main() { _, _ = http.Get(%q) }", server.URL)
-		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
+		task, err := NewWASMTask(ctx, NewTaskOptions{
 			Language: "go",
 			Template: &db.Tpl{
 				MaxMemory:      512,

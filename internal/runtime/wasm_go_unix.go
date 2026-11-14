@@ -21,10 +21,11 @@ import (
 )
 
 func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache, toolchain, dir string, stdout, stderr *wasmOutputBuffer) error {
-	imports, err := os.ReadFile(filepath.Join(toolchain, "importcfg"))
+	data, err := os.ReadFile(filepath.Join(toolchain, "importcfg"))
 	if err != nil {
 		return errors.Wrap(err, "read Go toolchain (run scripts/build-wasm-go.sh)")
 	}
+	imports := string(data)
 
 	file, err := parser.ParseFile(token.NewFileSet(), "main.go", t.code, parser.ImportsOnly)
 	if err != nil {
@@ -40,7 +41,7 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 		if err != nil {
 			return errors.Wrap(err, "parse Go import path")
 		}
-		if path != "unsafe" && (!strings.Contains(string(imports), "packagefile "+path+"=") || strings.Contains("/"+path+"/", "/internal/") || strings.HasPrefix(path, "vendor/")) {
+		if path != "unsafe" && (!strings.Contains(imports, "packagefile "+path+"=") || strings.Contains("/"+path+"/", "/internal/") || strings.HasPrefix(path, "vendor/")) {
 			return errors.Errorf("Go package %q is not available in the WASM toolchain", path)
 		}
 		http = http || path == "net/http"

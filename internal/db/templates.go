@@ -23,7 +23,7 @@ type TplStore interface {
 	GetByID(ctx context.Context, id uint) (*Tpl, error)
 	// Create creates a new template with the given options.
 	Create(ctx context.Context, options CreateTplOptions) (*Tpl, error)
-	// Update edits a new template with the given options.
+	// Update edits a template with the given options.
 	Update(ctx context.Context, id uint, options UpdateTplOptions) error
 	// Delete deletes a template with the given id.
 	Delete(ctx context.Context, id uint) error
@@ -51,16 +51,15 @@ type Tpl struct {
 	InternetAccess bool
 }
 
-var ErrTemplateNotFound = errors.New("template dose not exist")
+var ErrTemplateNotFound = errors.New("template does not exist")
 
 func (db *tpls) GetByID(ctx context.Context, id uint) (*Tpl, error) {
 	var template Tpl
 
-	if err := db.WithContext(ctx).Model(&Tpl{}).Where("id = ?", id).First(&template).Error; err != nil {
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&template).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrTemplateNotFound
 		}
-
 		return nil, errors.Wrap(err, "first")
 	}
 	return &template, nil
@@ -68,7 +67,7 @@ func (db *tpls) GetByID(ctx context.Context, id uint) (*Tpl, error) {
 
 func (db *tpls) All(ctx context.Context) ([]*Tpl, error) {
 	var templates []*Tpl
-	if err := db.WithContext(ctx).Model(&Tpl{}).Find(&templates).Error; err != nil {
+	if err := db.WithContext(ctx).Find(&templates).Error; err != nil {
 		return nil, errors.Wrap(err, "find")
 	}
 	return templates, nil
@@ -106,7 +105,7 @@ type CreateTplOptions struct {
 func (db *tpls) Create(ctx context.Context, options CreateTplOptions) (*Tpl, error) {
 	tpl := &Tpl{
 		Name:           options.Name,
-		Language:       pq.StringArray(options.Language),
+		Language:       options.Language,
 		Timeout:        options.Timeout,
 		MaxMemory:      options.MaxMemory,
 		InternetAccess: options.InternetAccess,
@@ -119,7 +118,6 @@ func (db *tpls) Create(ctx context.Context, options CreateTplOptions) (*Tpl, err
 }
 
 type UpdateTplOptions struct {
-	ID             uint
 	Name           string
 	Language       []string
 	Timeout        int
@@ -129,32 +127,33 @@ type UpdateTplOptions struct {
 }
 
 func (db *tpls) Update(ctx context.Context, id uint, options UpdateTplOptions) error {
-	template, err := db.GetByID(ctx, id)
-	if err != nil {
-		return errors.Wrap(err, "get by ID")
+	// Select explicitly so zero values are written too.
+	result := db.WithContext(ctx).Model(&Tpl{}).Where("id = ?", id).
+		Select("Name", "Language", "Timeout", "MaxCPU", "MaxMemory", "InternetAccess").
+		Updates(&Tpl{
+			Name:           options.Name,
+			Language:       options.Language,
+			Timeout:        options.Timeout,
+			MaxCPU:         options.MaxCPU,
+			MaxMemory:      options.MaxMemory,
+			InternetAccess: options.InternetAccess,
+		})
+	if result.Error != nil {
+		return errors.Wrap(result.Error, "update")
 	}
-
-	template.Name = options.Name
-	template.Language = options.Language
-	template.Timeout = options.Timeout
-	template.MaxCPU = options.MaxCPU
-	template.MaxMemory = options.MaxMemory
-	template.InternetAccess = options.InternetAccess
-
-	if err := db.WithContext(ctx).Save(template).Error; err != nil {
-		return errors.Wrap(err, "save")
+	if result.RowsAffected == 0 {
+		return ErrTemplateNotFound
 	}
 	return nil
 }
 
 func (db *tpls) Delete(ctx context.Context, id uint) error {
-	_, err := db.GetByID(ctx, id)
-	if err != nil {
-		return errors.Wrap(err, "get by ID")
+	result := db.WithContext(ctx).Delete(&Tpl{}, "id = ?", id)
+	if result.Error != nil {
+		return errors.Wrap(result.Error, "delete")
 	}
-
-	if err := db.WithContext(ctx).Delete(&Tpl{}, "id = ?", id).Error; err != nil {
-		return errors.Wrap(err, "delete")
+	if result.RowsAffected == 0 {
+		return ErrTemplateNotFound
 	}
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/flamego/session"
 	"github.com/flamego/template"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/form"
@@ -26,7 +25,7 @@ import (
 // @In header
 // @Name Authorization
 // @Description Use "Token <session token>" with the token returned by signIn.
-func New(db *gorm.DB) (*flamego.Flame, error) {
+func New() (*flamego.Flame, error) {
 	f := flamego.Classic()
 
 	frontendFS, err := fs.Sub(web.FS, "dist")
@@ -60,7 +59,7 @@ func New(db *gorm.DB) (*flamego.Flame, error) {
 		template.Templater(template.Options{
 			FileSystem: templatesFS,
 		}),
-		context.Contexter(db),
+		context.Contexter(),
 	)
 
 	runnerHandler := NewRunnerHandler()

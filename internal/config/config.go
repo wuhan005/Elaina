@@ -42,8 +42,12 @@ var App = struct {
 	WASMLimits      WASMLimits     `mapstructure:"wasm_limits"`
 	WASMDeniedCIDRs []netip.Prefix `mapstructure:"wasm_denied_cidrs"`
 }{
-	WASMLimits: defaultWASMLimits,
+	WASMRuntimeDir: ".wasm",
+	WASMCacheDir:   ".wasm/cache",
+	WASMLimits:     defaultWASMLimits,
 }
+
+var defaultApp = App
 
 var Postgres struct {
 	DSN string `mapstructure:"dsn"`
@@ -52,28 +56,17 @@ var Postgres struct {
 func Init(configFilePath string) error {
 	v := viper.New()
 	v.SetConfigFile(configFilePath)
-	v.SetDefault("app.wasm_runtime_dir", ".wasm")
-	v.SetDefault("app.wasm_cache_dir", ".wasm/cache")
-	v.SetDefault("app.wasm_limits.max_concurrent_tasks", defaultWASMLimits.MaxConcurrentTasks)
-	v.SetDefault("app.wasm_limits.max_memory_mib", defaultWASMLimits.MaxMemoryMiB)
-	v.SetDefault("app.wasm_limits.max_request_bytes", defaultWASMLimits.MaxRequestBytes)
-	v.SetDefault("app.wasm_limits.max_source_bytes", defaultWASMLimits.MaxSourceBytes)
-	v.SetDefault("app.wasm_limits.max_workspace_bytes", defaultWASMLimits.MaxWorkspaceBytes)
-	v.SetDefault("app.wasm_limits.max_file_bytes", defaultWASMLimits.MaxFileBytes)
-	v.SetDefault("app.wasm_limits.max_files", defaultWASMLimits.MaxFiles)
 	if err := v.ReadInConfig(); err != nil {
 		return errors.Wrap(err, "read config file")
 	}
 
-	App.WASMLimits = defaultWASMLimits
-	App.WASMDeniedCIDRs = nil
+	// Fields omitted from the config file keep their default values.
+	App, Postgres.DSN = defaultApp, ""
 	if err := v.UnmarshalKey("app", &App, func(c *mapstructure.DecoderConfig) {
 		c.DecodeHook = mapstructure.ComposeDecodeHookFunc(c.DecodeHook, mapstructure.StringToNetIPPrefixHookFunc())
 	}); err != nil {
 		return errors.Wrap(err, "parse app")
 	}
-	App.WASMRuntimeDir = v.GetString("app.wasm_runtime_dir")
-	App.WASMCacheDir = v.GetString("app.wasm_cache_dir")
 
 	for i, prefix := range App.WASMDeniedCIDRs {
 		if !prefix.IsValid() {

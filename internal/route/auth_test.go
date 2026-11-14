@@ -33,7 +33,7 @@ func TestSignIn(t *testing.T) {
 	longPassword := strings.Repeat("a", 72)
 	longHash := hash(longPassword)
 
-	router, err := New(nil)
+	router, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -72,8 +72,8 @@ import {LANGUAGES} from '@/const/template'
 
 const route = useRoute()
 const router = useRouter()
-const mode = ref<'create' | 'edit'>(route.name === 'createTemplate' ? 'create' : 'edit')
-const id = ref<string | undefined>(route.params.id as string | undefined)
+const mode = route.name === 'createTemplate' ? 'create' : 'edit'
+const id = Number(route.params.id)
 const legacyMaxCpus = ref(0)
 
 const FORM_RULES: FormProps['rules'] = {
@@ -89,20 +89,20 @@ const formData = ref<CreateTemplateReq | UpdateTemplateReq>({
   name: '', language: [], timeout: 60, maxMemory: 512, internetAccess: false,
 })
 const onSubmit = (ctx: SubmitContext) => {
-  if (ctx.validateResult === true) {
-    if (mode.value === 'create') {
-      client.templates.createTemplate(formData.value).then(() => {
-        MessagePlugin.success('Create new template successfully')
-        router.push({name: 'template'})
-      })
-    } else {
-      client.templates.updateTemplate({
-        id: Number(id.value),
-      }, formData.value).then(res => {
-        legacyMaxCpus.value = 0
-        MessagePlugin.success(res.data.data)
-      })
-    }
+  if (ctx.validateResult !== true) {
+    return
+  }
+
+  if (mode === 'create') {
+    client.templates.createTemplate(formData.value).then(() => {
+      MessagePlugin.success('Create new template successfully')
+      router.push({name: 'template'})
+    })
+  } else {
+    client.templates.updateTemplate({id}, formData.value).then(res => {
+      legacyMaxCpus.value = 0
+      MessagePlugin.success(res.data.data)
+    })
   }
 }
 
@@ -111,25 +111,20 @@ const onCancel = () => {
 }
 
 onMounted(() => {
-  if (mode.value === 'edit') {
-    client.templates.getTemplate({
-      id: Number(id.value),
-    }).then(res => {
-      const template = res.data.data
-      legacyMaxCpus.value = template.maxCpu
-
-      formData.value = {
-        name: template.name,
-        language: template.language,
-        timeout: template.timeout,
-        maxMemory: template.maxMemory,
-        internetAccess: template.internetAccess,
-      }
-    })
+  if (mode !== 'edit') {
+    return
   }
+
+  client.templates.getTemplate({id}).then(res => {
+    const template = res.data.data
+    legacyMaxCpus.value = template.maxCpu
+    formData.value = {
+      name: template.name,
+      language: template.language,
+      timeout: template.timeout,
+      maxMemory: template.maxMemory,
+      internetAccess: template.internetAccess,
+    }
+  })
 })
 </script>
-
-<style scoped>
-
-</style>

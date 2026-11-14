@@ -37,8 +37,7 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {MenuValue} from "tdesign-vue-next";
-import {DropdownOption} from "tdesign-vue-next";
+import type {DropdownOption, MenuValue} from "tdesign-vue-next";
 import {useAuthStore} from "@/store";
 
 const route = useRoute()
@@ -50,18 +49,10 @@ const onChange = (value: MenuValue) => {
   router.push({name: value.toString()})
 }
 
-const onClickDropDown = (dropdownItem: DropdownOption, context: { e: MouseEvent }) => {
-  switch (dropdownItem.value) {
-    case 'sign-out':
-      authStore.cleanToken()
-      router.push({name: 'signIn'})
-      break
+const onClickDropDown = (dropdownItem: DropdownOption) => {
+  if (dropdownItem.value === 'sign-out') {
+    authStore.cleanToken()
+    router.push({name: 'signIn'})
   }
 }
 </script>
-
-<style scoped lang="scss">
-.logo {
-
-}
-</style>

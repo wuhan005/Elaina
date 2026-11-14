@@ -41,6 +41,14 @@ func ToTemplate(template *db.Tpl) *Template {
 	}
 }
 
+func ToTemplates(templates []*db.Tpl) []*Template {
+	items := make([]*Template, 0, len(templates))
+	for _, template := range templates {
+		items = append(items, ToTemplate(template))
+	}
+	return items
+}
+
 type ListTemplatesResp struct {
 	Templates []*Template `json:"templates"`
 	Total     int64       `json:"total"`

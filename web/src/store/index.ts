@@ -1,9 +1,8 @@
 import {createPinia} from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import useAuthStore from './modules/auth';
 
 const pinia = createPinia();
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-
 pinia.use(piniaPluginPersistedstate)
 
 export {useAuthStore};

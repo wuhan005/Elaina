@@ -32,7 +32,7 @@ func TestWASMTaskAdmission(t *testing.T) {
 	done := make(chan error, 2)
 	for _, language := range []string{"python", "c"} {
 		go func() {
-			task, err := NewWASMTask(ctx, NewWASMTaskOptions{
+			task, err := NewWASMTask(ctx, NewTaskOptions{
 				Language: language,
 				Template: &db.Tpl{},
 			})
@@ -58,7 +58,7 @@ func TestWASMTaskAdmission(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
-	other, err := NewWASMTask(ctx, NewWASMTaskOptions{
+	other, err := NewWASMTask(ctx, NewTaskOptions{
 		Language: "javascript",
 		Template: &db.Tpl{},
 	})
@@ -94,7 +94,7 @@ func TestWASMMemoryCeiling(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, memory := range []int64{0, 1, 512, 4096} {
-		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		task, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: "python",
 			Template: &db.Tpl{
 				MaxMemory: memory,
@@ -115,7 +115,7 @@ func TestWASMSourceLimit(t *testing.T) {
 	t.Cleanup(func() { config.App = previous })
 	config.App.WASMLimits.MaxSourceBytes = 6
 	for _, code := range []string{"1234567", "中文a"} {
-		_, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		_, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: "python",
 			Template: &db.Tpl{},
 			Code:     []byte(code),
@@ -124,7 +124,7 @@ func TestWASMSourceLimit(t *testing.T) {
 			t.Fatalf("oversized source accepted: %v", err)
 		}
 	}
-	task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+	task, err := NewWASMTask(context.Background(), NewTaskOptions{
 		Language: "python",
 		Template: &db.Tpl{},
 		Code:     []byte("中文"),

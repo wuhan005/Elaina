@@ -1,22 +1,18 @@
-// Setted by iframe.
-let languagePlaceholder = [];
+// Set by iframe.
+let languagePlaceholder = {};
+
+const editorMode = (lang) => lang === 'c' ? 'text/x-csrc' : lang;
 
 // Codemirror editor.
-var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+const editor = CodeMirror.fromTextArea(document.getElementById('code'), {
     lineNumbers: true,
-    mode: ((lang) => {
-        if (lang === 'c') {
-            return 'text/x-csrc'
-        }
-        return lang
-    })(lang),
+    mode: editorMode(lang),
     theme: 'material-palenight'
 });
 
 $('#run').click(() => {
     // Reset the text color.
     $('#result_bar').css('color', 'white');
-
     $('#result_data').text('Loading...');
 
     $.post(window.location.href + '/execute', {'lang': lang, 'code': editor.getValue()}, (res) => {
@@ -32,18 +28,14 @@ $('#run').click(() => {
             $('#result_bar').css('color', 'red');
             $('#result_data').append(build_details);
             $('#result_data').append($('<p></p>').text(stderr));
-            
         } else {
-            $('#result_bar').css('color', 'white');
             $('#result_data').text(stdout);
         }
 
-        let startAt = res.data.start_at;
-        let endAt = res.data.end_at;
-        $('#time_cost').text(((endAt - startAt) / 1000000000) + 's');
+        $('#time_cost').text(((res.data.end_at - res.data.start_at) / 1000000000) + 's');
     }).fail((err) => {
         $('#result_bar').css('color', 'red');
-        $('#result_data').text(err.responseJSON.msg);
+        $('#result_data').text(err.responseJSON?.msg ?? err.statusText);
     })
 })
 
@@ -55,7 +47,7 @@ $('[lang]').click((evt) => {
     // Set the new language.
     lang = evt.target.lang;
     $('#lang').text(lang);
-    editor.setOption('mode', lang);
+    editor.setOption('mode', editorMode(lang));
 
     // Recover the language placeholder.
     if (languagePlaceholder[lang] === undefined) {

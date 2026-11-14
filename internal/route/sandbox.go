@@ -29,7 +29,7 @@ func (h *SandboxHandler) Sandboxer(ctx context.Context) error {
 	sandbox, err := db.Sandboxes.GetByID(ctx.Request().Context(), sandboxID)
 	if err != nil {
 		if errors.Is(err, db.ErrSandboxNotFound) {
-			return ctx.Error(http.StatusNotFound, "Sanbox does not exist")
+			return ctx.Error(http.StatusNotFound, "Sandbox does not exist")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get sandbox")
 		return ctx.ServerError()
@@ -63,13 +63,8 @@ func (h *SandboxHandler) List(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	items := make([]*dto.Sandbox, 0, len(sandboxes))
-	for _, sandbox := range sandboxes {
-		items = append(items, dto.ToSandbox(sandbox))
-	}
-
 	return ctx.Success(dto.ListSandboxesResp{
-		Sandboxes: items,
+		Sandboxes: dto.ToSandboxes(sandboxes),
 		Total:     total,
 	})
 }
@@ -134,19 +129,20 @@ func (h *SandboxHandler) Create(ctx context.Context, f form.CreateSandbox) error
 // @ID updateSandbox
 // @Router /api/sandbox/{id} [put]
 func (h *SandboxHandler) Update(ctx context.Context, sandbox *db.Sandbox, f form.UpdateSandbox) error {
-	sandboxID := sandbox.ID
-
-	if err := db.Sandboxes.Update(ctx.Request().Context(), sandboxID, db.UpdateSandboxOptions{
+	if err := db.Sandboxes.Update(ctx.Request().Context(), sandbox.ID, db.UpdateSandboxOptions{
 		Name:        f.Name,
 		TemplateID:  f.TemplateID,
 		Placeholder: f.Placeholder,
 		Editable:    f.Editable,
 	}); err != nil {
+		if errors.Is(err, db.ErrSandboxNotFound) {
+			return ctx.Error(http.StatusNotFound, "Sandbox does not exist")
+		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update sandbox")
 		return ctx.ServerError()
 	}
 
-	return ctx.Success("SandBox updated successfully")
+	return ctx.Success("Sandbox updated successfully")
 }
 
 // Delete delete a sandbox.
@@ -162,9 +158,7 @@ func (h *SandboxHandler) Update(ctx context.Context, sandbox *db.Sandbox, f form
 // @ID deleteSandbox
 // @Router /api/sandbox/{id} [delete]
 func (h *SandboxHandler) Delete(ctx context.Context, sandbox *db.Sandbox) error {
-	sandboxID := sandbox.ID
-
-	if err := db.Sandboxes.Delete(ctx.Request().Context(), sandboxID); err != nil {
+	if err := db.Sandboxes.Delete(ctx.Request().Context(), sandbox.ID); err != nil {
 		if errors.Is(err, db.ErrSandboxNotFound) {
 			return ctx.Error(http.StatusNotFound, "Sandbox does not exist")
 		}

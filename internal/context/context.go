@@ -12,9 +12,7 @@ import (
 	"github.com/flamego/flamego"
 	"github.com/flamego/session"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 
-	"github.com/wuhan005/Elaina/internal/dbutil"
 	"github.com/wuhan005/Elaina/internal/dto"
 )
 
@@ -25,23 +23,23 @@ type Context struct {
 	IsAuthenticated bool
 }
 
-func (c *Context) Success(data ...interface{}) error {
-	c.ResponseWriter().Header().Set("Content-Type", "application/json; charset=utf-8")
-	c.ResponseWriter().WriteHeader(http.StatusOK)
+// WriteJSON writes v as a JSON response body; encoding errors are only logged.
+func WriteJSON(w http.ResponseWriter, r *http.Request, statusCode int, v any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		logrus.WithContext(r.Context()).WithError(err).Error("Failed to encode")
+	}
+}
 
-	var d interface{}
+func (c *Context) Success(data ...any) error {
+	var d any
 	if len(data) == 1 {
 		d = data[0]
 	}
-
-	err := json.NewEncoder(c.ResponseWriter()).Encode(
-		dto.Response[interface{}]{
-			Data: d,
-		},
-	)
-	if err != nil {
-		logrus.WithContext(c.Request().Context()).WithError(err).Error("Failed to encode")
-	}
+	WriteJSON(c.ResponseWriter(), c.Request().Request, http.StatusOK, dto.Response[any]{
+		Data: d,
+	})
 	return nil
 }
 
@@ -49,18 +47,10 @@ func (c *Context) ServerError() error {
 	return c.Error(http.StatusInternalServerError, "internal server error")
 }
 
-func (c *Context) Error(statusCode int, message string, v ...interface{}) error {
-	c.ResponseWriter().Header().Set("Content-Type", "application/json; charset=utf-8")
-	c.ResponseWriter().WriteHeader(statusCode)
-
-	err := json.NewEncoder(c.ResponseWriter()).Encode(
-		dto.ErrorResponse{
-			Msg: fmt.Sprintf(message, v...),
-		},
-	)
-	if err != nil {
-		logrus.WithContext(c.Request().Context()).WithError(err).Error("Failed to encode")
-	}
+func (c *Context) Error(statusCode int, message string, v ...any) error {
+	WriteJSON(c.ResponseWriter(), c.Request().Request, statusCode, dto.ErrorResponse{
+		Msg: fmt.Sprintf(message, v...),
+	})
 	return nil
 }
 
@@ -73,19 +63,12 @@ const (
 )
 
 // Contexter initializes a classic context for a request.
-func Contexter(gormDB *gorm.DB) flamego.Handler {
+func Contexter() flamego.Handler {
 	return func(ctx flamego.Context, session session.Session) {
-		c := Context{
+		isAuthenticated, _ := session.Get(SessionIDIsAuthenticated).(bool)
+		ctx.Map(Context{
 			Context:         ctx,
-			IsAuthenticated: false,
-		}
-
-		isAuthenticatedInf := session.Get(SessionIDIsAuthenticated)
-		if isAuthenticated, ok := isAuthenticatedInf.(bool); ok && isAuthenticated {
-			c.IsAuthenticated = true
-		}
-
-		c.MapTo(gormDB, (*dbutil.Transactor)(nil))
-		c.Map(c)
+			IsAuthenticated: isAuthenticated,
+		})
 	}
 }

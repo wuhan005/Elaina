@@ -6,7 +6,6 @@ package route
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/flamego/flamego"
 
 	"github.com/wuhan005/Elaina/internal/config"
+	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/dto"
 )
 
@@ -39,9 +39,7 @@ func limitRequestBody(ctx flamego.Context) {
 		if errors.As(err, &sizeError) {
 			status, message = http.StatusRequestEntityTooLarge, "Request body exceeds the configured size limit"
 		}
-		ctx.ResponseWriter().Header().Set("Content-Type", "application/json; charset=utf-8")
-		ctx.ResponseWriter().WriteHeader(status)
-		_ = json.NewEncoder(ctx.ResponseWriter()).Encode(dto.ErrorResponse{
+		context.WriteJSON(ctx.ResponseWriter(), r, status, dto.ErrorResponse{
 			Msg: message,
 		})
 		return

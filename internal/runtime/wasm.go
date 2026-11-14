@@ -38,14 +38,8 @@ type WASMTask struct {
 	code     []byte
 }
 
-type NewWASMTaskOptions struct {
-	Language string
-	Template *db.Tpl
-	Code     []byte
-}
-
 // NewWASMTask creates a wazero task inside the Go backend.
-func NewWASMTask(_ context.Context, options NewWASMTaskOptions) (*WASMTask, error) {
+func NewWASMTask(_ context.Context, options NewTaskOptions) (*WASMTask, error) {
 	runner, ok := languages.Get(options.Language)
 	if !ok || runner.WASMModule == "" {
 		return nil, errors.Errorf("unsupported WASM language: %q", options.Language)

@@ -68,16 +68,16 @@ const FORM_RULES: Record<string, FormRule[]> = {
 const formData = ref<SignInForm>({password: ''});
 const showPsw = ref(false);
 
-const onSubmit = async (ctx: SubmitContext) => {
-  if (ctx.validateResult === true) {
-
-    client.auth.signIn(formData.value).then(res => {
-      authStore.setToken(res.data.data);
-
-      MessagePlugin.success('Sign in successfully');
-      router.push({name: 'dashboard'});
-    })
+const onSubmit = (ctx: SubmitContext) => {
+  if (ctx.validateResult !== true) {
+    return;
   }
+
+  client.auth.signIn(formData.value).then(res => {
+    authStore.setToken(res.data.data);
+    MessagePlugin.success('Sign in successfully');
+    router.push({name: 'dashboard'});
+  })
 };
 </script>
 
@@ -103,10 +103,6 @@ const onSubmit = async (ctx: SubmitContext) => {
     font: var(--td-font-headline-large);
     color: var(--td-text-color-primary);
     margin-top: var(--td-comp-margin-xs);
-
-    &.margin-no {
-      margin-top: 0;
-    }
   }
 
   .sub-title {
@@ -127,24 +123,6 @@ const onSubmit = async (ctx: SubmitContext) => {
 .item-container {
   width: 400px;
   margin-top: var(--td-comp-margin-xxxxl);
-
-  .check-container {
-    display: flex;
-    align-items: center;
-
-    &.remember-pwd {
-      margin-bottom: var(--td-comp-margin-l);
-      justify-content: space-between;
-    }
-
-    span {
-      color: var(--td-brand-color);
-
-      &:hover {
-        cursor: pointer;
-      }
-    }
-  }
 
   .btn-container {
     margin-top: var(--td-comp-margin-xxxxl);

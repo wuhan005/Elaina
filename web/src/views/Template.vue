@@ -133,15 +133,5 @@ onMounted(() => {
   display: flex;
   align-items: center;
   margin-bottom: var(--td-comp-margin-xxl);
-
-  .selected-count {
-    display: inline-block;
-    margin-left: var(--td-comp-margin-l);
-    color: var(--td-text-color-secondary);
-  }
-}
-
-.search-input {
-  width: 360px;
 }
 </style>

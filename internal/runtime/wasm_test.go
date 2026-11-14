@@ -60,7 +60,7 @@ func TestNewWASMTaskValidation(t *testing.T) {
 		{Timeout: -1},
 		{Timeout: 61},
 	} {
-		if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		if _, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: "python",
 			Template: template,
 		}); err == nil {
@@ -68,7 +68,7 @@ func TestNewWASMTaskValidation(t *testing.T) {
 		}
 	}
 
-	if _, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+	if _, err := NewWASMTask(context.Background(), NewTaskOptions{
 		Language: "python",
 		Template: &db.Tpl{
 			InternetAccess: true,
@@ -133,7 +133,7 @@ func TestWASMInterpreters(t *testing.T) {
 	run := func(t *testing.T, language, code string, internet bool, memory int64, timeout int) *ExecOutput {
 		t.Helper()
 
-		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		task, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: language,
 			Code:     []byte(code),
 			Template: &db.Tpl{
@@ -317,7 +317,7 @@ print('quota-ok')`, false, 128, 60)
 			server.Close()
 		}()
 
-		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
+		task, err := NewWASMTask(ctx, NewTaskOptions{
 			Language: "php",
 			Template: &db.Tpl{
 				Timeout:        60,
@@ -415,7 +415,7 @@ print('limitations-ok')`
 		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 		defer cancel()
 
-		task, _ := NewWASMTask(ctx, NewWASMTaskOptions{
+		task, _ := NewWASMTask(ctx, NewTaskOptions{
 			Language: "python",
 			Template: &db.Tpl{
 				Timeout: 60,

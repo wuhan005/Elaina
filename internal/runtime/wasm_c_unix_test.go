@@ -52,7 +52,7 @@ func TestWASMC(t *testing.T) {
 	run := func(t *testing.T, code string, internet bool, timeout int) *ExecOutput {
 		t.Helper()
 
-		task, err := NewWASMTask(context.Background(), NewWASMTaskOptions{
+		task, err := NewWASMTask(context.Background(), NewTaskOptions{
 			Language: "c",
 			Template: &db.Tpl{
 				MaxMemory:      512,
@@ -184,7 +184,7 @@ int main(void) {
 		defer server.Close()
 
 		port := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[1]
-		task, err := NewWASMTask(ctx, NewWASMTaskOptions{
+		task, err := NewWASMTask(ctx, NewTaskOptions{
 			Language: "c",
 			Template: &db.Tpl{
 				MaxMemory:      512,

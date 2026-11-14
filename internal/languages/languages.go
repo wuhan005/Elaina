@@ -40,11 +40,9 @@ var runners = []Runner{
 
 func Get(name string) (*Runner, bool) {
 	for _, r := range runners {
-		r := r
 		if r.Name == name {
 			return &r, true
 		}
 	}
-
 	return nil, false
 }

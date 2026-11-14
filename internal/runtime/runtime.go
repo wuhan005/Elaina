@@ -30,5 +30,5 @@ type NewTaskOptions struct {
 
 // NewTask creates a WASM task for the selected language.
 func NewTask(ctx context.Context, options NewTaskOptions) (ExecRuntime, error) {
-	return NewWASMTask(ctx, NewWASMTaskOptions(options))
+	return NewWASMTask(ctx, options)
 }

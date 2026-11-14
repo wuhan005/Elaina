@@ -41,6 +41,14 @@ func ToSandbox(sandbox *db.Sandbox) *Sandbox {
 	}
 }
 
+func ToSandboxes(sandboxes []*db.Sandbox) []*Sandbox {
+	items := make([]*Sandbox, 0, len(sandboxes))
+	for _, sandbox := range sandboxes {
+		items = append(items, ToSandbox(sandbox))
+	}
+	return items
+}
+
 type ListSandboxesResp struct {
 	Sandboxes []*Sandbox `json:"sandboxes"`
 	Total     int64      `json:"total"`
