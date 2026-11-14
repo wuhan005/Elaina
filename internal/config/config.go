@@ -6,7 +6,9 @@ package config
 
 import (
 	"math"
+	"net/netip"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
@@ -35,9 +37,10 @@ var defaultWASMLimits = WASMLimits{
 var App = struct {
 	PasswordHash string `mapstructure:"password_hash"`
 
-	WASMRuntimeDir string     `mapstructure:"wasm_runtime_dir"`
-	WASMCacheDir   string     `mapstructure:"wasm_cache_dir"`
-	WASMLimits     WASMLimits `mapstructure:"wasm_limits"`
+	WASMRuntimeDir  string         `mapstructure:"wasm_runtime_dir"`
+	WASMCacheDir    string         `mapstructure:"wasm_cache_dir"`
+	WASMLimits      WASMLimits     `mapstructure:"wasm_limits"`
+	WASMDeniedCIDRs []netip.Prefix `mapstructure:"wasm_denied_cidrs"`
 }{
 	WASMLimits: defaultWASMLimits,
 }
@@ -63,11 +66,24 @@ func Init(configFilePath string) error {
 	}
 
 	App.WASMLimits = defaultWASMLimits
-	if err := v.UnmarshalKey("app", &App); err != nil {
+	App.WASMDeniedCIDRs = nil
+	if err := v.UnmarshalKey("app", &App, func(c *mapstructure.DecoderConfig) {
+		c.DecodeHook = mapstructure.ComposeDecodeHookFunc(c.DecodeHook, mapstructure.StringToNetIPPrefixHookFunc())
+	}); err != nil {
 		return errors.Wrap(err, "parse app")
 	}
 	App.WASMRuntimeDir = v.GetString("app.wasm_runtime_dir")
 	App.WASMCacheDir = v.GetString("app.wasm_cache_dir")
+
+	for i, prefix := range App.WASMDeniedCIDRs {
+		if !prefix.IsValid() {
+			return errors.Errorf("app.wasm_denied_cidrs[%d]: expected a CIDR", i)
+		}
+		if prefix.Addr().Is4In6() {
+			return errors.Errorf("app.wasm_denied_cidrs[%d]: use IPv4 notation for %q", i, prefix)
+		}
+		App.WASMDeniedCIDRs[i] = prefix.Masked()
+	}
 
 	if err := v.UnmarshalKey("postgres", &Postgres); err != nil {
 		return errors.Wrap(err, "parse postgres")

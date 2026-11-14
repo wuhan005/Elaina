@@ -148,6 +148,14 @@ int main(void) {
 
 		port := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[1]
 		for _, host := range []string{"127.0.0.1", "localhost"} {
+			output := run(t, wasmCHTTPClient(host, port), true, 60)
+			if output.Error == "" || !strings.Contains(output.Stderr, "connect: Operation not permitted") || requests.Load() != 0 {
+				t.Fatalf("blocked destination %s: %+v requests=%d", host, output, requests.Load())
+			}
+		}
+
+		allowWASMTestLoopback(t)
+		for _, host := range []string{"127.0.0.1", "localhost"} {
 			code := wasmCHTTPClient(host, port)
 			before := requests.Load()
 			output := run(t, code, true, 60)
@@ -163,6 +171,7 @@ int main(void) {
 	})
 
 	t.Run("blocked HTTP cancellation", func(t *testing.T) {
+		allowWASMTestLoopback(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

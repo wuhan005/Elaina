@@ -6,6 +6,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,6 +98,29 @@ func TestWASMLimits(t *testing.T) {
 	}
 	if err := Init(writeConfig(t, base)); err != nil || App.WASMLimits != defaultWASMLimits {
 		t.Fatalf("default limits: %+v, %v", App.WASMLimits, err)
+	}
+}
+
+func TestWASMDeniedCIDRs(t *testing.T) {
+	app, postgres := App, Postgres
+	t.Cleanup(func() { App, Postgres = app, postgres })
+	base := "app:\n  password_hash: " + testPasswordHash + "\n"
+	for _, value := range []string{"[8.8.8.7/24, '2606:4700::1/32']", "'8.8.8.7/24,2606:4700::1/32'"} {
+		if err := Init(writeConfig(t, base+"  wasm_denied_cidrs: "+value+"\n")); err != nil {
+			t.Fatal(err)
+		}
+		if got := App.WASMDeniedCIDRs; len(got) != 2 || got[0] != netip.MustParsePrefix("8.8.8.0/24") || got[1] != netip.MustParsePrefix("2606:4700::/32") {
+			t.Fatalf("unexpected denied CIDRs: %v", got)
+		}
+	}
+	if err := Init(writeConfig(t, base)); err != nil || len(App.WASMDeniedCIDRs) != 0 {
+		t.Fatalf("expected no additional CIDRs: %v, %v", App.WASMDeniedCIDRs, err)
+	}
+	for _, value := range []string{"[bad-cidr]", "['::ffff:8.8.8.0/120']", "[null]"} {
+		err := Init(writeConfig(t, base+"  wasm_denied_cidrs: "+value+"\n"))
+		if err == nil || !strings.Contains(err.Error(), "wasm_denied_cidrs[0]") {
+			t.Fatalf("expected error for %s, got %v", value, err)
+		}
 	}
 }
 

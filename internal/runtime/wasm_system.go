@@ -129,6 +129,22 @@ func (s *wasmSystem) SockAddressInfo(ctx context.Context, name, service string, 
 	return s.System.SockAddressInfo(ctx, name, service, hints, results)
 }
 
+func (s *wasmSystem) SockConnect(ctx context.Context, fd wasi.FD, peer wasi.SocketAddress) (wasi.SocketAddress, wasi.Errno) {
+	if !s.internet || !wasmDestinationAllowed(peer) {
+		return nil, wasi.EPERM
+	}
+
+	return s.System.SockConnect(ctx, fd, peer)
+}
+
+func (s *wasmSystem) SockSendTo(ctx context.Context, fd wasi.FD, buffers []wasi.IOVec, flags wasi.SIFlags, peer wasi.SocketAddress) (wasi.Size, wasi.Errno) {
+	if !s.internet || !wasmDestinationAllowed(peer) {
+		return 0, wasi.EPERM
+	}
+
+	return s.System.SockSendTo(ctx, fd, buffers, flags, peer)
+}
+
 func (s *wasmSystem) PathSymlink(context.Context, string, wasi.FD, string) wasi.Errno {
 	return wasi.ENOTSUP
 }

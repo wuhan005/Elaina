@@ -6,6 +6,8 @@ app:
   wasm_runtime_dir: .wasm
   # Installed interpreters and compilers are warmed before the server starts listening.
   wasm_cache_dir: .wasm/cache # Must be writable by the server.
+  # Additional destination CIDRs to deny for all WASM sandboxes, including internally routed public IPs.
+  wasm_denied_cidrs: []
   wasm_limits:
     # Shared by all sandboxes, including compilation; excess tasks receive HTTP 503.
     max_concurrent_tasks: 1

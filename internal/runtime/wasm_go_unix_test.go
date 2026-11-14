@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/pem"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -90,11 +91,36 @@ func main() {
 		var requests atomic.Int64
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requests.Add(1)
+			if r.URL.Path == "/redirect" {
+				http.Redirect(w, r, "http://"+strings.Replace(r.Host, "127.0.0.1", "0.0.0.0", 1), http.StatusFound)
+				return
+			}
 			_, _ = w.Write([]byte("network-ok"))
 		}))
 		defer server.Close()
 
-		for _, address := range []string{server.URL, strings.Replace(server.URL, "127.0.0.1", "localhost", 1)} {
+		assertBlocked := func(address string, wantRequests int64) {
+			t.Helper()
+			code := fmt.Sprintf(`package main
+import ("errors"; "fmt"; "net/http"; "strings"; "syscall")
+func main() {
+ _, err := http.Get(%q)
+ if !errors.Is(err, syscall.EPERM) || !strings.Contains(err.Error(), "connect:") { panic(fmt.Sprint(err)) }
+ fmt.Print("blocked")
+}`, address)
+			output := run(t, code, true, 512, 60)
+			if output.Error != "" || output.Stdout != "blocked" || requests.Load() != wantRequests {
+				t.Fatalf("blocked destination %s: %+v requests=%d", address, output, requests.Load())
+			}
+		}
+		addresses := []string{server.URL, strings.Replace(server.URL, "127.0.0.1", "localhost", 1)}
+		for _, address := range addresses {
+			assertBlocked(address, 0)
+		}
+
+		allowWASMTestLoopback(t)
+		assertBlocked(server.URL+"/redirect", 1)
+		for _, address := range addresses {
 			code := fmt.Sprintf(`package main
 import ("fmt"; "io"; "net/http"; "os")
 func main() { r, err := http.Get(%q); if err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }; defer r.Body.Close(); _, _ = io.Copy(os.Stdout, r.Body) }`, address)
@@ -111,7 +137,31 @@ func main() { r, err := http.Get(%q); if err != nil { fmt.Fprintln(os.Stderr, er
 		}
 	})
 
+	t.Run("UDP egress", func(t *testing.T) {
+		receiver, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = receiver.Close() }()
+
+		code := fmt.Sprintf(`package main
+import ("errors"; "fmt"; "net"; "syscall"; "github.com/stealthrocket/net/wasip1")
+func main() {
+ if _, err := wasip1.Dial("udp4", %q); !errors.Is(err, syscall.EPERM) { panic(fmt.Sprint("UDP connect: ", err)) }
+ conn, err := wasip1.ListenPacket("udp4", "127.0.0.1:0")
+ if err != nil { panic(err) }
+ defer conn.Close()
+ peer := &net.UDPAddr{IP:net.IP{127,0,0,1}, Port:%d}
+ if _, err := conn.WriteTo([]byte("blocked"), peer); !errors.Is(err, syscall.EPERM) { panic(fmt.Sprint("UDP sendto: ", err)) }
+ fmt.Print("blocked")
+}`, receiver.LocalAddr().String(), receiver.LocalAddr().(*net.UDPAddr).Port)
+		if output := run(t, code, true, 512, 60); output.Error != "" || output.Stdout != "blocked" {
+			t.Fatalf("UDP was not blocked: %+v", output)
+		}
+	})
+
 	t.Run("HTTPS", func(t *testing.T) {
+		allowWASMTestLoopback(t)
 		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte("tls-ok"))
 		}))
@@ -165,6 +215,7 @@ func main() {
 	})
 
 	t.Run("blocked HTTP cancellation", func(t *testing.T) {
+		allowWASMTestLoopback(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

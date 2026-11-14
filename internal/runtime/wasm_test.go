@@ -252,6 +252,12 @@ print('quota-ok')`, false, 128, 60)
 
 		code := fmt.Sprintf(`<?php $r = file_get_contents(%q); if ($r === false) exit(1); echo $r;`, server.URL)
 		output := run(t, "php", code, true, 128, 60)
+		if output.Error != "exit status 1" || requests.Load() != 0 {
+			t.Fatalf("blocked destination: %+v requests=%d", output, requests.Load())
+		}
+
+		allowWASMTestLoopback(t)
+		output = run(t, "php", code, true, 128, 60)
 		if output.Error != "" || output.Stdout != "network-ok" || requests.Load() != 1 {
 			t.Fatalf("network enabled: %+v, requests=%d", output, requests.Load())
 		}
@@ -274,6 +280,7 @@ print('quota-ok')`, false, 128, 60)
 	})
 
 	t.Run("blocked network timeout", func(t *testing.T) {
+		allowWASMTestLoopback(t)
 		if output := run(t, "php", `<?php echo 'ready';`, false, 128, 60); output.Error != "" {
 			t.Fatalf("warm PHP compilation cache: %+v", output)
 		}
@@ -294,6 +301,7 @@ print('quota-ok')`, false, 128, 60)
 	})
 
 	t.Run("blocked network cancellation", func(t *testing.T) {
+		allowWASMTestLoopback(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

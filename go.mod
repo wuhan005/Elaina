@@ -6,6 +6,7 @@ require (
 	github.com/flamego/flamego v1.9.4
 	github.com/flamego/session v1.6.5
 	github.com/flamego/template v1.2.2
+	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
@@ -30,7 +31,6 @@ require (
 	github.com/charmbracelet/x/ansi v0.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
 	github.com/jackc/pgx/v5 v5.6.0 // indirect
