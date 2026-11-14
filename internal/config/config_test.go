@@ -25,13 +25,14 @@ func TestInit(t *testing.T) {
 	t.Setenv("WASM_CACHE_DIR", "environment-cache")
 
 	for _, test := range []struct {
-		name, content, runtimeDir, cacheDir, dsn string
-		keepCompiledInMemory                     bool
+		name, content, runtimeDir, cacheDir, dsn, clientIPHeader string
+		keepCompiledInMemory                                     bool
 	}{
 		{
 			"file values",
 			`app:
   password_hash: "` + testPasswordHash + `"
+  client_ip_header: CF-Connecting-IP
   wasm_runtime_dir: /opt/elaina/wasm
   wasm_cache_dir: /var/cache/elaina
   wasm_keep_compiled_in_memory: true
@@ -41,10 +42,11 @@ postgres:
 			"/opt/elaina/wasm",
 			"/var/cache/elaina",
 			"postgres://user:password@localhost/elaina?sslmode=disable",
+			"CF-Connecting-IP",
 			true,
 		},
-		{"default directories", "app:\n  password_hash: " + testPasswordHash + "\npostgres:\n  dsn: file-dsn\n", ".wasm", ".wasm/cache", "file-dsn", false},
-		{"app only", "app:\n  password_hash: " + testPasswordHash + "\n  wasm_runtime_dir: ./local-wasm\n", "./local-wasm", ".wasm/cache", "", false},
+		{"default directories", "app:\n  password_hash: " + testPasswordHash + "\npostgres:\n  dsn: file-dsn\n", ".wasm", ".wasm/cache", "file-dsn", "X-Forwarded-For", false},
+		{"app only", "app:\n  password_hash: " + testPasswordHash + "\n  wasm_runtime_dir: ./local-wasm\n", "./local-wasm", ".wasm/cache", "", "X-Forwarded-For", false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			App.PasswordHash, Postgres.DSN = "", ""
@@ -52,7 +54,7 @@ postgres:
 				t.Fatal(err)
 			}
 			if App.PasswordHash != testPasswordHash || App.WASMRuntimeDir != test.runtimeDir || App.WASMCacheDir != test.cacheDir ||
-				App.WASMKeepCompiledInMemory != test.keepCompiledInMemory || Postgres.DSN != test.dsn {
+				App.WASMKeepCompiledInMemory != test.keepCompiledInMemory || App.ClientIPHeader != test.clientIPHeader || Postgres.DSN != test.dsn {
 				t.Fatal("configuration does not match the file and defaults")
 			}
 		})

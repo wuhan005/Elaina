@@ -43,6 +43,7 @@ var defaultWASMLimits = WASMLimits{
 var App = struct {
 	PasswordHash   string         `mapstructure:"password_hash"`
 	TrustedProxies []netip.Prefix `mapstructure:"trusted_proxies"`
+	ClientIPHeader string         `mapstructure:"client_ip_header"`
 
 	WASMRuntimeDir           string         `mapstructure:"wasm_runtime_dir"`
 	WASMCacheDir             string         `mapstructure:"wasm_cache_dir"`
@@ -53,6 +54,7 @@ var App = struct {
 	// ExecutionRetentionDays is how long execution records are kept. Zero keeps them forever.
 	ExecutionRetentionDays int `mapstructure:"execution_retention_days"`
 }{
+	ClientIPHeader:         "X-Forwarded-For",
 	WASMRuntimeDir:         ".wasm",
 	WASMCacheDir:           ".wasm/cache",
 	WASMLimits:             defaultWASMLimits,

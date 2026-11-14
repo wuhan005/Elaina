@@ -95,7 +95,7 @@ func clientAddress(r *http.Request) string {
 	return addr.String()
 }
 
-// clientIP returns the client IP; behind trusted proxies it uses the rightmost untrusted X-Forwarded-For address.
+// clientIP uses the rightmost untrusted address in the configured header when the peer is a trusted proxy.
 func clientIP(r *http.Request) (netip.Addr, bool) {
 	remote, err := netip.ParseAddrPort(r.RemoteAddr)
 	if err != nil {
@@ -104,7 +104,7 @@ func clientIP(r *http.Request) (netip.Addr, bool) {
 
 	addr := remote.Addr().Unmap()
 	if trustedProxy(addr) {
-		hops := strings.Split(strings.Join(r.Header.Values("X-Forwarded-For"), ","), ",")
+		hops := strings.Split(strings.Join(r.Header.Values(config.App.ClientIPHeader), ","), ",")
 		for i := len(hops) - 1; i >= 0; i-- {
 			hop, err := netip.ParseAddr(strings.TrimSpace(hops[i]))
 			if err != nil {

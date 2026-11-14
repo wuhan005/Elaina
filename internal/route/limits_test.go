@@ -153,6 +153,30 @@ func TestClientAddress(t *testing.T) {
 	}
 }
 
+func TestClientAddressCustomHeader(t *testing.T) {
+	previous := config.App
+	t.Cleanup(func() { config.App = previous })
+	config.App.TrustedProxies = []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
+	config.App.ClientIPHeader = "cf-connecting-ip"
+	for _, test := range []struct{ remote, header, want string }{
+		{"10.0.0.2:1234", "198.51.100.9", "198.51.100.9"},
+		{"10.0.0.2:1234", "2001:db8:1:2::3", "2001:db8:1:2::/64"},
+		{"10.0.0.2:1234", "", "10.0.0.2"},
+		{"10.0.0.2:1234", "invalid", "10.0.0.2"},
+		{"203.0.113.7:1234", "198.51.100.9", "203.0.113.7"},
+	} {
+		r := httptest.NewRequest(http.MethodPost, "/", nil)
+		r.RemoteAddr = test.remote
+		r.Header.Set("X-Forwarded-For", "192.0.2.1")
+		if test.header != "" {
+			r.Header.Set("CF-Connecting-IP", test.header)
+		}
+		if got := clientAddress(r); got != test.want {
+			t.Fatalf("remote=%s header=%q: got %s, want %s", test.remote, test.header, got, test.want)
+		}
+	}
+}
+
 func TestRunnerLimits(t *testing.T) {
 	previous := config.App
 	t.Cleanup(func() {
@@ -161,6 +185,8 @@ func TestRunnerLimits(t *testing.T) {
 	})
 	config.App.WASMRuntimeDir = t.TempDir()
 	config.App.WASMCacheDir = t.TempDir()
+	config.App.TrustedProxies = []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
+	config.App.ClientIPHeader = "X-Real-IP"
 	config.App.WASMLimits.MaxConcurrentTasks = 1
 	config.App.WASMLimits.MaxQueuedTasks = 0
 	config.App.WASMLimits.MaxTasksPerClient = 1
@@ -192,11 +218,12 @@ func TestRunnerLimits(t *testing.T) {
 		})
 	})
 	f.Post("/", NewRunnerHandler().Execute)
-	const holder, other = "198.51.100.1:1000", "198.51.100.2:1000"
-	request := func(ctx context.Context, remote, language, code string) *httptest.ResponseRecorder {
+	const holder, other = "198.51.100.1", "198.51.100.2"
+	request := func(ctx context.Context, client, language, code string) *httptest.ResponseRecorder {
 		body := url.Values{"lang": {language}, "code": {code}}.Encode()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)).WithContext(ctx)
-		r.RemoteAddr = remote
+		r.RemoteAddr = "10.0.0.2:1000"
+		r.Header.Set("X-Real-IP", client)
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 		f.ServeHTTP(w, r)
@@ -222,7 +249,7 @@ func TestRunnerLimits(t *testing.T) {
 		if test.record == db.ExecutionStatusRejected {
 			wantCode = ""
 		}
-		if record.Status != test.record || record.Code != wantCode || record.CodeBytes != len(test.code) {
+		if record.Status != test.record || record.Code != wantCode || record.CodeBytes != len(test.code) || record.ClientAddress != other {
 			t.Fatalf("source %q: unexpected record %+v", test.code, record)
 		}
 	}

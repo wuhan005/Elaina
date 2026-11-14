@@ -11,9 +11,10 @@ app:
   wasm_keep_compiled_in_memory: false
   # Days to keep sandbox execution records; 0 keeps them forever.
   execution_retention_days: 30
-  # Reverse proxies whose X-Forwarded-For header identifies clients, e.g. [127.0.0.1/32, 10.0.0.0/8].
-  # Without it, every request through a proxy counts as the same client for per-client limits.
+  # Reverse proxies allowed to supply the client IP, e.g. [127.0.0.1/32, 10.0.0.0/8].
   trusted_proxies: []
+  # Header containing a client IP or a comma-separated chain of IPs, set or sanitized by trusted proxies.
+  client_ip_header: X-Forwarded-For
   # Additional destination CIDRs to deny for all WASM sandboxes, including internally routed public IPs.
   wasm_denied_cidrs: []
   wasm_limits:
