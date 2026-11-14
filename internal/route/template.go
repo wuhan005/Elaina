@@ -28,7 +28,7 @@ func (h *TemplateHandler) Templater(ctx context.Context) error {
 	tpl, err := db.Tpls.GetByID(ctx.Request().Context(), templateID)
 	if err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
-			return ctx.Error(http.StatusNotFound, "Template does not exist")
+			return ctx.Error(http.StatusNotFound, "template::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get template")
 		return ctx.ServerError()
@@ -159,12 +159,12 @@ func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.U
 		InternetAccess: f.InternetAccess,
 	}); err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
-			return ctx.Error(http.StatusNotFound, "Template does not exist")
+			return ctx.Error(http.StatusNotFound, "template::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update template")
 		return ctx.ServerError()
 	}
-	return ctx.Success("Template updated successfully")
+	return ctx.Success(ctx.Tr("template::updated"))
 }
 
 // Delete delete a template.
@@ -182,10 +182,10 @@ func (h *TemplateHandler) Update(ctx context.Context, template *db.Tpl, f form.U
 func (h *TemplateHandler) Delete(ctx context.Context, template *db.Tpl) error {
 	if err := db.Tpls.Delete(ctx.Request().Context(), template.ID); err != nil {
 		if errors.Is(err, db.ErrTemplateNotFound) {
-			return ctx.Error(http.StatusNotFound, "Template does not exist")
+			return ctx.Error(http.StatusNotFound, "template::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to delete template")
 		return ctx.ServerError()
 	}
-	return ctx.Success("Template deleted successfully")
+	return ctx.Success(ctx.Tr("template::deleted"))
 }

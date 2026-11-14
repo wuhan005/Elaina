@@ -11,6 +11,7 @@ import (
 
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/form"
+	"github.com/wuhan005/Elaina/internal/i18n"
 	"github.com/wuhan005/Elaina/public"
 	"github.com/wuhan005/Elaina/templates"
 	"github.com/wuhan005/Elaina/web"
@@ -59,6 +60,7 @@ func New() (*flamego.Flame, error) {
 		template.Templater(template.Options{
 			FileSystem: templatesFS,
 		}),
+		i18n.I18n(),
 		context.Contexter(),
 	)
 

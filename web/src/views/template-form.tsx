@@ -15,6 +15,7 @@ import { SpinnerGlyph } from "@/components/base/spinner/spinner";
 import { SwitchCard } from "@/components/base/switch/switch-card";
 import { toast } from "@/components/base/toast/toast";
 import { LANGUAGES } from "@/const/template";
+import { translate, useT } from "@/i18n";
 
 type FormData = Required<CreateTemplateReq>;
 type FormErrors = Partial<Record<keyof FormData, string>>;
@@ -23,19 +24,20 @@ const PendingGlyph = ({ className }: { className?: string }) => <SpinnerGlyph si
 
 function validate(form: FormData): FormErrors {
   const errors: FormErrors = {};
-  if (form.name.trim() === "") errors.name = "Name is required.";
-  if (form.language.length === 0) errors.language = "Select at least one programming language.";
+  if (form.name.trim() === "") errors.name = translate("Name is required.");
+  if (form.language.length === 0) errors.language = translate("Select at least one programming language.");
   if (!Number.isInteger(form.timeout) || form.timeout < 0 || form.timeout > 60) {
-    errors.timeout = "Use a whole number from 0 to 60.";
+    errors.timeout = translate("Use a whole number from {min} to {max}.", { min: 0, max: 60 });
   }
   if (!Number.isInteger(form.maxMemory) || form.maxMemory < 0 || form.maxMemory > 4096) {
-    errors.maxMemory = "Use a whole number from 0 to 4096.";
+    errors.maxMemory = translate("Use a whole number from {min} to {max}.", { min: 0, max: 4096 });
   }
   return errors;
 }
 
 export default function TemplateForm() {
   const navigate = useNavigate();
+  const t = useT();
   const params = useParams();
   const isEdit = params.id !== undefined;
   const id = Number(params.id);
@@ -94,26 +96,26 @@ export default function TemplateForm() {
           toast.success(res.data.data);
         })
       : client.templates.createTemplate(payload).then(() => {
-          toast.success("Template created");
+          toast.success(t("Template created"));
           navigate("/template");
         });
     request.catch(() => undefined).finally(() => setSaving(false));
   };
 
-  const title = isEdit ? "Edit template" : "New template";
+  const title = isEdit ? t("Edit template") : t("New template");
 
   return (
     <>
       <PageHeader
         title={title}
-        breadcrumbs={[{ label: "Templates", href: "/template", icon: RiStackLine }, { label: title }]}
+        breadcrumbs={[{ label: t("Templates"), href: "/template", icon: RiStackLine }, { label: title }]}
       />
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <div className="flex items-start gap-3 rounded-2xl bg-background-secondary-default px-4 py-3 text-text-secondary">
           <RiInformationLine className="mt-0.5 size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
           <p className="text-body-regular">
-            Server configuration caps memory, global concurrency, input and workspace usage.
+            {t("Server configuration caps memory, global concurrency, input and workspace usage.")}
           </p>
         </div>
 
@@ -132,10 +134,10 @@ export default function TemplateForm() {
             </div>
           ) : (
             <>
-              <FormSection title="General">
+              <FormSection title={t("General")}>
                 <Input
-                  label="Name"
-                  placeholder="e.g. Python playground"
+                  label={t("Name")}
+                  placeholder={t("e.g. Python playground")}
                   value={form.name}
                   onChange={(value) => update("name", value)}
                   isRequired
@@ -146,16 +148,16 @@ export default function TemplateForm() {
               </FormSection>
 
               <FormSection
-                title="Languages"
-                description="Code runs as WebAssembly. Native extensions and subprocesses are unavailable."
+                title={t("Languages")}
+                description={t("Code runs as WebAssembly. Native extensions and subprocesses are unavailable.")}
               >
                 <div className="flex flex-col gap-1">
-                  <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="Programming languages">
+                  <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label={t("Languages")}>
                     {LANGUAGES.map((language) => (
                       <CheckboxCard
                         key={language.value}
                         title={language.label}
-                        description={language.runtime}
+                        description={t(language.runtime)}
                         isSelected={form.language.includes(language.value)}
                         onChange={(selected) => toggleLanguage(language.value, selected)}
                       />
@@ -165,10 +167,10 @@ export default function TemplateForm() {
                 </div>
               </FormSection>
 
-              <FormSection title="Limits">
+              <FormSection title={t("Limits")}>
                 <div className="grid gap-5 lg:grid-cols-2">
                   <NumberField
-                    label="Execution timeout (s)"
+                    label={t("Execution timeout (s)")}
                     value={form.timeout}
                     onChange={(value) => update("timeout", value)}
                     minValue={0}
@@ -177,10 +179,10 @@ export default function TemplateForm() {
                     formatOptions={{ maximumFractionDigits: 0 }}
                     isRequired
                     isInvalid={errors.timeout !== undefined}
-                    hint={errors.timeout ?? "0 uses the 10-second default. Includes compilation and startup; 60s is recommended for C/Go cold starts."}
+                    hint={errors.timeout ?? t("0 uses the 10-second default. Includes compilation and startup; 60s is recommended for C/Go cold starts.")}
                   />
                   <NumberField
-                    label="WASM linear memory (MiB)"
+                    label={t("WASM linear memory (MiB)")}
                     value={form.maxMemory}
                     onChange={(value) => update("maxMemory", value)}
                     minValue={0}
@@ -189,24 +191,24 @@ export default function TemplateForm() {
                     formatOptions={{ maximumFractionDigits: 0, useGrouping: false }}
                     isRequired
                     isInvalid={errors.maxMemory !== undefined}
-                    hint={errors.maxMemory ?? "0 inherits the server ceiling; nonzero values are capped by it. Start with 512 MiB for C/Go, 128 MiB for interpreters."}
+                    hint={errors.maxMemory ?? t("0 inherits the server ceiling; nonzero values are capped by it. Start with 512 MiB for C/Go, 128 MiB for interpreters.")}
                   />
                 </div>
               </FormSection>
 
               <FormSection
-                title="Network"
-                description="Compilation is always offline."
+                title={t("Network")}
+                description={t("Compilation is always offline.")}
               >
                 <SwitchCard
                   icon={RiGlobalLine}
-                  title="Network access"
-                  description={form.internetAccess ? "Supported networking is allowed" : "Sockets and DNS are blocked"}
+                  title={t("Network access")}
+                  description={form.internetAccess ? t("Supported networking is allowed") : t("Sockets and DNS are blocked")}
                   isSelected={form.internetAccess}
                   onChange={(value) => update("internetAccess", value)}
                 />
                 <p className="-mt-2 text-caption-1-medium text-text-secondary">
-                  Supported: Go HTTP/DNS/HTTPS, C IPv4 TCP/DNS without bundled TLS, PHP IPv4 TCP/HTTP. Python and JavaScript have no networking.
+                  {t("Supported: Go HTTP/DNS/HTTPS, C IPv4 TCP/DNS without bundled TLS, PHP IPv4 TCP/HTTP. Python and JavaScript have no networking.")}
                 </p>
               </FormSection>
             </>
@@ -214,7 +216,7 @@ export default function TemplateForm() {
 
           <div className="flex flex-col-reverse gap-2 border-t border-separator-border px-5 py-4 sm:flex-row sm:items-center sm:justify-end md:px-6">
             <Button variant="secondary" onClick={() => navigate("/template")}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               type="submit"
@@ -222,7 +224,7 @@ export default function TemplateForm() {
               aria-busy={saving || undefined}
               leadingIcon={saving ? PendingGlyph : undefined}
             >
-              {isEdit ? "Save changes" : "Create template"}
+              {isEdit ? t("Save changes") : t("Create template")}
             </Button>
           </div>
         </Panel>

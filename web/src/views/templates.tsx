@@ -14,13 +14,15 @@ import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@/components/base/table/table";
 import { toast } from "@/components/base/toast/toast";
 import { LANGUAGES_MAP } from "@/const/template";
+import { translate, useT } from "@/i18n";
 import { formatDateTime } from "@/utils/format";
 
 const PAGE_SIZE = 20;
 
 export function LanguageChips({ languages }: { languages?: string[] | null }) {
+  const t = useT();
   if (!languages || languages.length === 0) {
-    return <span className="text-body-medium text-text-tertiary">None</span>;
+    return <span className="text-body-medium text-text-tertiary">{t("None")}</span>;
   }
   return (
     <div className="flex flex-wrap gap-1">
@@ -34,29 +36,31 @@ export function LanguageChips({ languages }: { languages?: string[] | null }) {
 }
 
 export function NetworkChip({ allowed }: { allowed: boolean }) {
+  const t = useT();
   return allowed ? (
     <Chip variant="caption" color="lime" className="gap-1">
       <RiGlobalLine className="size-3.5" aria-hidden />
-      Allowed
+      {t("Allowed")}
     </Chip>
   ) : (
     <Chip variant="caption" color="neutral" className="gap-1">
       <RiProhibited2Line className="size-3.5" aria-hidden />
-      Denied
+      {t("Denied")}
     </Chip>
   );
 }
 
 export function formatTimeout(timeout: number): string {
-  return timeout === 0 ? "10s (default)" : `${timeout}s`;
+  return timeout === 0 ? translate("10s (default)") : `${timeout}s`;
 }
 
 export function formatMemory(maxMemory: number): string {
-  return maxMemory === 0 ? "Server ceiling" : `${maxMemory} MiB`;
+  return maxMemory === 0 ? translate("Server ceiling") : `${maxMemory} MiB`;
 }
 
 export default function Templates() {
   const navigate = useNavigate();
+  const t = useT();
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [data, setData] = useState<Template[]>([]);
@@ -100,10 +104,10 @@ export default function Templates() {
   return (
     <>
       <PageHeader
-        title="Templates"
+        title={t("Templates")}
         actions={
           <Button leadingIcon={RiAddLine} onClick={() => navigate("/template/new")}>
-            New template
+            {t("New template")}
           </Button>
         }
       />
@@ -115,7 +119,7 @@ export default function Templates() {
               <Skeleton shape="text" className="my-1 h-3.5 w-24" />
             ) : (
               <p className="text-body-medium text-text-secondary tabular-nums">
-                {total.toLocaleString()} {total === 1 ? "template" : "templates"}
+                {t(total === 1 ? "{count} template" : "{count} templates", { count: total.toLocaleString() })}
               </p>
             )}
           </div>
@@ -125,27 +129,27 @@ export default function Templates() {
           <div className="border-t border-separator-border">
             <EmptyState
               icon={<RiStackLine className="size-6" aria-hidden />}
-              title="No templates"
-              description="A sandbox needs a template for its languages and limits."
+              title={t("No templates")}
+              description={t("A sandbox needs a template for its languages and limits.")}
               action={
                 <Button leadingIcon={RiAddLine} onClick={() => navigate("/template/new")}>
-                  New template
+                  {t("New template")}
                 </Button>
               }
             />
           </div>
         ) : (
           <div className="mt-2">
-            <Table aria-label="Templates" className="min-w-[900px]">
+            <Table aria-label={t("Templates")} className="min-w-[900px]">
               <TableHeader>
-                <TableColumn isRowHeader className="w-[220px]">Name</TableColumn>
-                <TableColumn>Languages</TableColumn>
-                <TableColumn className="w-[130px]">Timeout</TableColumn>
-                <TableColumn className="w-[140px]">Memory</TableColumn>
-                <TableColumn className="w-[120px]">Network</TableColumn>
-                <TableColumn className="w-[180px]">Created at</TableColumn>
+                <TableColumn isRowHeader className="w-[220px]">{t("Name")}</TableColumn>
+                <TableColumn>{t("Languages")}</TableColumn>
+                <TableColumn className="w-[130px]">{t("Timeout")}</TableColumn>
+                <TableColumn className="w-[140px]">{t("Memory")}</TableColumn>
+                <TableColumn className="w-[120px]">{t("Network")}</TableColumn>
+                <TableColumn className="w-[180px]">{t("Created at")}</TableColumn>
                 <TableColumn className="w-[100px]">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("Actions")}</span>
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -186,8 +190,8 @@ export default function Templates() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">
-                            <RowAction icon={RiEditLine} label="Edit" onClick={() => navigate(`/template/${template.id}`)} />
-                            <RowAction icon={RiDeleteBin6Line} label="Delete" danger onClick={() => {
+                            <RowAction icon={RiEditLine} label={t("Edit")} onClick={() => navigate(`/template/${template.id}`)} />
+                            <RowAction icon={RiDeleteBin6Line} label={t("Delete")} danger onClick={() => {
                                 setDeleteTarget(template);
                                 setDeleteOpen(true);
                               }}
@@ -213,14 +217,10 @@ export default function Templates() {
       <AlertDialog
         isOpen={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete ${deleteTarget?.name ?? "template"}?`}
-        description={
-          <>
-            Sandboxes using <span className="text-body-medium text-text-primary">{deleteTarget?.name}</span> will stop running code. This can't be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        pendingLabel="Deleting…"
+        title={t("Delete {name}?", { name: deleteTarget?.name ?? "" })}
+        description={t("Sandboxes using {name} will stop running code. This can't be undone.", { name: deleteTarget?.name ?? "" })}
+        confirmLabel={t("Delete")}
+        pendingLabel={t("Deleting…")}
         onConfirm={onDelete}
       />
     </>

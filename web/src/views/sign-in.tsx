@@ -13,6 +13,8 @@ import { Input } from "@/components/base/input/input";
 import { InputOtp } from "@/components/base/input-otp/input-otp";
 import { Label } from "@/components/base/input/label";
 import { SpinnerGlyph } from "@/components/base/spinner/spinner";
+import { LanguageSwitch } from "@/components/application/layout/language-switch";
+import { useT } from "@/i18n";
 import { authStore, useIsAuthenticated } from "@/store/auth";
 
 const PendingGlyph = ({ className }: { className?: string }) => <SpinnerGlyph size="sm" className={className} />;
@@ -22,12 +24,13 @@ function PasswordStep({ onPending, onSuccess }: { onPending: (token: string) => 
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
   const [pending, setPending] = useState(false);
+  const t = useT();
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const next = {
-      username: username.trim() === "" ? "Enter your username." : undefined,
-      password: password === "" ? "Enter your password." : undefined,
+      username: username.trim() === "" ? t("Enter your username.") : undefined,
+      password: password === "" ? t("Enter your password.") : undefined,
     };
     setErrors(next);
     if (next.username || next.password) return;
@@ -47,7 +50,7 @@ function PasswordStep({ onPending, onSuccess }: { onPending: (token: string) => 
   return (
     <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
       <Input
-        label="Username"
+        label={t("Username")}
         value={username}
         onChange={(value) => {
           setUsername(value);
@@ -61,7 +64,7 @@ function PasswordStep({ onPending, onSuccess }: { onPending: (token: string) => 
         inputDir="ltr"
       />
       <PasswordField
-        label="Password"
+        label={t("Password")}
         value={password}
         onChange={(value) => {
           setPassword(value);
@@ -71,7 +74,7 @@ function PasswordStep({ onPending, onSuccess }: { onPending: (token: string) => 
         autoComplete="current-password"
       />
       <Button type="submit" className="mt-1 w-full" disabled={pending} aria-busy={pending || undefined} leadingIcon={pending ? PendingGlyph : undefined}>
-        Sign in
+        {t("Sign in")}
       </Button>
     </form>
   );
@@ -83,6 +86,7 @@ function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: ()
   const [invalid, setInvalid] = useState(false);
   const [pending, setPending] = useState(false);
   const otpRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (mode === "totp") otpRef.current?.querySelector("input")?.focus();
@@ -117,7 +121,7 @@ function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: ()
     >
       {mode === "totp" ? (
         <div className="flex flex-col gap-1.5">
-          <Label>Authentication code</Label>
+          <Label>{t("Authentication code")}</Label>
           <InputOtp
             ref={otpRef}
             value={code}
@@ -129,15 +133,15 @@ function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: ()
             isInvalid={invalid}
             isDisabled={pending}
             groupEvery={3}
-            aria-label="Authentication code"
+            aria-label={t("Authentication code")}
           />
           <HintText isInvalid={invalid}>
-            {invalid ? "That code didn't work. Try the current one." : "Open your authenticator app to view the code."}
+            {invalid ? t("That code didn't work. Try the current one.") : t("Open your authenticator app to view the code.")}
           </HintText>
         </div>
       ) : (
         <Input
-          label="Recovery code"
+          label={t("Recovery code")}
           placeholder="xxxxx-xxxxx"
           value={code}
           onChange={(value) => {
@@ -145,8 +149,8 @@ function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: ()
             setInvalid(false);
           }}
           isInvalid={invalid}
-          errorMessage="That recovery code didn't work."
-          hint="Each recovery code can be used once."
+          errorMessage={t("That recovery code didn't work.")}
+          hint={t("Each recovery code can be used once.")}
           autoComplete="off"
           autoFocus
           inputDir="ltr"
@@ -155,12 +159,12 @@ function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: ()
       )}
 
       <Button type="submit" className="w-full" disabled={pending || code.trim() === ""} aria-busy={pending || undefined} leadingIcon={pending ? PendingGlyph : undefined}>
-        Verify
+        {t("Verify")}
       </Button>
 
       <div className="flex items-center justify-between gap-3">
         <LinkButton size="small" variant="secondary" leadingIcon={RiArrowLeftLine} onClick={onBack}>
-          Back
+          {t("Back")}
         </LinkButton>
         <LinkButton
           size="small"
@@ -170,7 +174,7 @@ function TwoFactorStep({ token, onBack, onSuccess }: { token: string; onBack: ()
             setInvalid(false);
           }}
         >
-          {mode === "totp" ? "Use a recovery code" : "Use authenticator app"}
+          {mode === "totp" ? t("Use a recovery code") : t("Use authenticator app")}
         </LinkButton>
       </div>
     </form>
@@ -182,6 +186,7 @@ export default function SignIn() {
   const location = useLocation();
   const isAuthenticated = useIsAuthenticated();
   const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const t = useT();
 
   const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
 
@@ -196,7 +201,8 @@ export default function SignIn() {
 
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background-full px-4 py-10">
-      <div className="absolute top-4 end-4">
+      <div className="absolute top-4 end-4 flex items-center gap-2">
+        <LanguageSwitch />
         <ThemeToggle appearance="segmented" />
       </div>
 
@@ -204,7 +210,7 @@ export default function SignIn() {
         <section className="w-full rounded-3xl border border-border-button-default bg-background-full p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex flex-col gap-4">
             <Logo className="size-11" />
-            <h1 className="text-title-2-medium text-text-primary">{pendingToken ? "Two-factor authentication" : "Sign in to Elaina"}</h1>
+            <h1 className="text-title-2-medium text-text-primary">{pendingToken ? t("Two-factor authentication") : t("Sign in to Elaina")}</h1>
           </div>
 
           {pendingToken ? (

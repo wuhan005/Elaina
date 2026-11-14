@@ -1,0 +1,61 @@
+# English messages returned by the API. Keys are looked up as "section::key";
+# values are fmt formats when the call site passes arguments.
+common:
+  unauthorized: Unauthorized
+  internal_error: Internal server error
+  invalid_body: Failed to parse request body
+
+auth:
+  invalid_credentials: Invalid username or password
+  invalid_code: Invalid verification code
+  verification_expired: Verification expired. Please sign in again.
+  too_many_codes: Too many incorrect codes. Please sign in again.
+  signed_out: Signed out
+
+account:
+  wrong_current_password: Current password is incorrect
+  wrong_password: Password is incorrect
+  password_changed: Password changed
+  two_factor_already_enabled: Two-factor authentication is already enabled
+  two_factor_not_enabled: Two-factor authentication is not enabled
+  two_factor_setup_first: Start two-factor setup first
+  two_factor_disabled: Two-factor authentication disabled
+
+user:
+  not_found: User does not exist
+  exists: Username already exists
+  manage_self: Use account settings to manage your own account
+  deleted: User deleted
+  password_updated: Password updated
+  two_factor_reset: Two-factor authentication turned off
+
+template:
+  not_found: Template does not exist
+  updated: Template updated successfully
+  deleted: Template deleted successfully
+
+sandbox:
+  not_found: Sandbox does not exist
+  updated: Sandbox updated successfully
+  deleted: Sandbox deleted successfully
+
+execution:
+  not_found: Execution does not exist
+  invalid_status: Invalid status %q
+  invalid_days: days must be between 1 and %d
+  unknown_timezone: Unknown time zone %q
+
+runner:
+  parse_form: Failed to parse form
+  parse_form_detail: "Failed to parse form: %v"
+  source_too_large: Source code exceeds the configured size limit
+  client_task_limit: Too many tasks from this client; wait for the previous ones to finish
+  task_limit: Task limit reached; try again later
+  create_task_failed: "Failed to create task: %v"
+  run_task_failed: "Failed to run task: %v"
+
+validation:
+  username: Username must be 2-32 characters of letters, digits, '_', '.' or '-', starting with a letter or digit
+  password_length: Password must contain %d-%d UTF-8 bytes
+  unsupported_language: "Unsupported WASM language: %q"
+  placeholder_too_large: Placeholder exceeds the configured source size limit

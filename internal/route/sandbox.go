@@ -29,7 +29,7 @@ func (h *SandboxHandler) Sandboxer(ctx context.Context) error {
 	sandbox, err := db.Sandboxes.GetByID(ctx.Request().Context(), sandboxID)
 	if err != nil {
 		if errors.Is(err, db.ErrSandboxNotFound) {
-			return ctx.Error(http.StatusNotFound, "Sandbox does not exist")
+			return ctx.Error(http.StatusNotFound, "sandbox::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get sandbox")
 		return ctx.ServerError()
@@ -136,13 +136,13 @@ func (h *SandboxHandler) Update(ctx context.Context, sandbox *db.Sandbox, f form
 		Editable:    f.Editable,
 	}); err != nil {
 		if errors.Is(err, db.ErrSandboxNotFound) {
-			return ctx.Error(http.StatusNotFound, "Sandbox does not exist")
+			return ctx.Error(http.StatusNotFound, "sandbox::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update sandbox")
 		return ctx.ServerError()
 	}
 
-	return ctx.Success("Sandbox updated successfully")
+	return ctx.Success(ctx.Tr("sandbox::updated"))
 }
 
 // Delete delete a sandbox.
@@ -160,10 +160,10 @@ func (h *SandboxHandler) Update(ctx context.Context, sandbox *db.Sandbox, f form
 func (h *SandboxHandler) Delete(ctx context.Context, sandbox *db.Sandbox) error {
 	if err := db.Sandboxes.Delete(ctx.Request().Context(), sandbox.ID); err != nil {
 		if errors.Is(err, db.ErrSandboxNotFound) {
-			return ctx.Error(http.StatusNotFound, "Sandbox does not exist")
+			return ctx.Error(http.StatusNotFound, "sandbox::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to delete sandbox")
 		return ctx.ServerError()
 	}
-	return ctx.Success("Sandbox deleted successfully")
+	return ctx.Success(ctx.Tr("sandbox::deleted"))
 }

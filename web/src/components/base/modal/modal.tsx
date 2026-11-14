@@ -26,6 +26,7 @@ import { CloseButton } from "@/components/base/buttons/close-button";
 import { SpinnerGlyph } from "@/components/base/spinner/spinner";
 import { useDirection } from "@/components/foundations/direction/direction";
 import { ScrollFade, useScrollFade } from "@/components/foundations/scroll-fade/scroll-fade";
+import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
 import { cx, sortCx } from "@/utils/cx";
 
 /**
@@ -238,6 +239,7 @@ export function ModalHeader({
   className,
   children,
 }: ModalHeaderProps) {
+  const localize = useTemplateCopy();
   const context = useContext(ModalContext);
   const close = useModalClose();
   const setDescribed = context?.setDescribed;
@@ -249,7 +251,7 @@ export function ModalHeader({
     return () => setDescribed(false);
   }, [hasDescription, setDescribed]);
 
-  return (
+  return localize(
     <div className={cx("flex shrink-0 items-start gap-3 px-6", className)}>
       <div className="flex min-w-0 flex-1 flex-col">
         {Icon ? (
@@ -270,7 +272,7 @@ export function ModalHeader({
       {showCloseButton ? (
         <CloseButton size="sm" aria-label={closeLabel} onClick={close} className="-me-1 shrink-0" />
       ) : null}
-    </div>
+    </div>,
   );
 }
 
@@ -370,8 +372,9 @@ export function AlertDialog({
   ...props
 }: AlertDialogProps) {
   const [pending, setPending] = useState(false);
+  const localize = useTemplateCopy();
 
-  return (
+  return localize(
     <Modal {...props} size={size} role="alertdialog" isDismissable={isDismissable && !pending} isKeyboardDismissDisabled={pending}>
       {({ close }) => {
         const confirm = async () => {
@@ -426,6 +429,6 @@ export function AlertDialog({
           </>
         );
       }}
-    </Modal>
+    </Modal>,
   );
 }

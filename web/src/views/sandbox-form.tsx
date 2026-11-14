@@ -15,6 +15,7 @@ import { SwitchCard } from "@/components/base/switch/switch-card";
 import { Textarea } from "@/components/base/textarea/textarea";
 import { toast } from "@/components/base/toast/toast";
 import { LANGUAGES_MAP } from "@/const/template";
+import { useT } from "@/i18n";
 import { copyRunnerUrl, runnerUrl } from "./sandboxes";
 
 type FormData = Required<CreateSandboxReq>;
@@ -28,6 +29,7 @@ function languagesOf(template: Template): string {
 
 export default function SandboxForm() {
   const navigate = useNavigate();
+  const t = useT();
   const params = useParams();
   const isEdit = params.id !== undefined;
   const id = Number(params.id);
@@ -72,8 +74,8 @@ export default function SandboxForm() {
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors: FormErrors = {};
-    if (form.name.trim() === "") nextErrors.name = "Name is required.";
-    if (!form.templateID) nextErrors.templateID = "Template is required.";
+    if (form.name.trim() === "") nextErrors.name = t("Name is required.");
+    if (!form.templateID) nextErrors.templateID = t("Template is required.");
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
 
@@ -84,34 +86,34 @@ export default function SandboxForm() {
           toast.success(res.data.data);
         })
       : client.sandboxes.createSandbox(payload).then((res) => {
-          toast.success("Sandbox created", {
+          toast.success(t("Sandbox created"), {
             description: runnerUrl(res.data.data.uid),
-            actions: [{ label: "Copy link", onClick: () => copyRunnerUrl(res.data.data.uid) }],
+            actions: [{ label: t("Copy link"), onClick: () => copyRunnerUrl(res.data.data.uid) }],
           });
           navigate("/sandbox");
         });
     request.catch(() => undefined).finally(() => setSaving(false));
   };
 
-  const title = isEdit ? "Edit sandbox" : "New sandbox";
+  const title = isEdit ? t("Edit sandbox") : t("New sandbox");
   const selectedTemplate = templates.find((template) => template.id === form.templateID);
 
   return (
     <>
       <PageHeader
         title={title}
-        breadcrumbs={[{ label: "Sandboxes", href: "/sandbox", icon: RiCodeBoxLine }, { label: title }]}
+        breadcrumbs={[{ label: t("Sandboxes"), href: "/sandbox", icon: RiCodeBoxLine }, { label: title }]}
         actions={
           isEdit && uid ? (
             <>
               <Button variant="secondary" leadingIcon={RiHistoryLine} onClick={() => navigate(`/execution?sandbox=${id}`)}>
-                Runs
+                {t("Runs")}
               </Button>
               <Button variant="secondary" leadingIcon={RiFileCopyLine} onClick={() => copyRunnerUrl(uid)}>
-                Copy link
+                {t("Copy link")}
               </Button>
               <ButtonLink variant="secondary" leadingIcon={RiExternalLinkLine} href={`/r/${uid}`} target="_blank" rel="noreferrer">
-                Open runner
+                {t("Open runner")}
               </ButtonLink>
             </>
           ) : undefined
@@ -134,10 +136,10 @@ export default function SandboxForm() {
             </div>
           ) : (
             <>
-              <FormSection title="General">
+              <FormSection title={t("General")}>
                 <Input
-                  label="Name"
-                  placeholder="e.g. Hello world in Go"
+                  label={t("Name")}
+                  placeholder={t("e.g. Hello world in Go")}
                   value={form.name}
                   onChange={(value) => update("name", value)}
                   isRequired
@@ -146,18 +148,18 @@ export default function SandboxForm() {
                   autoFocus={!isEdit}
                 />
                 {isEdit && uid && (
-                  <Input label="Runner link" value={runnerUrl(uid)} isReadOnly inputDir="ltr" />
+                  <Input label={t("Runner link")} value={runnerUrl(uid)} isReadOnly inputDir="ltr" />
                 )}
               </FormSection>
 
               <FormSection
-                title="Template"
-                description="Languages, limits and network access come from the template."
+                title={t("Template")}
+                description={t("Languages, limits and network access come from the template.")}
               >
                 <div className="flex flex-col gap-1">
                   <Select
-                    label="Template"
-                    placeholder="Select a template"
+                    label={t("Template")}
+                    placeholder={t("Select a template")}
                     isRequired
                     className="w-full"
                     selectedKey={form.templateID || null}
@@ -175,26 +177,25 @@ export default function SandboxForm() {
                     <HintText isInvalid>{errors.templateID}</HintText>
                   ) : templates.length === 0 ? (
                     <p className="pt-px text-caption-1-medium text-text-secondary">
-                      No templates yet.{" "}
+                      {t("No templates yet.")}{" "}
                       <Link to="/template/new" className="text-text-primary underline underline-offset-2">
-                        Create one first
+                        {t("Create one first")}
                       </Link>
-                      .
                     </p>
                   ) : selectedTemplate ? (
                     <p className="pt-px text-caption-1-medium text-text-secondary">
-                      Runs with {languagesOf(selectedTemplate) || "no languages"}.
+                      {t("Languages: {languages}", { languages: languagesOf(selectedTemplate) || t("None") })}
                     </p>
                   ) : null}
                 </div>
               </FormSection>
 
               <FormSection
-                title="Code"
-                description="Shown on the runner page when it opens."
+                title={t("Code")}
+                description={t("Shown on the runner page when it opens.")}
               >
                 <Textarea
-                  label="Source code"
+                  label={t("Source code")}
                   placeholder={'print("Hello, Elaina!")'}
                   value={form.placeholder}
                   onChange={(value) => update("placeholder", value)}
@@ -205,8 +206,8 @@ export default function SandboxForm() {
                 />
                 <SwitchCard
                   icon={RiPencilLine}
-                  title="Editable"
-                  description={form.editable ? "Visitors can change the code before running it" : "Visitors can only run the code as is"}
+                  title={t("Editable")}
+                  description={form.editable ? t("Visitors can change the code before running it") : t("Visitors can only run the code as is")}
                   isSelected={form.editable}
                   onChange={(value) => update("editable", value)}
                 />
@@ -216,7 +217,7 @@ export default function SandboxForm() {
 
           <div className="flex flex-col-reverse gap-2 border-t border-separator-border px-5 py-4 sm:flex-row sm:items-center sm:justify-end md:px-6">
             <Button variant="secondary" onClick={() => navigate("/sandbox")}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               type="submit"
@@ -224,7 +225,7 @@ export default function SandboxForm() {
               aria-busy={saving || undefined}
               leadingIcon={saving ? PendingGlyph : undefined}
             >
-              {isEdit ? "Save changes" : "Create sandbox"}
+              {isEdit ? t("Save changes") : t("Create sandbox")}
             </Button>
           </div>
         </Panel>

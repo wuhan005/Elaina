@@ -38,7 +38,7 @@ func TestTemplateBinding(t *testing.T) {
 			{"fractional memory", map[string]interface{}{"maxMemory": 0.5}, "parse request"},
 			{"missing name", map[string]interface{}{"name": ""}, "Name"},
 			{"empty languages", map[string]interface{}{"language": []string{}}, "Language"},
-			{"unsupported language", map[string]interface{}{"language": []string{"rust"}}, "unsupported WASM language"},
+			{"unsupported language", map[string]interface{}{"language": []string{"rust"}}, "Unsupported WASM language"},
 		} {
 			t.Run(method+"/"+test.name, func(t *testing.T) {
 				body := map[string]interface{}{"name": "WASM", "language": []string{"c", "go", "python", "php", "javascript"}}

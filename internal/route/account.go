@@ -40,12 +40,12 @@ func NewAccountHandler() *AccountHandler {
 // @Router /api/account/password [put]
 func (h *AccountHandler) ChangePassword(ctx context.Context, session session.Session, f form.ChangePassword) error {
 	if !auth.CheckPassword(ctx.User.PasswordHash, f.CurrentPassword) {
-		return ctx.Error(http.StatusForbidden, "Current password is incorrect")
+		return ctx.Error(http.StatusForbidden, "account::wrong_current_password")
 	}
 
 	hash, err := auth.HashPassword(f.NewPassword)
 	if err != nil {
-		return ctx.Error(http.StatusBadRequest, "%s", err.Error())
+		return ctx.ErrorFrom(http.StatusBadRequest, err)
 	}
 	version, err := db.Users.UpdatePassword(ctx.Request().Context(), ctx.User.ID, hash)
 	if err != nil {
@@ -53,7 +53,7 @@ func (h *AccountHandler) ChangePassword(ctx context.Context, session session.Ses
 		return ctx.ServerError()
 	}
 	session.Set(context.SessionKeySessionVersion, version)
-	return ctx.Success("Password changed")
+	return ctx.Success(ctx.Tr("account::password_changed"))
 }
 
 // SetupTwoFactor start two-factor authentication setup.
@@ -70,7 +70,7 @@ func (h *AccountHandler) ChangePassword(ctx context.Context, session session.Ses
 // @Router /api/account/2fa/setup [post]
 func (h *AccountHandler) SetupTwoFactor(ctx context.Context) error {
 	if ctx.User.TOTPEnabled {
-		return ctx.Error(http.StatusConflict, "Two-factor authentication is already enabled")
+		return ctx.Error(http.StatusConflict, "account::two_factor_already_enabled")
 	}
 
 	key, err := auth.GenerateTOTP(ctx.User.Username)
@@ -107,13 +107,13 @@ func (h *AccountHandler) SetupTwoFactor(ctx context.Context) error {
 // @Router /api/account/2fa/enable [post]
 func (h *AccountHandler) EnableTwoFactor(ctx context.Context, f form.EnableTwoFactor) error {
 	if ctx.User.TOTPEnabled {
-		return ctx.Error(http.StatusConflict, "Two-factor authentication is already enabled")
+		return ctx.Error(http.StatusConflict, "account::two_factor_already_enabled")
 	}
 	if ctx.User.TOTPSecret == "" {
-		return ctx.Error(http.StatusBadRequest, "Start two-factor setup first")
+		return ctx.Error(http.StatusBadRequest, "account::two_factor_setup_first")
 	}
 	if !auth.ValidateTOTP(f.Code, ctx.User.TOTPSecret) {
-		return ctx.Error(http.StatusForbidden, "Invalid verification code")
+		return ctx.Error(http.StatusForbidden, "auth::invalid_code")
 	}
 
 	codes, hashes, err := auth.GenerateRecoveryCodes()
@@ -144,16 +144,16 @@ func (h *AccountHandler) EnableTwoFactor(ctx context.Context, f form.EnableTwoFa
 // @Router /api/account/2fa/disable [post]
 func (h *AccountHandler) DisableTwoFactor(ctx context.Context, f form.ConfirmPassword) error {
 	if !ctx.User.TOTPEnabled {
-		return ctx.Error(http.StatusBadRequest, "Two-factor authentication is not enabled")
+		return ctx.Error(http.StatusBadRequest, "account::two_factor_not_enabled")
 	}
 	if !auth.CheckPassword(ctx.User.PasswordHash, f.Password) {
-		return ctx.Error(http.StatusForbidden, "Password is incorrect")
+		return ctx.Error(http.StatusForbidden, "account::wrong_password")
 	}
 	if err := db.Users.DisableTOTP(ctx.Request().Context(), ctx.User.ID, false); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to disable TOTP")
 		return ctx.ServerError()
 	}
-	return ctx.Success("Two-factor authentication disabled")
+	return ctx.Success(ctx.Tr("account::two_factor_disabled"))
 }
 
 // RegenerateRecoveryCodes regenerate recovery codes.
@@ -173,10 +173,10 @@ func (h *AccountHandler) DisableTwoFactor(ctx context.Context, f form.ConfirmPas
 // @Router /api/account/2fa/recovery-codes [post]
 func (h *AccountHandler) RegenerateRecoveryCodes(ctx context.Context, f form.ConfirmPassword) error {
 	if !ctx.User.TOTPEnabled {
-		return ctx.Error(http.StatusBadRequest, "Two-factor authentication is not enabled")
+		return ctx.Error(http.StatusBadRequest, "account::two_factor_not_enabled")
 	}
 	if !auth.CheckPassword(ctx.User.PasswordHash, f.Password) {
-		return ctx.Error(http.StatusForbidden, "Password is incorrect")
+		return ctx.Error(http.StatusForbidden, "account::wrong_password")
 	}
 
 	codes, hashes, err := auth.GenerateRecoveryCodes()

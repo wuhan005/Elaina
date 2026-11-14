@@ -93,14 +93,14 @@ func selectLanguage(languages []string, language string) string {
 
 func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t template.Template, data template.Data) error {
 	if err := ctx.Request().ParseForm(); err != nil {
-		return ctx.Error(http.StatusBadRequest, "Failed to parse form")
+		return ctx.Error(http.StatusBadRequest, "runner::parse_form")
 	}
 	code := ctx.Request().PostForm.Get("c")
 	if code == "" {
 		code = sandbox.Placeholder
 	}
 	if int64(len(code)) > config.App.WASMLimits.MaxSourceBytes {
-		return ctx.Error(http.StatusRequestEntityTooLarge, "%s", runtime.ErrSourceLimit)
+		return ctx.Error(http.StatusRequestEntityTooLarge, "runner::source_too_large")
 	}
 
 	languages := sandbox.Template.Language
@@ -134,7 +134,7 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error {
 	if err := ctx.Request().ParseForm(); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to parse form")
-		return ctx.Error(http.StatusBadRequest, "Failed to parse form: %v", err)
+		return ctx.Error(http.StatusBadRequest, "runner::parse_form_detail", err)
 	}
 
 	startAt := time.Now().UnixNano()
@@ -154,26 +154,26 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 	if err != nil {
 		if errors.Is(err, runtime.ErrSourceLimit) {
 			execution.save(db.ExecutionStatusRejected, nil, err)
-			return ctx.Error(http.StatusRequestEntityTooLarge, "%s", err)
+			return ctx.Error(http.StatusRequestEntityTooLarge, "runner::source_too_large")
 		}
 		execution.save(db.ExecutionStatusError, nil, err)
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create task")
-		return ctx.Error(http.StatusInternalServerError, "Failed to create task: %v", err)
+		return ctx.Error(http.StatusInternalServerError, "runner::create_task_failed", err)
 	}
 
 	output, err := r.Run(ctx.Request().Context())
 	if err != nil {
 		if errors.Is(err, runtime.ErrClientTaskLimit) {
 			execution.save(db.ExecutionStatusRejected, nil, err)
-			return ctx.Error(http.StatusTooManyRequests, "%s", err)
+			return ctx.Error(http.StatusTooManyRequests, "runner::client_task_limit")
 		}
 		if errors.Is(err, runtime.ErrTaskLimit) {
 			execution.save(db.ExecutionStatusRejected, nil, err)
-			return ctx.Error(http.StatusServiceUnavailable, "%s", err)
+			return ctx.Error(http.StatusServiceUnavailable, "runner::task_limit")
 		}
 		execution.save(db.ExecutionStatusError, nil, err)
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to run task")
-		return ctx.Error(http.StatusInternalServerError, "Failed to run task: %v", err)
+		return ctx.Error(http.StatusInternalServerError, "runner::run_task_failed", err)
 	}
 
 	switch output.Error {

@@ -23,6 +23,7 @@ import { Pagination } from "@/components/base/pagination/pagination";
 import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@/components/base/table/table";
 import { toast } from "@/components/base/toast/toast";
+import { translate, useT } from "@/i18n";
 import { formatDateTime } from "@/utils/format";
 
 const PAGE_SIZE = 20;
@@ -34,38 +35,41 @@ export function runnerUrl(uid: string): string {
 export function copyRunnerUrl(uid: string) {
   navigator.clipboard
     .writeText(runnerUrl(uid))
-    .then(() => toast.success("Link copied"))
-    .catch(() => toast.error("Could not copy the link"));
+    .then(() => toast.success(translate("Link copied")))
+    .catch(() => toast.error(translate("Could not copy the link")));
 }
 
 export function EditableChip({ editable }: { editable: boolean }) {
+  const t = useT();
   return editable ? (
     <Chip variant="caption" color="blue" className="gap-1">
       <RiPencilLine className="size-3.5" aria-hidden />
-      Editable
+      {t("Editable")}
     </Chip>
   ) : (
     <Chip variant="caption" color="neutral" className="gap-1">
       <RiLockLine className="size-3.5" aria-hidden />
-      Read-only
+      {t("Read-only")}
     </Chip>
   );
 }
 
 export function TemplateName({ sandbox }: { sandbox: Sandbox }) {
+  const t = useT();
   return sandbox.template ? (
     <span className="truncate text-body-medium text-text-primary">{sandbox.template.name}</span>
   ) : (
     <Chip variant="caption" color="rose">
-      Template unavailable
+      {t("Template unavailable")}
     </Chip>
   );
 }
 
 export function CodePreview({ code }: { code: string }) {
+  const t = useT();
   const firstLine = code.split("\n").find((line) => line.trim() !== "") ?? "";
   if (firstLine === "") {
-    return <span className="text-body-medium text-text-tertiary">Empty</span>;
+    return <span className="text-body-medium text-text-tertiary">{t("Empty")}</span>;
   }
   return (
     <code dir="ltr" className="block max-w-[240px] truncate rounded-md bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-1-medium text-text-secondary">
@@ -76,6 +80,7 @@ export function CodePreview({ code }: { code: string }) {
 
 export default function Sandboxes() {
   const navigate = useNavigate();
+  const t = useT();
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [data, setData] = useState<Sandbox[]>([]);
@@ -118,10 +123,10 @@ export default function Sandboxes() {
   return (
     <>
       <PageHeader
-        title="Sandboxes"
+        title={t("Sandboxes")}
         actions={
           <Button leadingIcon={RiAddLine} onClick={() => navigate("/sandbox/new")}>
-            New sandbox
+            {t("New sandbox")}
           </Button>
         }
       />
@@ -133,7 +138,7 @@ export default function Sandboxes() {
               <Skeleton shape="text" className="my-1 h-3.5 w-24" />
             ) : (
               <p className="text-body-medium text-text-secondary tabular-nums">
-                {total.toLocaleString()} {total === 1 ? "sandbox" : "sandboxes"}
+                {t(total === 1 ? "{count} sandbox" : "{count} sandboxes", { count: total.toLocaleString() })}
               </p>
             )}
           </div>
@@ -143,26 +148,26 @@ export default function Sandboxes() {
           <div className="border-t border-separator-border">
             <EmptyState
               icon={<RiCodeBoxLine className="size-6" aria-hidden />}
-              title="No sandboxes"
-              description="Each sandbox gets a runner page at /r/:uid."
+              title={t("No sandboxes")}
+              description={t("Each sandbox gets a runner page at /r/:uid.")}
               action={
                 <Button leadingIcon={RiAddLine} onClick={() => navigate("/sandbox/new")}>
-                  New sandbox
+                  {t("New sandbox")}
                 </Button>
               }
             />
           </div>
         ) : (
           <div className="mt-2">
-            <Table aria-label="Sandboxes" className="min-w-[960px]">
+            <Table aria-label={t("Sandboxes")} className="min-w-[960px]">
               <TableHeader>
-                <TableColumn isRowHeader className="w-[230px]">Name</TableColumn>
-                <TableColumn className="w-[180px]">Template</TableColumn>
-                <TableColumn className="w-[120px]">Mode</TableColumn>
-                <TableColumn>Code</TableColumn>
-                <TableColumn className="w-[180px]">Created at</TableColumn>
+                <TableColumn isRowHeader className="w-[230px]">{t("Name")}</TableColumn>
+                <TableColumn className="w-[180px]">{t("Template")}</TableColumn>
+                <TableColumn className="w-[120px]">{t("Mode")}</TableColumn>
+                <TableColumn>{t("Code")}</TableColumn>
+                <TableColumn className="w-[180px]">{t("Created at")}</TableColumn>
                 <TableColumn className="w-[210px]">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("Actions")}</span>
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -199,13 +204,13 @@ export default function Sandboxes() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">
-                            <RowAction icon={RiExternalLinkLine} label="Open runner" href={`/r/${sandbox.uid}`} />
-                            <RowAction icon={RiFileCopyLine} label="Copy runner link" onClick={() => copyRunnerUrl(sandbox.uid)} />
-                            <RowAction icon={RiHistoryLine} label="Runs" onClick={() => navigate(`/execution?sandbox=${sandbox.id}`)} />
-                            <RowAction icon={RiEditLine} label="Edit" onClick={() => navigate(`/sandbox/${sandbox.id}`)} />
+                            <RowAction icon={RiExternalLinkLine} label={t("Open runner")} href={`/r/${sandbox.uid}`} />
+                            <RowAction icon={RiFileCopyLine} label={t("Copy runner link")} onClick={() => copyRunnerUrl(sandbox.uid)} />
+                            <RowAction icon={RiHistoryLine} label={t("Runs")} onClick={() => navigate(`/execution?sandbox=${sandbox.id}`)} />
+                            <RowAction icon={RiEditLine} label={t("Edit")} onClick={() => navigate(`/sandbox/${sandbox.id}`)} />
                             <RowAction
                               icon={RiDeleteBin6Line}
-                              label="Delete"
+                              label={t("Delete")}
                               danger
                               onClick={() => {
                                 setDeleteTarget(sandbox);
@@ -233,14 +238,10 @@ export default function Sandboxes() {
       <AlertDialog
         isOpen={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete ${deleteTarget?.name ?? "sandbox"}?`}
-        description={
-          <>
-            Its runner link will stop working. This can't be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        pendingLabel="Deleting…"
+        title={t("Delete {name}?", { name: deleteTarget?.name ?? "" })}
+        description={t("Its runner link will stop working. This can't be undone.")}
+        confirmLabel={t("Delete")}
+        pendingLabel={t("Deleting…")}
         onConfirm={onDelete}
       />
     </>

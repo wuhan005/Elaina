@@ -33,7 +33,7 @@ func (h *ExecutionHandler) Executioner(ctx context.Context) error {
 	execution, err := db.Executions.GetByID(ctx.Request().Context(), uint(ctx.ParamInt("id")))
 	if err != nil {
 		if errors.Is(err, db.ErrExecutionNotFound) {
-			return ctx.Error(http.StatusNotFound, "Execution does not exist")
+			return ctx.Error(http.StatusNotFound, "execution::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get execution")
 		return ctx.ServerError()
@@ -62,7 +62,7 @@ func (h *ExecutionHandler) Executioner(ctx context.Context) error {
 func (h *ExecutionHandler) List(ctx context.Context) error {
 	status := db.ExecutionStatus(ctx.Query("status"))
 	if status != "" && !status.Valid() {
-		return ctx.Error(http.StatusBadRequest, "Invalid status %q", status)
+		return ctx.Error(http.StatusBadRequest, "execution::invalid_status", status)
 	}
 
 	executions, total, err := db.Executions.List(ctx.Request().Context(), db.ListExecutionOptions{
@@ -119,14 +119,14 @@ func (h *ExecutionHandler) Stats(ctx context.Context) error {
 		days = defaultStatsDays
 	}
 	if days < 1 || days > maxStatsDays {
-		return ctx.Error(http.StatusBadRequest, "days must be between 1 and %d", maxStatsDays)
+		return ctx.Error(http.StatusBadRequest, "execution::invalid_days", maxStatsDays)
 	}
 
 	location := time.UTC
 	if name := ctx.Query("timezone"); name != "" {
 		loaded, err := time.LoadLocation(name)
 		if err != nil || name == "Local" {
-			return ctx.Error(http.StatusBadRequest, "Unknown time zone %q", name)
+			return ctx.Error(http.StatusBadRequest, "execution::unknown_timezone", name)
 		}
 		location = loaded
 	}

@@ -14,6 +14,7 @@ import { Select, SelectItem } from "@/components/base/select/select";
 import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@/components/base/table/table";
 import { LANGUAGES_MAP } from "@/const/template";
+import { useT } from "@/i18n";
 import { formatDateTime } from "@/utils/format";
 
 const PAGE_SIZE = 20;
@@ -43,6 +44,7 @@ export function LanguageChip({ language }: { language: string }) {
 }
 
 export default function Executions() {
+  const t = useT();
   const [params, setParams] = useSearchParams();
   const sandboxID = Number(params.get("sandbox")) || 0;
   const status = (params.get("status") ?? "") as ExecutionStatus | "";
@@ -98,7 +100,7 @@ export default function Executions() {
 
   return (
     <>
-      <PageHeader title="Runs" />
+      <PageHeader title={t("Runs")} />
 
       <section className="flex w-full flex-col rounded-2xl border border-border-table bg-background-full pt-2">
         <div className="flex flex-col gap-3 px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
@@ -106,20 +108,20 @@ export default function Executions() {
             <Skeleton shape="text" className="my-1 h-3.5 w-20" />
           ) : (
             <p className="text-body-medium text-text-secondary tabular-nums">
-              {total.toLocaleString()} {total === 1 ? "run" : "runs"}
+              {t(total === 1 ? "{count} run" : "{count} runs", { count: total.toLocaleString() })}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-2.5">
             <Select
-              aria-label="Filter by sandbox"
-              placeholder="Sandbox"
+              aria-label={t("Filter by sandbox")}
+              placeholder={t("Sandbox")}
               popoverClassName="min-w-48"
               selectedKey={sandboxID ? String(sandboxID) : ALL}
               onSelectionChange={(key) => update({ sandbox: key === ALL ? 0 : Number(key) })}
             >
               {[
-                <SelectItem key={ALL} id={ALL} textValue="All sandboxes">
-                  All sandboxes
+                <SelectItem key={ALL} id={ALL} textValue={t("All sandboxes")}>
+                  {t("All sandboxes")}
                 </SelectItem>,
                 ...sandboxes.map((sandbox) => (
                   <SelectItem key={sandbox.id} id={String(sandbox.id)} textValue={sandbox.name}>
@@ -129,18 +131,18 @@ export default function Executions() {
               ]}
             </Select>
             <Select
-              aria-label="Filter by status"
+              aria-label={t("Filter by status")}
               popoverClassName="min-w-40"
               selectedKey={status || ALL}
               onSelectionChange={(key) => update({ status: key === ALL ? "" : String(key) })}
             >
               {[
-                <SelectItem key={ALL} id={ALL} textValue="All statuses">
-                  All statuses
+                <SelectItem key={ALL} id={ALL} textValue={t("All statuses")}>
+                  {t("All statuses")}
                 </SelectItem>,
                 ...EXECUTION_STATUSES.map((option) => (
-                  <SelectItem key={option.value} id={option.value} textValue={option.label}>
-                    {option.label}
+                  <SelectItem key={option.value} id={option.value} textValue={t(option.label)}>
+                    {t(option.label)}
                   </SelectItem>
                 )),
               ]}
@@ -152,22 +154,22 @@ export default function Executions() {
           <div className="border-t border-separator-border">
             <EmptyState
               icon={<RiPulseLine className="size-6" aria-hidden />}
-              title={filtered ? "No matching runs" : "No runs"}
-              description={filtered ? "Try another sandbox or status." : "Runs appear here when someone presses Run on a sandbox page."}
+              title={filtered ? t("No matching runs") : t("No runs")}
+              description={filtered ? t("Try another sandbox or status.") : t("Runs appear here when someone presses Run on a sandbox page.")}
             />
           </div>
         ) : (
           <div className="mt-2">
-            <Table aria-label="Runs" className="min-w-[900px]">
+            <Table aria-label={t("Runs")} className="min-w-[900px]">
               <TableHeader>
-                <TableColumn className="w-[180px]">Time</TableColumn>
-                <TableColumn isRowHeader>Sandbox</TableColumn>
-                <TableColumn className="w-[120px]">Language</TableColumn>
-                <TableColumn className="w-[130px]">Status</TableColumn>
-                <TableColumn className="w-[100px]">Duration</TableColumn>
-                <TableColumn className="w-[170px]">Client</TableColumn>
+                <TableColumn className="w-[180px]">{t("Time")}</TableColumn>
+                <TableColumn isRowHeader>{t("Sandbox")}</TableColumn>
+                <TableColumn className="w-[120px]">{t("Language")}</TableColumn>
+                <TableColumn className="w-[130px]">{t("Status")}</TableColumn>
+                <TableColumn className="w-[100px]">{t("Duration")}</TableColumn>
+                <TableColumn className="w-[170px]">{t("Client")}</TableColumn>
                 <TableColumn className="w-[64px]">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("Actions")}</span>
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -210,7 +212,7 @@ export default function Executions() {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end">
-                            <RowAction icon={RiEyeLine} label="View" onClick={() => setOpenID(execution.id)} />
+                            <RowAction icon={RiEyeLine} label={t("View")} onClick={() => setOpenID(execution.id)} />
                           </div>
                         </TableCell>
                       </TableRow>

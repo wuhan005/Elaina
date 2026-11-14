@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { Breadcrumb, BreadcrumbItem } from "@/components/base/breadcrumb/breadcrumb";
+import { useT } from "@/i18n";
 import { cx } from "@/utils/cx";
 
 type IconComponent = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
@@ -23,10 +24,11 @@ export function PageHeader({
   actions?: ReactNode;
   className?: string;
 }) {
+  const t = useT();
   return (
     <header className={cx("flex flex-col gap-3 pb-6", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <Breadcrumb className="-ms-1">
+        <Breadcrumb className="-ms-1" aria-label={t("Breadcrumb")}>
           {breadcrumbs.map((crumb, index) => (
             <BreadcrumbItem
               key={crumb.label}

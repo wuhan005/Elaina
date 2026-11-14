@@ -135,6 +135,36 @@ func TestSignIn(t *testing.T) {
 	}
 }
 
+func TestLocalizedMessages(t *testing.T) {
+	store := useFakeUsers(t)
+	createTestUser(t, store, "admin", "admin-password")
+	client := newTestClient(t)
+
+	request := func(query, language string) string {
+		t.Helper()
+		r := httptest.NewRequest(http.MethodPost, "/api/auth/sign-in"+query, strings.NewReader(`{"username":"admin","password":"wrong-password"}`))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Accept-Language", language)
+		w := httptest.NewRecorder()
+		client.router.ServeHTTP(w, r)
+		var body struct{ Msg string }
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		return body.Msg
+	}
+	for _, test := range []struct{ query, language, want string }{
+		{"", "zh-CN,zh;q=0.9", "用户名或密码错误"},
+		{"", "en-US", "Invalid username or password"},
+		{"?lang=zh-CN", "en-US", "用户名或密码错误"},
+		{"?lang=en-US", "zh-CN", "Invalid username or password"},
+	} {
+		if got := request(test.query, test.language); got != test.want {
+			t.Fatalf("query %q, Accept-Language %q: got %q, want %q", test.query, test.language, got, test.want)
+		}
+	}
+}
+
 func TestSignInTwoFactor(t *testing.T) {
 	store := useFakeUsers(t)
 	createTestUser(t, store, "admin", "admin-password")

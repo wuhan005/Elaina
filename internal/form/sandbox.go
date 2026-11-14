@@ -5,9 +5,8 @@
 package form
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/wuhan005/Elaina/internal/config"
+	"github.com/wuhan005/Elaina/internal/i18n"
 )
 
 type CreateSandbox struct {
@@ -26,7 +25,7 @@ type UpdateSandbox struct {
 
 func (f CreateSandbox) Validate() error {
 	if int64(len(f.Placeholder)) > config.App.WASMLimits.MaxSourceBytes {
-		return errors.New("placeholder exceeds the configured source size limit")
+		return i18n.Errorf("validation::placeholder_too_large")
 	}
 	return nil
 }

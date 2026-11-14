@@ -24,8 +24,10 @@ import {
 } from "@/components/base/dropdown/dropdown";
 import { toast } from "@/components/base/toast/toast";
 import { ChevronUpDownSmall } from "@/components/foundations/icons/chevrons";
+import { useT } from "@/i18n";
 import { authStore, useCurrentUser } from "@/store/auth";
 import { cx } from "@/utils/cx";
+import { LanguageSwitch } from "./language-switch";
 import { Logo } from "./logo";
 
 type IconComponent = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
@@ -73,7 +75,9 @@ const navItemClass = (collapsed: boolean, selected: boolean) =>
       : "hover:bg-background-secondary-hover",
   );
 
-function NavItem({ to, label, icon: Icon, collapsed }: NavEntry & { collapsed: boolean }) {
+function NavItem({ to, label: source, icon: Icon, collapsed }: NavEntry & { collapsed: boolean }) {
+  const t = useT();
+  const label = t(source);
   return (
     <NavLink
       to={to}
@@ -130,6 +134,7 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
   const user = useCurrentUser();
   const username = user?.username ?? "";
   const initials = username.slice(0, 1).toUpperCase();
+  const t = useT();
 
   const signOut = () => {
     setIsOpen(false);
@@ -143,7 +148,7 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
   return (
     <Dropdown isOpen={isOpen} onOpenChange={setIsOpen}>
       <DropdownTrigger
-        aria-label="Account menu"
+        aria-label={t("Account menu")}
         className={cx(
           "flex items-center justify-between gap-2 rounded-2lg text-start",
           "transition-[width,background-color] duration-300 ease-in-out hover:bg-background-secondary-hover",
@@ -161,8 +166,8 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
           <ChevronUpDownSmall className="size-4 shrink-0 text-foreground-icon-tertiary" />
         </Collapsible>
       </DropdownTrigger>
-      <DropdownPopover aria-label="Account" placement={collapsed ? "right bottom" : "top start"} offset={8} className="w-[220px]">
-        <p className="truncate px-2 pt-1 text-caption-1-medium text-text-tertiary">Signed in as {username}</p>
+      <DropdownPopover aria-label={t("Account")} placement={collapsed ? "right bottom" : "top start"} offset={8} className="w-[220px]">
+        <p className="truncate px-2 pt-1 text-caption-1-medium text-text-tertiary">{t("Signed in as {username}", { username })}</p>
         <DropdownDivider />
         <DropdownItem
           onSelect={() => {
@@ -171,11 +176,11 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
           }}
         >
           <RiShieldUserLine className="size-[18px] shrink-0 text-foreground-icon-secondary" aria-hidden />
-          <span className="text-body-medium text-text-primary">Account settings</span>
+          <span className="text-body-medium text-text-primary">{t("Account settings")}</span>
         </DropdownItem>
         <DropdownItem onSelect={signOut}>
           <RiLogoutBoxRLine className="size-[18px] shrink-0 text-foreground-icon-secondary" aria-hidden />
-          <span className="text-body-medium text-text-primary">Sign out</span>
+          <span className="text-body-medium text-text-primary">{t("Sign out")}</span>
         </DropdownItem>
       </DropdownPopover>
     </Dropdown>
@@ -196,6 +201,7 @@ function useIsCompactViewport() {
 }
 
 export function AppSidebar({ className }: { className?: string }) {
+  const t = useT();
   const compactViewport = useIsCompactViewport();
   const [collapsedState, setCollapsedState] = useState(() => window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === "1");
   const collapsed = compactViewport || collapsedState;
@@ -224,7 +230,7 @@ export function AppSidebar({ className }: { className?: string }) {
             collapsed ? "flex-col items-start gap-3" : "flex-row items-center justify-between",
           )}
         >
-          <Link to="/dashboard" aria-label="Elaina home" className="flex min-w-0 items-center gap-2.5 rounded-2lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
+          <Link to="/dashboard" aria-label={t("Home")} className="flex min-w-0 items-center gap-2.5 rounded-2lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
             <Logo className="size-9" />
             <Collapsible collapsed={collapsed}>
               <span className="text-headline-semibold whitespace-nowrap text-text-primary">Elaina</span>
@@ -233,7 +239,7 @@ export function AppSidebar({ className }: { className?: string }) {
           {!compactViewport && (
             <button
               type="button"
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed ? t("Expand sidebar") : t("Collapse sidebar")}
               aria-expanded={!collapsed}
               onClick={toggle}
               className={cx(
@@ -258,7 +264,17 @@ export function AppSidebar({ className }: { className?: string }) {
       </div>
 
       <div className="flex w-full shrink-0 flex-col gap-3">
-        {collapsed ? <ThemeToggle collapsed /> : <ThemeToggle appearance="sidebar-segmented" />}
+        {collapsed ? (
+          <div className="flex flex-col gap-1">
+            <LanguageSwitch collapsed />
+            <ThemeToggle collapsed />
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <ThemeToggle appearance="sidebar-segmented" />
+            <LanguageSwitch />
+          </div>
+        )}
         <nav className="flex w-full flex-col gap-1">
           <ExternalNavItem href={GITHUB_URL} label="GitHub" icon={RiGithubLine} collapsed={collapsed} />
         </nav>

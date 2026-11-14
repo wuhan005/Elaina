@@ -3,11 +3,12 @@ import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
 import { HintText } from "@/components/base/input/hint-text";
 import { InputBase, TextField } from "@/components/base/input/input";
 import { Label } from "@/components/base/input/label";
+import { translate, useT } from "@/i18n";
 
 // The server limits passwords by UTF-8 bytes; bcrypt handles at most 72.
 export function validateNewPassword(password: string): string | undefined {
   const bytes = new TextEncoder().encode(password).length;
-  if (bytes < 8 || bytes > 72) return "Use 8-72 characters (UTF-8 bytes).";
+  if (bytes < 8 || bytes > 72) return translate("Use 8-72 characters (UTF-8 bytes).");
   return undefined;
 }
 
@@ -29,6 +30,7 @@ export function PasswordField({
   autoFocus?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
+  const t = useT();
   return (
     <TextField
       type={visible ? "text" : "password"}
@@ -44,7 +46,7 @@ export function PasswordField({
         trailingAddon={
           <button
             type="button"
-            aria-label={visible ? "Hide password" : "Show password"}
+            aria-label={visible ? t("Hide password") : t("Show password")}
             onClick={() => setVisible((current) => !current)}
             className="flex shrink-0 cursor-pointer items-center rounded-md text-foreground-icon-tertiary outline-none transition-colors hover:text-foreground-icon-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
           >

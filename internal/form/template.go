@@ -5,8 +5,7 @@
 package form
 
 import (
-	"github.com/pkg/errors"
-
+	"github.com/wuhan005/Elaina/internal/i18n"
 	"github.com/wuhan005/Elaina/internal/languages"
 )
 
@@ -22,7 +21,7 @@ type CreateTemplate struct {
 func (f CreateTemplate) Validate() error {
 	for _, name := range f.Language {
 		if _, ok := languages.Get(name); !ok {
-			return errors.Errorf("unsupported WASM language: %q", name)
+			return i18n.Errorf("validation::unsupported_language", name)
 		}
 	}
 	return nil

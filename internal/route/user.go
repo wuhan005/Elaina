@@ -29,13 +29,13 @@ func (h *UserHandler) Userer(ctx context.Context) error {
 	user, err := db.Users.GetByID(ctx.Request().Context(), userID)
 	if err != nil {
 		if errors.Is(err, db.ErrUserNotFound) {
-			return ctx.Error(http.StatusNotFound, "User does not exist")
+			return ctx.Error(http.StatusNotFound, "user::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get user")
 		return ctx.ServerError()
 	}
 	if user.ID == ctx.User.ID {
-		return ctx.Error(http.StatusBadRequest, "Use account settings to manage your own account")
+		return ctx.Error(http.StatusBadRequest, "user::manage_self")
 	}
 
 	ctx.Map(user)
@@ -78,7 +78,7 @@ func (h *UserHandler) List(ctx context.Context) error {
 func (h *UserHandler) Create(ctx context.Context, f form.CreateUser) error {
 	hash, err := auth.HashPassword(f.Password)
 	if err != nil {
-		return ctx.Error(http.StatusBadRequest, "%s", err.Error())
+		return ctx.ErrorFrom(http.StatusBadRequest, err)
 	}
 	user, err := db.Users.Create(ctx.Request().Context(), db.CreateUserOptions{
 		Username:     f.Username,
@@ -86,7 +86,7 @@ func (h *UserHandler) Create(ctx context.Context, f form.CreateUser) error {
 	})
 	if err != nil {
 		if errors.Is(err, db.ErrUserExists) {
-			return ctx.Error(http.StatusConflict, "Username already exists")
+			return ctx.Error(http.StatusConflict, "user::exists")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to create user")
 		return ctx.ServerError()
@@ -110,12 +110,12 @@ func (h *UserHandler) Create(ctx context.Context, f form.CreateUser) error {
 func (h *UserHandler) Delete(ctx context.Context, user *db.User) error {
 	if err := db.Users.Delete(ctx.Request().Context(), user.ID); err != nil {
 		if errors.Is(err, db.ErrUserNotFound) {
-			return ctx.Error(http.StatusNotFound, "User does not exist")
+			return ctx.Error(http.StatusNotFound, "user::not_found")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to delete user")
 		return ctx.ServerError()
 	}
-	return ctx.Success("User deleted")
+	return ctx.Success(ctx.Tr("user::deleted"))
 }
 
 // ResetPassword set a new password for a user.
@@ -137,13 +137,13 @@ func (h *UserHandler) Delete(ctx context.Context, user *db.User) error {
 func (h *UserHandler) ResetPassword(ctx context.Context, user *db.User, f form.ResetPassword) error {
 	hash, err := auth.HashPassword(f.Password)
 	if err != nil {
-		return ctx.Error(http.StatusBadRequest, "%s", err.Error())
+		return ctx.ErrorFrom(http.StatusBadRequest, err)
 	}
 	if _, err := db.Users.UpdatePassword(ctx.Request().Context(), user.ID, hash); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to reset password")
 		return ctx.ServerError()
 	}
-	return ctx.Success("Password updated")
+	return ctx.Success(ctx.Tr("user::password_updated"))
 }
 
 // ResetTwoFactor turn off two-factor authentication for a user.
@@ -165,5 +165,5 @@ func (h *UserHandler) ResetTwoFactor(ctx context.Context, user *db.User) error {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to reset TOTP")
 		return ctx.ServerError()
 	}
-	return ctx.Success("Two-factor authentication turned off")
+	return ctx.Success(ctx.Tr("user::two_factor_reset"))
 }

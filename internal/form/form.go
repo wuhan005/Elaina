@@ -11,8 +11,10 @@ import (
 
 	"github.com/flamego/flamego"
 	"github.com/wuhan005/govalid"
+	"golang.org/x/text/language"
 
 	"github.com/wuhan005/Elaina/internal/context"
+	"github.com/wuhan005/Elaina/internal/i18n"
 )
 
 func Bind(model any) flamego.Handler {
@@ -28,18 +30,22 @@ func Bind(model any) flamego.Handler {
 			defer func() { _ = r.Body.Close() }()
 
 			if err := json.NewDecoder(r.Body).Decode(obj.Interface()); err != nil {
-				_ = ctx.Error(http.StatusBadRequest, "Failed to parse request body")
+				_ = ctx.Error(http.StatusBadRequest, "common::invalid_body")
 				return
 			}
 		}
 
-		if errs, ok := govalid.Check(obj.Interface()); !ok {
-			_ = ctx.Error(http.StatusBadRequest, "%s", errs[0].Error())
+		lang := language.English
+		if i18n.Chinese(ctx.Locale) {
+			lang = language.Chinese
+		}
+		if errs, ok := govalid.Check(obj.Interface(), lang); !ok {
+			_ = ctx.ErrorFrom(http.StatusBadRequest, errs[0])
 			return
 		}
 		if validator, ok := obj.Interface().(interface{ Validate() error }); ok {
 			if err := validator.Validate(); err != nil {
-				_ = ctx.Error(http.StatusBadRequest, "%s", err.Error())
+				_ = ctx.ErrorFrom(http.StatusBadRequest, err)
 				return
 			}
 		}

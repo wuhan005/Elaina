@@ -17,6 +17,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from "@/components/base/mo
 import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { Spinner, SpinnerGlyph } from "@/components/base/spinner/spinner";
 import { toast } from "@/components/base/toast/toast";
+import { useT } from "@/i18n";
 import { useCurrentUser } from "@/store/auth";
 import { formatDateTime } from "@/utils/format";
 
@@ -28,13 +29,14 @@ function ChangePasswordForm() {
   const [confirm, setConfirm] = useState("");
   const [errors, setErrors] = useState<{ current?: string; next?: string; confirm?: string }>({});
   const [saving, setSaving] = useState(false);
+  const t = useT();
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors = {
-      current: current === "" ? "Enter your current password." : undefined,
+      current: current === "" ? t("Enter your current password.") : undefined,
       next: validateNewPassword(next),
-      confirm: confirm !== next ? "Passwords don't match." : undefined,
+      confirm: confirm !== next ? t("Passwords don't match.") : undefined,
     };
     setErrors(nextErrors);
     if (nextErrors.current || nextErrors.next || nextErrors.confirm) return;
@@ -43,7 +45,7 @@ function ChangePasswordForm() {
     client.account
       .changePassword({ currentPassword: current, newPassword: next })
       .then((res) => {
-        toast.success(res.data.data, { description: "Other sessions have been signed out." });
+        toast.success(res.data.data, { description: t("Other sessions have been signed out.") });
         setCurrent("");
         setNext("");
         setConfirm("");
@@ -54,12 +56,12 @@ function ChangePasswordForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex max-w-md flex-col gap-4">
-      <PasswordField label="Current password" value={current} onChange={setCurrent} error={errors.current} autoComplete="current-password" />
-      <PasswordField label="New password" value={next} onChange={setNext} error={errors.next} hint="8-72 characters." autoComplete="new-password" />
-      <PasswordField label="Confirm new password" value={confirm} onChange={setConfirm} error={errors.confirm} autoComplete="new-password" />
+      <PasswordField label={t("Current password")} value={current} onChange={setCurrent} error={errors.current} autoComplete="current-password" />
+      <PasswordField label={t("New password")} value={next} onChange={setNext} error={errors.next} hint={t("8-72 characters.")} autoComplete="new-password" />
+      <PasswordField label={t("Confirm new password")} value={confirm} onChange={setConfirm} error={errors.confirm} autoComplete="new-password" />
       <div>
         <Button type="submit" disabled={saving} aria-busy={saving || undefined} leadingIcon={saving ? PendingGlyph : undefined}>
-          Update password
+          {t("Update password")}
         </Button>
       </div>
     </form>
@@ -73,6 +75,7 @@ function SetupTwoFactorModal({ isOpen, onOpenChange, username }: { isOpen: boole
   const [pending, setPending] = useState(false);
   const [codes, setCodes] = useState<string[] | null>(null);
   const otpRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -109,28 +112,28 @@ function SetupTwoFactorModal({ isOpen, onOpenChange, username }: { isOpen: boole
         codes ? (
           <>
             <ModalHeader
-              title="Save your recovery codes"
-              description="If you lose your phone, each code lets you sign in once. They won't be shown again."
+              title={t("Save your recovery codes")}
+              description={t("If you lose your phone, each code lets you sign in once. They won't be shown again.")}
               showCloseButton={false}
             />
             <ModalBody>
               <RecoveryCodes codes={codes} username={username} />
             </ModalBody>
             <ModalFooter>
-              <Button onClick={close}>Done</Button>
+              <Button onClick={close}>{t("Done")}</Button>
             </ModalFooter>
           </>
         ) : (
           <>
-            <ModalHeader title="Set up two-factor authentication" />
+            <ModalHeader title={t("Set up two-factor authentication")} />
             <ModalBody className="flex flex-col gap-5">
               {setup ? (
                 <>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <img src={setup.qrCode} alt="QR code for your authenticator app" className="size-36 shrink-0 rounded-xl border border-border-button-default bg-white p-1.5" />
+                    <img src={setup.qrCode} alt={t("QR code for your authenticator app")} className="size-36 shrink-0 rounded-xl border border-border-button-default bg-white p-1.5" />
                     <div className="flex min-w-0 flex-col gap-2">
                       <p className="text-body-regular text-text-secondary">
-                        Scan the QR code with an authenticator app such as Google Authenticator, 1Password or Authy. If you can't scan it, enter this key instead:
+                        {t("Scan the QR code with an authenticator app such as Google Authenticator, 1Password or Authy. If you can't scan it, enter this key instead:")}
                       </p>
                       <div className="flex items-center gap-2">
                         <code dir="ltr" className="min-w-0 flex-1 break-all rounded-lg bg-background-secondary-default px-2 py-1.5 font-mono text-caption-1-medium text-text-primary">
@@ -139,14 +142,14 @@ function SetupTwoFactorModal({ isOpen, onOpenChange, username }: { isOpen: boole
                         <IconButton
                           icon={RiFileCopyLine}
                           size="small"
-                          aria-label="Copy key"
-                          onClick={() => navigator.clipboard.writeText(setup.secret).then(() => toast.success("Key copied"))}
+                          aria-label={t("Copy key")}
+                          onClick={() => navigator.clipboard.writeText(setup.secret).then(() => toast.success(t("Key copied")))}
                         />
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Code from the app</Label>
+                    <Label>{t("Code from the app")}</Label>
                     <InputOtp
                       ref={otpRef}
                       value={code}
@@ -158,9 +161,9 @@ function SetupTwoFactorModal({ isOpen, onOpenChange, username }: { isOpen: boole
                       isInvalid={invalid}
                       isDisabled={pending}
                       groupEvery={3}
-                      aria-label="Code from the app"
+                      aria-label={t("Code from the app")}
                     />
-                    {invalid ? <HintText isInvalid>That code didn't work. Try the current one.</HintText> : null}
+                    {invalid ? <HintText isInvalid>{t("That code didn't work. Try the current one.")}</HintText> : null}
                   </div>
                 </>
               ) : (
@@ -171,10 +174,10 @@ function SetupTwoFactorModal({ isOpen, onOpenChange, username }: { isOpen: boole
             </ModalBody>
             <ModalFooter>
               <Button variant="secondary" onClick={close}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button onClick={() => enable(code)} disabled={!setup || code.length !== 6 || pending} leadingIcon={pending ? PendingGlyph : undefined}>
-                Turn on
+                {t("Turn on")}
               </Button>
             </ModalFooter>
           </>
@@ -207,6 +210,7 @@ function PasswordConfirmModal({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (isOpen) {
@@ -224,7 +228,7 @@ function PasswordConfirmModal({
             onSubmit={(event) => {
               event.preventDefault();
               if (password === "") {
-                setError("Enter your password.");
+                setError(t("Enter your password."));
                 return;
               }
               setPending(true);
@@ -235,11 +239,11 @@ function PasswordConfirmModal({
           >
             <ModalHeader title={title} description={description} />
             <ModalBody>
-              <PasswordField label="Password" value={password} onChange={setPassword} error={error} autoComplete="current-password" autoFocus />
+              <PasswordField label={t("Password")} value={password} onChange={setPassword} error={error} autoComplete="current-password" autoFocus />
             </ModalBody>
             <ModalFooter>
               <Button variant="secondary" onClick={close}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" variant={danger ? "danger" : "primary"} disabled={pending} leadingIcon={pending ? PendingGlyph : undefined}>
                 {confirmLabel}
@@ -257,6 +261,7 @@ function TwoFactorSection({ user }: { user: User }) {
   const [disableOpen, setDisableOpen] = useState(false);
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [newCodes, setNewCodes] = useState<string[] | null>(null);
+  const t = useT();
 
   return (
     <>
@@ -267,17 +272,17 @@ function TwoFactorSection({ user }: { user: User }) {
           </span>
           <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-body-medium text-text-primary">Authenticator app</span>
+              <span className="text-body-medium text-text-primary">{t("Authenticator app")}</span>
               {user.twoFactorEnabled ? (
-                <Chip variant="caption" color="lime">On</Chip>
+                <Chip variant="caption" color="lime">{t("On")}</Chip>
               ) : (
-                <Chip variant="caption" color="neutral">Off</Chip>
+                <Chip variant="caption" color="neutral">{t("Off")}</Chip>
               )}
             </div>
             <span className="text-body-regular text-text-secondary">
               {user.twoFactorEnabled
-                ? `${user.recoveryCodesRemaining} of 10 recovery codes left.`
-                : "Ask for a 6-digit code from an app after the password."}
+                ? t("{count} of 10 recovery codes left.", { count: user.recoveryCodesRemaining })
+                : t("Ask for a 6-digit code from an app after the password.")}
             </span>
           </div>
         </div>
@@ -285,15 +290,15 @@ function TwoFactorSection({ user }: { user: User }) {
           {user.twoFactorEnabled ? (
             <>
               <Button variant="secondary" size="small" onClick={() => setRegenerateOpen(true)}>
-                New recovery codes
+                {t("New recovery codes")}
               </Button>
               <Button variant="secondary" size="small" onClick={() => setDisableOpen(true)}>
-                Turn off
+                {t("Turn off")}
               </Button>
             </>
           ) : (
             <Button size="small" onClick={() => setSetupOpen(true)}>
-              Set up
+              {t("Set up")}
             </Button>
           )}
         </div>
@@ -304,9 +309,9 @@ function TwoFactorSection({ user }: { user: User }) {
       <PasswordConfirmModal
         isOpen={disableOpen}
         onOpenChange={setDisableOpen}
-        title="Turn off two-factor authentication?"
-        description="Signing in will only need your password. Your recovery codes stop working."
-        confirmLabel="Turn off"
+        title={t("Turn off two-factor authentication?")}
+        description={t("Signing in will only need your password. Your recovery codes stop working.")}
+        confirmLabel={t("Turn off")}
         danger
         onConfirm={(password) =>
           client.account.disableTwoFactor({ password }).then((res) => {
@@ -323,9 +328,9 @@ function TwoFactorSection({ user }: { user: User }) {
           setRegenerateOpen(open);
           if (!open) setNewCodes(null);
         }}
-        title="Generate new recovery codes"
-        description="Your current recovery codes will stop working."
-        confirmLabel="Generate"
+        title={t("Generate new recovery codes")}
+        description={t("Your current recovery codes will stop working.")}
+        confirmLabel={t("Generate")}
         onConfirm={(password) =>
           client.account.regenerateRecoveryCodes({ password }).then((res) => {
             setNewCodes(res.data.data.codes);
@@ -335,7 +340,7 @@ function TwoFactorSection({ user }: { user: User }) {
       >
         {newCodes ? (
           <>
-            <ModalHeader title="New recovery codes" description="Your old codes no longer work. These won't be shown again." showCloseButton={false} />
+            <ModalHeader title={t("New recovery codes")} description={t("Your old codes no longer work. These won't be shown again.")} showCloseButton={false} />
             <ModalBody>
               <RecoveryCodes codes={newCodes} username={user.username} />
             </ModalBody>
@@ -346,7 +351,7 @@ function TwoFactorSection({ user }: { user: User }) {
                   setNewCodes(null);
                 }}
               >
-                Done
+                {t("Done")}
               </Button>
             </ModalFooter>
           </>
@@ -367,29 +372,30 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 
 export default function Account() {
   const user = useCurrentUser();
+  const t = useT();
 
   return (
     <>
-      <PageHeader title="Account settings" />
+      <PageHeader title={t("Account settings")} />
 
       <Panel bodyClassName="p-0">
-        <FormSection title="Profile">
+        <FormSection title={t("Profile")}>
           {user ? (
             <dl className="grid gap-4 sm:grid-cols-3">
-              <Detail label="Username">{user.username}</Detail>
-              <Detail label="Created">{formatDateTime(user.createdAt)}</Detail>
-              <Detail label="Last sign-in">{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : "—"}</Detail>
+              <Detail label={t("Username")}>{user.username}</Detail>
+              <Detail label={t("Created")}>{formatDateTime(user.createdAt)}</Detail>
+              <Detail label={t("Last sign-in")}>{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : "—"}</Detail>
             </dl>
           ) : (
             <Skeleton shape="text" className="h-4 w-60" />
           )}
         </FormSection>
 
-        <FormSection title="Password" description="Changing it signs you out everywhere else.">
+        <FormSection title={t("Password")} description={t("Changing it signs you out everywhere else.")}>
           <ChangePasswordForm />
         </FormSection>
 
-        <FormSection title="Two-factor authentication">
+        <FormSection title={t("Two-factor authentication")}>
           {user ? <TwoFactorSection user={user} /> : <Skeleton className="h-20 w-full rounded-2xl" />}
         </FormSection>
       </Panel>

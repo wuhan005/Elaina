@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { SpinnerGlyph } from "@/components/base/spinner/spinner";
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@/components/base/table/table";
 import { toast } from "@/components/base/toast/toast";
+import { useT } from "@/i18n";
 import { useCurrentUser } from "@/store/auth";
 import { formatDateTime } from "@/utils/format";
 
@@ -23,6 +24,7 @@ const PendingGlyph = ({ className }: { className?: string }) => <SpinnerGlyph si
 const USERNAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,31}$/;
 
 function CreateUserModal({ isOpen, onOpenChange, onCreated }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onCreated: () => void }) {
+  const t = useT();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
@@ -38,7 +40,7 @@ function CreateUserModal({ isOpen, onOpenChange, onCreated }: { isOpen: boolean;
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const next = {
-      username: USERNAME_PATTERN.test(username) ? undefined : "2-32 letters, digits, '_', '.' or '-'.",
+      username: USERNAME_PATTERN.test(username) ? undefined : t("2-32 letters, digits, '_', '.' or '-'."),
       password: validateNewPassword(password),
     };
     setErrors(next);
@@ -48,7 +50,7 @@ function CreateUserModal({ isOpen, onOpenChange, onCreated }: { isOpen: boolean;
     client.users
       .createUser({ username, password })
       .then((res) => {
-        toast.success(`Created ${res.data.data.username}`);
+        toast.success(t("Created {username}", { username: res.data.data.username }));
         onOpenChange(false);
         onCreated();
       })
@@ -60,10 +62,10 @@ function CreateUserModal({ isOpen, onOpenChange, onCreated }: { isOpen: boolean;
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
       {({ close }) => (
         <form className="contents" onSubmit={onSubmit} noValidate>
-          <ModalHeader title="New user" />
+          <ModalHeader title={t("New user")} />
           <ModalBody className="flex flex-col gap-4">
             <Input
-              label="Username"
+              label={t("Username")}
               value={username}
               onChange={setUsername}
               isRequired
@@ -73,14 +75,14 @@ function CreateUserModal({ isOpen, onOpenChange, onCreated }: { isOpen: boolean;
               autoFocus
               inputDir="ltr"
             />
-            <PasswordField label="Password" value={password} onChange={setPassword} error={errors.password} hint="8-72 characters." autoComplete="new-password" />
+            <PasswordField label={t("Password")} value={password} onChange={setPassword} error={errors.password} hint={t("8-72 characters.")} autoComplete="new-password" />
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={close}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" disabled={pending} leadingIcon={pending ? PendingGlyph : undefined}>
-              Create
+              {t("Create")}
             </Button>
           </ModalFooter>
         </form>
@@ -90,6 +92,7 @@ function CreateUserModal({ isOpen, onOpenChange, onCreated }: { isOpen: boolean;
 }
 
 function ResetPasswordModal({ user, isOpen, onOpenChange }: { user: User | null; isOpen: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useT();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -110,7 +113,7 @@ function ResetPasswordModal({ user, isOpen, onOpenChange }: { user: User | null;
     client.users
       .resetUserPassword({ id: user.id }, { password })
       .then((res) => {
-        toast.success(res.data.data, { description: `${user.username} has been signed out.` });
+        toast.success(res.data.data, { description: t("{username} has been signed out.", { username: user.username }) });
         onOpenChange(false);
       })
       .catch(() => undefined)
@@ -121,16 +124,16 @@ function ResetPasswordModal({ user, isOpen, onOpenChange }: { user: User | null;
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="sm">
       {({ close }) => (
         <form className="contents" onSubmit={onSubmit} noValidate>
-          <ModalHeader title={`Set password for ${user?.username ?? ""}`} description="They will be signed out of all sessions." />
+          <ModalHeader title={t("Set password for {username}", { username: user?.username ?? "" })} description={t("They will be signed out of all sessions.")} />
           <ModalBody>
-            <PasswordField label="New password" value={password} onChange={setPassword} error={error} hint="8-72 characters." autoComplete="new-password" autoFocus />
+            <PasswordField label={t("New password")} value={password} onChange={setPassword} error={error} hint={t("8-72 characters.")} autoComplete="new-password" autoFocus />
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={close}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" disabled={pending} leadingIcon={pending ? PendingGlyph : undefined}>
-              Set password
+              {t("Set password")}
             </Button>
           </ModalFooter>
         </form>
@@ -142,6 +145,7 @@ function ResetPasswordModal({ user, isOpen, onOpenChange }: { user: User | null;
 type Action = "password" | "2fa" | "delete";
 
 export default function Users() {
+  const t = useT();
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
   const [users, setUsers] = useState<User[]>([]);
@@ -172,10 +176,10 @@ export default function Users() {
   return (
     <>
       <PageHeader
-        title="Users"
+        title={t("Users")}
         actions={
           <Button leadingIcon={RiAddLine} onClick={() => setCreateOpen(true)}>
-            New user
+            {t("New user")}
           </Button>
         }
       />
@@ -186,18 +190,18 @@ export default function Users() {
             <Skeleton shape="text" className="my-1 h-3.5 w-20" />
           ) : (
             <p className="text-body-medium text-text-secondary tabular-nums">
-              {users.length} {users.length === 1 ? "user" : "users"}
+              {t(users.length === 1 ? "{count} user" : "{count} users", { count: users.length })}
             </p>
           )}
         </div>
-        <Table aria-label="Users" className="mt-2 min-w-[720px]">
+        <Table aria-label={t("Users")} className="mt-2 min-w-[720px]">
           <TableHeader>
-            <TableColumn isRowHeader>Username</TableColumn>
-            <TableColumn className="w-[150px]">Two-factor</TableColumn>
-            <TableColumn className="w-[190px]">Last sign-in</TableColumn>
-            <TableColumn className="w-[190px]">Created</TableColumn>
+            <TableColumn isRowHeader>{t("Username")}</TableColumn>
+            <TableColumn className="w-[150px]">{t("Two-factor")}</TableColumn>
+            <TableColumn className="w-[190px]">{t("Last sign-in")}</TableColumn>
+            <TableColumn className="w-[190px]">{t("Created")}</TableColumn>
             <TableColumn className="w-[140px]">
-              <span className="sr-only">Actions</span>
+              <span className="sr-only">{t("Actions")}</span>
             </TableColumn>
           </TableHeader>
           <TableBody>
@@ -221,21 +225,21 @@ export default function Users() {
                           <span className="truncate text-body-medium text-text-primary">{user.username}</span>
                           {isSelf && (
                             <Chip variant="caption" color="blue">
-                              You
+                              {t("You")}
                             </Chip>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         {user.twoFactorEnabled ? (
-                          <Chip variant="caption" color="lime">On</Chip>
+                          <Chip variant="caption" color="lime">{t("On")}</Chip>
                         ) : (
-                          <Chip variant="caption" color="neutral">Off</Chip>
+                          <Chip variant="caption" color="neutral">{t("Off")}</Chip>
                         )}
                       </TableCell>
                       <TableCell>
                         <span className="whitespace-nowrap text-text-secondary tabular-nums">
-                          {user.lastSignInAt ? formatDateTime(user.lastSignInAt) : "Never"}
+                          {user.lastSignInAt ? formatDateTime(user.lastSignInAt) : t("Never")}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -245,15 +249,15 @@ export default function Users() {
                         <div className="flex items-center justify-end gap-2">
                           {isSelf ? (
                             <Button variant="secondary" size="small" onClick={() => navigate("/account")}>
-                              Settings
+                              {t("Settings")}
                             </Button>
                           ) : (
                             <>
-                              <RowAction icon={RiKey2Line} label="Set password" onClick={() => open(user, "password")} />
+                              <RowAction icon={RiKey2Line} label={t("Set password")} onClick={() => open(user, "password")} />
                               {user.twoFactorEnabled && (
-                                <RowAction icon={RiShieldLine} label="Turn off two-factor" onClick={() => open(user, "2fa")} />
+                                <RowAction icon={RiShieldLine} label={t("Turn off two-factor")} onClick={() => open(user, "2fa")} />
                               )}
-                              <RowAction icon={RiDeleteBin6Line} label="Delete" danger onClick={() => open(user, "delete")} />
+                              <RowAction icon={RiDeleteBin6Line} label={t("Delete")} danger onClick={() => open(user, "delete")} />
                             </>
                           )}
                         </div>
@@ -271,9 +275,9 @@ export default function Users() {
       <AlertDialog
         isOpen={action === "2fa"}
         onOpenChange={setOpen("2fa")}
-        title={`Turn off two-factor for ${target?.username ?? ""}?`}
-        description="Use this when they've lost both their authenticator and recovery codes. They will be signed out and can sign in with just their password."
-        confirmLabel="Turn off"
+        title={t("Turn off two-factor for {username}?", { username: target?.username ?? "" })}
+        description={t("Use this when they've lost both their authenticator and recovery codes. They will be signed out and can sign in with just their password.")}
+        confirmLabel={t("Turn off")}
         onConfirm={async () => {
           if (!target) return;
           const res = await client.users.resetUserTwoFactor({ id: target.id });
@@ -285,9 +289,9 @@ export default function Users() {
       <AlertDialog
         isOpen={action === "delete"}
         onOpenChange={setOpen("delete")}
-        title={`Delete ${target?.username ?? ""}?`}
-        description="They will be signed out immediately. This can't be undone."
-        confirmLabel="Delete"
+        title={t("Delete {name}?", { name: target?.username ?? "" })}
+        description={t("They will be signed out immediately. This can't be undone.")}
+        confirmLabel={t("Delete")}
         onConfirm={async () => {
           if (!target) return;
           const res = await client.users.deleteUser({ id: target.id });

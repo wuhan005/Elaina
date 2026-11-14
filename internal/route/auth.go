@@ -34,21 +34,21 @@ func NewAuthHandler() *AuthHandler {
 // flushed when the user was deleted or the session version is outdated.
 func (h *AuthHandler) Authenticator(ctx context.Context, session session.Session) error {
 	if !ctx.IsAuthenticated {
-		return ctx.Error(http.StatusUnauthorized, "Unauthorized")
+		return ctx.Error(http.StatusUnauthorized, "common::unauthorized")
 	}
 
 	user, err := db.Users.GetByID(ctx.Request().Context(), ctx.UserID)
 	if err != nil {
 		if errors.Is(err, db.ErrUserNotFound) {
 			session.Flush()
-			return ctx.Error(http.StatusUnauthorized, "Unauthorized")
+			return ctx.Error(http.StatusUnauthorized, "common::unauthorized")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get user")
 		return ctx.ServerError()
 	}
 	if version, _ := session.Get(context.SessionKeySessionVersion).(int64); version != user.SessionVersion {
 		session.Flush()
-		return ctx.Error(http.StatusUnauthorized, "Unauthorized")
+		return ctx.Error(http.StatusUnauthorized, "common::unauthorized")
 	}
 
 	ctx.User = user
@@ -98,7 +98,7 @@ func (h *AuthHandler) SignIn(ctx context.Context, session session.Session, f for
 		passwordHash = user.PasswordHash
 	}
 	if !auth.CheckPassword(passwordHash, f.Password) {
-		return ctx.Error(http.StatusForbidden, "Invalid username or password")
+		return ctx.Error(http.StatusForbidden, "auth::invalid_credentials")
 	}
 
 	// Sign out any user of the current session first.
@@ -134,14 +134,14 @@ func (h *AuthHandler) SignInTwoFactor(ctx context.Context, session session.Sessi
 	expiresAt, _ := session.Get(context.SessionKeyPendingExpiresAt).(time.Time)
 	if userID == 0 || time.Now().After(expiresAt) {
 		clearPendingSignIn(session)
-		return ctx.Error(http.StatusGone, "Verification expired. Please sign in again.")
+		return ctx.Error(http.StatusGone, "auth::verification_expired")
 	}
 
 	user, err := db.Users.GetByID(ctx.Request().Context(), userID)
 	if err != nil {
 		if errors.Is(err, db.ErrUserNotFound) {
 			clearPendingSignIn(session)
-			return ctx.Error(http.StatusGone, "Verification expired. Please sign in again.")
+			return ctx.Error(http.StatusGone, "auth::verification_expired")
 		}
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get user")
 		return ctx.ServerError()
@@ -164,10 +164,10 @@ func (h *AuthHandler) SignInTwoFactor(ctx context.Context, session session.Sessi
 		attempts++
 		if attempts >= maxTwoFactorAttempts {
 			clearPendingSignIn(session)
-			return ctx.Error(http.StatusGone, "Too many incorrect codes. Please sign in again.")
+			return ctx.Error(http.StatusGone, "auth::too_many_codes")
 		}
 		session.Set(context.SessionKeyPendingAttempts, attempts)
-		return ctx.Error(http.StatusForbidden, "Invalid verification code")
+		return ctx.Error(http.StatusForbidden, "auth::invalid_code")
 	}
 	return h.completeSignIn(ctx, session, user)
 }
@@ -196,5 +196,5 @@ func (h *AuthHandler) Profile(ctx context.Context) error {
 // @Router /api/auth/sign-out [post]
 func (h *AuthHandler) SignOut(ctx context.Context, session session.Session) error {
 	session.Flush()
-	return ctx.Success("Signed out")
+	return ctx.Success(ctx.Tr("auth::signed_out"))
 }

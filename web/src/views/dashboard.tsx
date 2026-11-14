@@ -16,7 +16,9 @@ import { Skeleton } from "@/components/base/skeleton/skeleton";
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@/components/base/table/table";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { LANGUAGES } from "@/const/template";
+import { translate, useT } from "@/i18n";
 import { cx } from "@/utils/cx";
+import { formatMonthDay, formatMonthDayTime, formatWeekdayMonthDay } from "@/utils/format";
 import { ExecutionSandboxName, LanguageChip } from "./executions";
 
 // Maximum number of sandboxes fetched for the dashboard statistics.
@@ -32,26 +34,29 @@ function createdThisWeek(items: { createdAt: string }[]): number {
 }
 
 function weekDelta(count: number): Pick<Stat, "delta" | "deltaColor"> {
-  return count > 0 ? { delta: `+${count} this week`, deltaColor: "lime" } : { delta: "None this week", deltaColor: "neutral" };
+  return count > 0
+    ? { delta: translate("+{count} this week", { count }), deltaColor: "lime" }
+    : { delta: translate("None this week"), deltaColor: "neutral" };
 }
 
 function RunsChart({ stats, loading }: { stats: ExecutionStats | null; loading: boolean }) {
+  const t = useT();
   const daily = stats?.daily ?? [];
   const max = Math.max(1, ...daily.map((day) => day.total));
 
   return (
     <Panel
-      title="Runs"
-      description={`Last ${CHART_DAYS} days`}
+      title={t("Runs")}
+      description={t("Last {count} days", { count: CHART_DAYS })}
       actions={
         <dl className="flex items-center gap-4 text-body-2-medium text-text-secondary">
           <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-chart-6" aria-hidden />
-            <dt>Succeeded</dt>
+            <dt>{t("Succeeded")}</dt>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-chart-3" aria-hidden />
-            <dt>Other</dt>
+            <dt>{t("Other")}</dt>
           </div>
         </dl>
       }
@@ -60,11 +65,10 @@ function RunsChart({ stats, loading }: { stats: ExecutionStats | null; loading: 
         <Skeleton className="h-44 w-full rounded-2xl" />
       ) : (
         <div className="flex flex-col gap-2">
-          <div className="flex h-40 items-end gap-1.5 sm:gap-2" role="list" aria-label="Runs per day">
+          <div className="flex h-40 items-end gap-1.5 sm:gap-2" role="list" aria-label={t("Runs per day")}>
             {daily.map((day) => {
               const succeeded = day.total - day.failed;
-              const date = dayjs(day.date);
-              const label = `${date.format("MMM D")}: ${day.total} ${day.total === 1 ? "run" : "runs"}, ${day.failed} not successful`;
+              const label = t(day.total === 1 ? "{date}: {total} run, {failed} not successful" : "{date}: {total} runs, {failed} not successful", { date: formatMonthDay(day.date), total: day.total, failed: day.failed });
               return (
                 <TooltipTrigger key={day.date} delay={100}>
                   <Focusable>
@@ -89,9 +93,9 @@ function RunsChart({ stats, loading }: { stats: ExecutionStats | null; loading: 
                   </Focusable>
                   <Tooltip size="md">
                     <span className="flex flex-col">
-                      <span>{date.format("ddd, MMM D")}</span>
+                      <span>{formatWeekdayMonthDay(day.date)}</span>
                       <span className="text-text-secondary tabular-nums">
-                        {day.total} total · {succeeded} succeeded · {day.failed} other
+                        {t("{total} total · {succeeded} succeeded · {failed} other", { total: day.total, succeeded, failed: day.failed })}
                       </span>
                     </span>
                   </Tooltip>
@@ -113,6 +117,7 @@ function RunsChart({ stats, loading }: { stats: ExecutionStats | null; loading: 
 }
 
 function Languages({ templates, loading }: { templates: Template[]; loading: boolean }) {
+  const t = useT();
   const rows = LANGUAGES.map((language) => ({
     ...language,
     count: templates.filter((template) => template.language?.includes(language.value)).length,
@@ -120,14 +125,14 @@ function Languages({ templates, loading }: { templates: Template[]; loading: boo
   const max = Math.max(1, ...rows.map((row) => row.count));
 
   return (
-    <Panel title="Templates by language">
+    <Panel title={t("Templates by language")}>
       <ul className="flex flex-col gap-3.5">
         {rows.map((row, index) => (
           <li key={row.value} className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between gap-3">
               <span className="flex min-w-0 items-baseline gap-2">
                 <span className="text-body-medium text-text-primary">{row.label}</span>
-                <span className="truncate text-caption-1-medium text-text-tertiary">{row.runtime}</span>
+                <span className="truncate text-caption-1-medium text-text-tertiary">{t(row.runtime)}</span>
               </span>
               {loading ? (
                 <Skeleton shape="text" className="h-3.5 w-6" />
@@ -150,6 +155,7 @@ function Languages({ templates, loading }: { templates: Template[]; loading: boo
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const t = useT();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
   const [sandboxTotal, setSandboxTotal] = useState(0);
@@ -179,29 +185,29 @@ export default function Dashboard() {
   const failed24h = stats?.failed24h ?? 0;
 
   const statCards: Stat[] = [
-    { icon: RiStackLine, label: "Templates", value: value(templates.length), ...weekDelta(createdThisWeek(templates)) },
-    { icon: RiCodeBoxLine, label: "Sandboxes", value: value(sandboxTotal), ...weekDelta(createdThisWeek(sandboxes)) },
+    { icon: RiStackLine, label: t("Templates"), value: value(templates.length), ...weekDelta(createdThisWeek(templates)) },
+    { icon: RiCodeBoxLine, label: t("Sandboxes"), value: value(sandboxTotal), ...weekDelta(createdThisWeek(sandboxes)) },
     {
       icon: RiTimeLine,
-      label: "Runs in 24 hours",
+      label: t("Runs in 24 hours"),
       value: value(stats?.last24h ?? 0),
-      delta: failed24h > 0 ? `${failed24h} not successful` : "All succeeded",
+      delta: failed24h > 0 ? t("{count} not successful", { count: failed24h }) : t("All succeeded"),
       deltaColor: failed24h > 0 ? "rose" : "neutral",
     },
-    { icon: RiPulseLine, label: "Total runs", value: value(stats?.total ?? 0), ...weekDelta(runsThisWeek) },
+    { icon: RiPulseLine, label: t("Total runs"), value: value(stats?.total ?? 0), ...weekDelta(runsThisWeek) },
   ];
 
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title={t("Dashboard")}
         actions={
           <>
             <Button variant="secondary" leadingIcon={RiStackLine} onClick={() => navigate("/template/new")}>
-              New template
+              {t("New template")}
             </Button>
             <Button leadingIcon={RiAddLine} onClick={() => navigate("/sandbox/new")}>
-              New sandbox
+              {t("New sandbox")}
             </Button>
           </>
         }
@@ -214,7 +220,7 @@ export default function Dashboard() {
 
         <div className="grid gap-4 lg:grid-cols-3">
           <Panel
-            title="Recent runs"
+            title={t("Recent runs")}
             className="lg:col-span-2"
             actions={
               <LinkButton
@@ -226,21 +232,21 @@ export default function Dashboard() {
                   navigate("/execution");
                 }}
               >
-                All runs
+                {t("All runs")}
               </LinkButton>
             }
             bodyClassName="px-0 pb-2 pt-4"
           >
             {!loading && recent.length === 0 ? (
-              <EmptyState icon={<RiPulseLine className="size-6" aria-hidden />} title="No runs" description="Runs appear here when someone presses Run on a sandbox page." />
+              <EmptyState icon={<RiPulseLine className="size-6" aria-hidden />} title={t("No runs")} description={t("Runs appear here when someone presses Run on a sandbox page.")} />
             ) : (
-              <Table aria-label="Recent runs" className="min-w-[560px]">
+              <Table aria-label={t("Recent runs")} className="min-w-[560px]">
                 <TableHeader>
-                  <TableColumn isRowHeader>Sandbox</TableColumn>
-                  <TableColumn className="w-[110px]">Language</TableColumn>
-                  <TableColumn className="w-[120px]">Status</TableColumn>
-                  <TableColumn className="w-[90px]">Duration</TableColumn>
-                  <TableColumn className="w-[110px]">When</TableColumn>
+                  <TableColumn isRowHeader>{t("Sandbox")}</TableColumn>
+                  <TableColumn className="w-[110px]">{t("Language")}</TableColumn>
+                  <TableColumn className="w-[120px]">{t("Status")}</TableColumn>
+                  <TableColumn className="w-[90px]">{t("Duration")}</TableColumn>
+                  <TableColumn className="w-[110px]">{t("When")}</TableColumn>
                 </TableHeader>
                 <TableBody>
                   {loading
@@ -274,7 +280,7 @@ export default function Dashboard() {
                           </TableCell>
                           <TableCell>
                             <span className="whitespace-nowrap text-text-secondary" title={execution.createdAt}>
-                              {dayjs(execution.createdAt).format("MMM D, HH:mm")}
+                              {formatMonthDayTime(execution.createdAt)}
                             </span>
                           </TableCell>
                         </TableRow>

@@ -20,6 +20,8 @@ import (
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/wuhan005/Elaina/internal/i18n"
 )
 
 const (
@@ -42,14 +44,14 @@ var usernamePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,31}$`)
 // letter or digit.
 func ValidateUsername(username string) error {
 	if !usernamePattern.MatchString(username) {
-		return errors.New("Username must be 2-32 characters of letters, digits, '_', '.' or '-', starting with a letter or digit")
+		return i18n.Errorf("validation::username")
 	}
 	return nil
 }
 
 func ValidatePassword(password string) error {
 	if len(password) < MinPasswordBytes || len(password) > MaxPasswordBytes {
-		return errors.Errorf("Password must contain %d-%d UTF-8 bytes", MinPasswordBytes, MaxPasswordBytes)
+		return i18n.Errorf("validation::password_length", MinPasswordBytes, MaxPasswordBytes)
 	}
 	return nil
 }

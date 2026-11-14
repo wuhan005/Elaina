@@ -1,5 +1,6 @@
 import type { ExecutionSummary } from "@/api/api";
 import { Chip, type ChipColor } from "@/components/base/badges/chip";
+import { useT } from "@/i18n";
 
 export type ExecutionStatus = ExecutionSummary["status"];
 
@@ -14,10 +15,11 @@ export const EXECUTION_STATUSES: { value: ExecutionStatus; label: string; color:
 const BY_VALUE = Object.fromEntries(EXECUTION_STATUSES.map((status) => [status.value, status]));
 
 export function ExecutionStatusChip({ status }: { status: ExecutionStatus }) {
+  const t = useT();
   const info = BY_VALUE[status];
   return (
     <Chip variant="caption" color={info?.color ?? "neutral"}>
-      {info?.label ?? status}
+      {info ? t(info.label) : status}
     </Chip>
   );
 }

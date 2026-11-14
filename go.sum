@@ -19,6 +19,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/flamego/flamego v1.9.4 h1:SNsooIfNa6ljQM1rBmfg4cFcXPIhQdG/uvNHqXxPvD8=
 github.com/flamego/flamego v1.9.4/go.mod h1:2tAVbugA3fgX8xOBoqR2jmJSSvZDLBFGXTFCR5h5eAU=
+github.com/flamego/i18n v1.2.0 h1:wRbrI0BD5mX/hs04c5EITzn7uCWZW1/K4m9ALrk+cOo=
+github.com/flamego/i18n v1.2.0/go.mod h1:AbmBNH8ljRzx7kepSOZzUhjNvLJ3CclIAnbLJrN5cNk=
 github.com/flamego/session v1.6.5 h1:YlQfMGjV84JcGihg5OjufKP5qOh/05iOfHYrf5qta5I=
 github.com/flamego/session v1.6.5/go.mod h1:EhBKxrWSmkqa2XwQSC6WbwXn7pLzyFY0BREtTwJBpQU=
 github.com/flamego/template v1.2.2 h1:aMpt8RzXBb2ZGuABf9p/q8oBBpXrurUV8rgBbz7mj2o=
@@ -148,6 +150,8 @@ golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8T
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
+gopkg.in/ini.v1 v1.64.0 h1:Mj2zXEXcNb5joEiSA0zc3HZpTst/iyjNiR4CN8tDzOg=
+gopkg.in/ini.v1 v1.64.0/go.mod h1:pNLf8WUiyNEtQjuu5G5vTm06TEv9tsIgeAvK8hOrP4k=
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
@@ -156,3 +160,5 @@ gorm.io/driver/postgres v1.5.7 h1:8ptbNJTDbEmhdr62uReG5BGkdQyeasu/FZHxI0IMGnM=
 gorm.io/driver/postgres v1.5.7/go.mod h1:3e019WlBaYI5o5LIdNV+LyxCMNtLOQETBXL2h4chKpA=
 gorm.io/gorm v1.25.10 h1:dQpO+33KalOA+aFYGlK+EfxcI5MbO7EP2yYygwh9h+s=
 gorm.io/gorm v1.25.10/go.mod h1:hbnx/Oo0ChWMn1BIhpy1oYozzpM15i4YPuHDmfYtwg8=
+unknwon.dev/i18n v1.0.1 h1:u3lR67ur4bsM5lucFO5LTHCwAUqGbQ4Gk+1Oe3J8U1M=
+unknwon.dev/i18n v1.0.1/go.mod h1:3dj1tQFJQE+HA5/iwBXVkZbWgMwdoRQZ9X2O90ZixBc=

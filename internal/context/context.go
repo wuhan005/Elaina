@@ -6,7 +6,6 @@ package context
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/flamego/flamego"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/internal/dto"
+	"github.com/wuhan005/Elaina/internal/i18n"
 )
 
 // Context represents context of a request.
@@ -26,6 +26,8 @@ type Context struct {
 	IsAuthenticated bool
 	// User is loaded by Authenticator and only set on routes that require sign-in.
 	User *db.User
+	// Locale is chosen by the i18n middleware; nil falls back to English.
+	Locale i18n.Locale
 }
 
 // WriteJSON writes v as a JSON response body; encoding errors are only logged.
@@ -48,13 +50,35 @@ func (c *Context) Success(data ...any) error {
 	return nil
 }
 
-func (c *Context) ServerError() error {
-	return c.Error(http.StatusInternalServerError, "internal server error")
+func (c *Context) locale() i18n.Locale {
+	if c.Locale == nil {
+		return i18n.English()
+	}
+	return c.Locale
 }
 
-func (c *Context) Error(statusCode int, message string, v ...any) error {
+// Tr translates the "section::key" message into the request locale.
+func (c *Context) Tr(key string, args ...any) string {
+	return c.locale().Translate(key, args...)
+}
+
+func (c *Context) ServerError() error {
+	return c.Error(http.StatusInternalServerError, "common::internal_error")
+}
+
+// Error writes the translated "section::key" message as the error response.
+func (c *Context) Error(statusCode int, key string, args ...any) error {
+	return c.writeError(statusCode, c.Tr(key, args...))
+}
+
+// ErrorFrom writes err as the error response, translating i18n messages.
+func (c *Context) ErrorFrom(statusCode int, err error) error {
+	return c.writeError(statusCode, i18n.TranslateError(c.locale(), err))
+}
+
+func (c *Context) writeError(statusCode int, message string) error {
 	WriteJSON(c.ResponseWriter(), c.Request().Request, statusCode, dto.ErrorResponse{
-		Msg: fmt.Sprintf(message, v...),
+		Msg: message,
 	})
 	return nil
 }
@@ -75,12 +99,13 @@ const (
 
 // Contexter initializes a classic context for a request.
 func Contexter() flamego.Handler {
-	return func(ctx flamego.Context, session session.Session) {
+	return func(ctx flamego.Context, session session.Session, locale i18n.Locale) {
 		userID, _ := session.Get(SessionKeyUserID).(uint)
 		ctx.Map(Context{
 			Context:         ctx,
 			UserID:          userID,
 			IsAuthenticated: userID != 0,
+			Locale:          locale,
 		})
 	}
 }
