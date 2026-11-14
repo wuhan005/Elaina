@@ -35,9 +35,18 @@ type wasmModuleOptions struct {
 }
 
 func (t *WASMTask) runWASM(ctx context.Context, runtimeDir, dir string, stdout, stderr *wasmOutputBuffer) error {
+	if compilationCacheDir == "" {
+		return errors.New("WASM runtime is not initialized")
+	}
 	cache := compilationCache
 	if cache == nil {
-		return errors.New("WASM runtime is not initialized")
+		// A task-local engine releases its modules while keeping disk entries.
+		var err error
+		cache, err = wazero.NewCompilationCacheWithDir(compilationCacheDir)
+		if err != nil {
+			return errors.Wrap(err, "open WASM compilation cache")
+		}
+		defer func() { _ = cache.Close(ctx) }()
 	}
 
 	if t.runner.Name == "go" {

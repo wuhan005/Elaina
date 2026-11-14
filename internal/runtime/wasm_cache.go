@@ -21,37 +21,49 @@ import (
 
 const wasmCompilerFeatures = api.CoreFeaturesV2 | experimental.CoreFeaturesTailCall | experimental.CoreFeaturesTypedFunctionReferences
 
-var compilationCache wazero.CompilationCache
+var (
+	compilationCacheDir string
+	compilationCache    wazero.CompilationCache
+)
 
-// Init prepares the process compilation cache before accepting requests.
+// Init prepares the disk cache and optionally warms the shared in-memory cache.
 func Init(ctx context.Context) error {
-	if compilationCache != nil {
+	if compilationCacheDir != "" {
 		return errors.New("WASM runtime is already initialized")
 	}
-
-	cache, err := wazero.NewCompilationCacheWithDir(config.App.WASMCacheDir)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	dir, err := filepath.Abs(config.App.WASMCacheDir)
+	if err != nil {
+		return errors.Wrap(err, "resolve WASM compilation cache directory")
+	}
+	cache, err := wazero.NewCompilationCacheWithDir(dir)
 	if err != nil {
 		return errors.Wrap(err, "open WASM compilation cache")
 	}
-
-	if err := warmWASMModules(ctx, cache, config.App.WASMRuntimeDir); err != nil {
-		_ = cache.Close(context.Background())
-		return err
+	if config.App.WASMKeepCompiledInMemory {
+		if err := warmWASMModules(ctx, cache, config.App.WASMRuntimeDir); err != nil {
+			_ = cache.Close(ctx)
+			return err
+		}
+		compilationCache = cache
+	} else if err := cache.Close(ctx); err != nil {
+		return errors.Wrap(err, "close WASM compilation cache")
 	}
-
-	compilationCache = cache
+	compilationCacheDir = dir
 	return nil
 }
 
-// Close releases the process cache after all requests have stopped.
+// Close releases the shared cache after all requests have stopped.
 func Close(ctx context.Context) error {
-	if compilationCache == nil {
-		return nil
-	}
-
-	err := compilationCache.Close(ctx)
+	cache := compilationCache
 	compilationCache = nil
-	return err
+	compilationCacheDir = ""
+	if cache != nil {
+		return cache.Close(ctx)
+	}
+	return nil
 }
 
 func wasmRuntimeConfig(cache wazero.CompilationCache, memory uint32, features api.CoreFeatures) wazero.RuntimeConfig {

@@ -5,8 +5,10 @@ app:
   password_hash: "" # Required bcrypt hash; omit the "admin:" prefix from the output.
   # Relative paths are resolved from the server's working directory.
   wasm_runtime_dir: .wasm
-  # Installed interpreters and compilers are warmed before the server starts listening.
+  # Both modes reuse the disk cache. A cache miss can require compilation on the first execution.
   wasm_cache_dir: .wasm/cache # Must be writable by the server.
+  # Enable startup warmup and keep compiled interpreters and toolchains in memory until shutdown.
+  wasm_keep_compiled_in_memory: false
   # Days to keep sandbox execution records; 0 keeps them forever.
   execution_retention_days: 30
   # Reverse proxies whose X-Forwarded-For header identifies clients, e.g. [127.0.0.1/32, 10.0.0.0/8].

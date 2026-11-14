@@ -44,10 +44,11 @@ var App = struct {
 	PasswordHash   string         `mapstructure:"password_hash"`
 	TrustedProxies []netip.Prefix `mapstructure:"trusted_proxies"`
 
-	WASMRuntimeDir  string         `mapstructure:"wasm_runtime_dir"`
-	WASMCacheDir    string         `mapstructure:"wasm_cache_dir"`
-	WASMLimits      WASMLimits     `mapstructure:"wasm_limits"`
-	WASMDeniedCIDRs []netip.Prefix `mapstructure:"wasm_denied_cidrs"`
+	WASMRuntimeDir           string         `mapstructure:"wasm_runtime_dir"`
+	WASMCacheDir             string         `mapstructure:"wasm_cache_dir"`
+	WASMKeepCompiledInMemory bool           `mapstructure:"wasm_keep_compiled_in_memory"`
+	WASMLimits               WASMLimits     `mapstructure:"wasm_limits"`
+	WASMDeniedCIDRs          []netip.Prefix `mapstructure:"wasm_denied_cidrs"`
 
 	// ExecutionRetentionDays is how long execution records are kept. Zero keeps them forever.
 	ExecutionRetentionDays int `mapstructure:"execution_retention_days"`

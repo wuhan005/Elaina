@@ -26,6 +26,7 @@ func TestInit(t *testing.T) {
 
 	for _, test := range []struct {
 		name, content, runtimeDir, cacheDir, dsn string
+		keepCompiledInMemory                     bool
 	}{
 		{
 			"file values",
@@ -33,22 +34,25 @@ func TestInit(t *testing.T) {
   password_hash: "` + testPasswordHash + `"
   wasm_runtime_dir: /opt/elaina/wasm
   wasm_cache_dir: /var/cache/elaina
+  wasm_keep_compiled_in_memory: true
 postgres:
   dsn: "postgres://user:password@localhost/elaina?sslmode=disable"
 `,
 			"/opt/elaina/wasm",
 			"/var/cache/elaina",
 			"postgres://user:password@localhost/elaina?sslmode=disable",
+			true,
 		},
-		{"default directories", "app:\n  password_hash: " + testPasswordHash + "\npostgres:\n  dsn: file-dsn\n", ".wasm", ".wasm/cache", "file-dsn"},
-		{"app only", "app:\n  password_hash: " + testPasswordHash + "\n  wasm_runtime_dir: ./local-wasm\n", "./local-wasm", ".wasm/cache", ""},
+		{"default directories", "app:\n  password_hash: " + testPasswordHash + "\npostgres:\n  dsn: file-dsn\n", ".wasm", ".wasm/cache", "file-dsn", false},
+		{"app only", "app:\n  password_hash: " + testPasswordHash + "\n  wasm_runtime_dir: ./local-wasm\n", "./local-wasm", ".wasm/cache", "", false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			App.PasswordHash, Postgres.DSN = "", ""
 			if err := Init(writeConfig(t, test.content)); err != nil {
 				t.Fatal(err)
 			}
-			if App.PasswordHash != testPasswordHash || App.WASMRuntimeDir != test.runtimeDir || App.WASMCacheDir != test.cacheDir || Postgres.DSN != test.dsn {
+			if App.PasswordHash != testPasswordHash || App.WASMRuntimeDir != test.runtimeDir || App.WASMCacheDir != test.cacheDir ||
+				App.WASMKeepCompiledInMemory != test.keepCompiledInMemory || Postgres.DSN != test.dsn {
 				t.Fatal("configuration does not match the file and defaults")
 			}
 		})

@@ -59,8 +59,54 @@ func installWASMCacheTestModule(t *testing.T, name string, data []byte) {
 	}
 }
 
+func TestWASMCacheLoadsOnDemand(t *testing.T) {
+	configureWASMCacheTest(t)
+	installWASMCacheTestModule(t, "python.wasm", wasmTestModule(nil))
+	// An unrelated broken interpreter must not block startup or Python execution.
+	installWASMCacheTestModule(t, "php.wasm", []byte("invalid module"))
+	if err := Init(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := filepath.Glob(filepath.Join(config.App.WASMCacheDir, "*", "*"))
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("startup compiled WASM modules: %v, %v", entries, err)
+	}
+
+	task, err := NewWASMTask(context.Background(), NewTaskOptions{
+		Language: "python",
+		Template: &db.Tpl{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func() string {
+		t.Helper()
+		output, err := task.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return output.Error
+	}
+	if message := run(); message != "" {
+		t.Fatalf("first execution: %s", message)
+	}
+	entries, err = filepath.Glob(filepath.Join(config.App.WASMCacheDir, "*", "*"))
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("first execution did not persist exactly one module: %v, %v", entries, err)
+	}
+	entry := entries[0]
+	if err := os.WriteFile(entry, nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	// A new task must read the disk entry again after the previous task releases its module.
+	if message := run(); !strings.Contains(message, "compilationcache: error reading header") {
+		t.Fatalf("second execution did not read the disk cache: %q", message)
+	}
+}
+
 func TestWASMCacheWarmup(t *testing.T) {
 	configureWASMCacheTest(t)
+	config.App.WASMKeepCompiledInMemory = true
 	// An unreachable entry point proves that warmup compiles without running the module.
 	for _, name := range []string{"python.wasm", "php.wasm", "javascript.wasm", "go/compile.wasm", "go/link.wasm", "c/clang.wasm", "c/wasm-ld.wasm"} {
 		installWASMCacheTestModule(t, name, wasmTestModule([]byte{0x00}))
@@ -101,19 +147,26 @@ func TestWASMCacheInitializationFailure(t *testing.T) {
 	configureWASMCacheTest(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := Init(ctx); !errors.Is(err, context.Canceled) || compilationCache != nil {
+	if err := Init(ctx); !errors.Is(err, context.Canceled) || compilationCacheDir != "" {
 		t.Fatalf("cancelled initialization published a cache: %v", err)
 	}
 
-	installWASMCacheTestModule(t, "python.wasm", []byte("invalid module"))
-	if err := Init(context.Background()); err == nil || compilationCache != nil {
-		t.Fatalf("invalid module published a cache: %v", err)
+	if err := os.WriteFile(config.App.WASMCacheDir, nil, 0600); err != nil {
+		t.Fatal(err)
 	}
-	installWASMCacheTestModule(t, "python.wasm", wasmTestModule(nil))
+	if err := Init(context.Background()); err == nil || compilationCacheDir != "" {
+		t.Fatalf("invalid directory published a cache: %v", err)
+	}
+	if err := os.Remove(config.App.WASMCacheDir); err != nil {
+		t.Fatal(err)
+	}
 	if err := Init(context.Background()); err != nil {
 		t.Fatalf("retry after initialization failure: %v", err)
 	}
-	if err := Close(context.Background()); err != nil || compilationCache != nil {
+	if err := Init(context.Background()); err == nil {
+		t.Fatal("initializing twice succeeded")
+	}
+	if err := Close(context.Background()); err != nil || compilationCacheDir != "" {
 		t.Fatalf("cache shutdown: %v", err)
 	}
 	if err := Init(context.Background()); err != nil {
@@ -121,7 +174,7 @@ func TestWASMCacheInitializationFailure(t *testing.T) {
 	}
 }
 
-func TestWASMWarmCacheIsolation(t *testing.T) {
+func TestWASMCacheIsolation(t *testing.T) {
 	configureWASMCacheTest(t)
 	config.App.WASMLimits.MaxConcurrentTasks = 8
 	// Assert fresh memory and globals, mutate the global, then grow past the one-MiB limit.
@@ -160,7 +213,7 @@ func TestWASMWarmCacheIsolation(t *testing.T) {
 				return
 			}
 			if (memory == 1 && !strings.Contains(output.Error, "unreachable")) || (memory == 2 && output.Error != "") {
-				t.Errorf("shared cache changed memory limits or instance isolation: memory=%d output=%+v", memory, output)
+				t.Errorf("disk cache changed memory limits or instance isolation: memory=%d output=%+v", memory, output)
 			}
 		}()
 	}
@@ -178,7 +231,7 @@ func TestWASMWarmCacheIsolation(t *testing.T) {
 	}
 	output, err := task.Run(context.Background())
 	if err != nil || output == nil || output.Error != "execution timed out" {
-		t.Fatalf("warm module lost timeout instrumentation: %+v, %v", output, err)
+		t.Fatalf("module lost timeout instrumentation: %+v, %v", output, err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -186,7 +239,7 @@ func TestWASMWarmCacheIsolation(t *testing.T) {
 	defer timer.Stop()
 	defer cancel()
 	if _, err := task.Run(ctx); !errors.Is(err, context.Canceled) {
-		t.Fatalf("warm module lost request cancellation: %v", err)
+		t.Fatalf("cached module lost request cancellation: %v", err)
 	}
 }
 
