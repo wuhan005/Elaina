@@ -145,6 +145,42 @@ func (s *wasmSystem) SockSendTo(ctx context.Context, fd wasi.FD, buffers []wasi.
 	return s.System.SockSendTo(ctx, fd, buffers, flags, peer)
 }
 
+// SockBind only allows UDP sockets to bind an ephemeral port, matching the implicit bind of sendto,
+// so guests cannot claim fixed ports on host interfaces.
+func (s *wasmSystem) SockBind(ctx context.Context, fd wasi.FD, addr wasi.SocketAddress) (wasi.SocketAddress, wasi.Errno) {
+	var port int
+	switch addr := addr.(type) {
+	case *wasi.Inet4Address:
+		port = addr.Port
+	case *wasi.Inet6Address:
+		port = addr.Port
+	default:
+		return nil, wasi.EPERM
+	}
+	if !s.internet || port != 0 {
+		return nil, wasi.EPERM
+	}
+
+	stat, errno := s.FDStatGet(ctx, fd)
+	if errno != wasi.ESUCCESS {
+		return nil, errno
+	}
+	if stat.FileType != wasi.SocketDGramType {
+		return nil, wasi.EPERM
+	}
+
+	return s.System.SockBind(ctx, fd, addr)
+}
+
+// SockListen and SockAccept are always denied: guests may only act as clients.
+func (s *wasmSystem) SockListen(context.Context, wasi.FD, int) wasi.Errno {
+	return wasi.EPERM
+}
+
+func (s *wasmSystem) SockAccept(context.Context, wasi.FD, wasi.FDFlags) (wasi.FD, wasi.SocketAddress, wasi.SocketAddress, wasi.Errno) {
+	return -1, nil, nil, wasi.EPERM
+}
+
 func (s *wasmSystem) PathSymlink(context.Context, string, wasi.FD, string) wasi.Errno {
 	return wasi.ENOTSUP
 }

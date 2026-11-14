@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -41,9 +45,22 @@ func main() {
 		logrus.WithError(err).Fatal("Failed to create route")
 	}
 
+	server := &http.Server{
+		Addr:              fmt.Sprintf("0.0.0.0:%d", *port),
+		Handler:           r,
+		ReadHeaderTimeout: 3 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		IdleTimeout:       2 * time.Minute,
+	}
 	go func() {
-		<-ctx.Done()
-		r.Stop()
+		logrus.WithField("addr", server.Addr).Info("Listening")
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logrus.WithError(err).Fatal("Failed to start server")
+		}
 	}()
-	r.Run(*port)
+
+	<-ctx.Done()
+	if err := server.Shutdown(context.Background()); err != nil {
+		logrus.WithError(err).Error("Failed to shut down server")
+	}
 }

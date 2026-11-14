@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/pem"
 	"go/parser"
+	"go/scanner"
 	"go/token"
 	"os"
 	"path/filepath"
@@ -33,6 +34,9 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 	}
 	if file.Name.Name != "main" {
 		return errors.New("Go source must declare package main")
+	}
+	if err := checkGoDirectives(t.code); err != nil {
+		return err
 	}
 
 	http := false
@@ -92,6 +96,21 @@ func (t *WASMTask) runGoWASM(ctx context.Context, cache wazero.CompilationCache,
 		internet: t.template.InternetAccess,
 		env:      runtimeEnv,
 	}, stdout, stderr)
+}
+
+// checkGoDirectives rejects //go:wasmimport so user code reaches WASI only through the toolchain's audited packages.
+func checkGoDirectives(code []byte) error {
+	var s scanner.Scanner
+	s.Init(token.NewFileSet().AddFile("main.go", -1, len(code)), code, nil, scanner.ScanComments)
+	for {
+		_, tok, lit := s.Scan()
+		if tok == token.EOF {
+			return nil
+		}
+		if tok == token.COMMENT && strings.HasPrefix(lit, "//go:wasmimport") {
+			return errors.New("Go directive //go:wasmimport is not allowed")
+		}
+	}
 }
 
 func wasmGoRootCertificates() ([]byte, error) {

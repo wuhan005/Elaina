@@ -15,27 +15,34 @@ import (
 )
 
 type WASMLimits struct {
-	MaxConcurrentTasks int   `mapstructure:"max_concurrent_tasks"`
-	MaxMemoryMiB       int64 `mapstructure:"max_memory_mib"`
-	MaxRequestBytes    int64 `mapstructure:"max_request_bytes"`
-	MaxSourceBytes     int64 `mapstructure:"max_source_bytes"`
-	MaxWorkspaceBytes  int64 `mapstructure:"max_workspace_bytes"`
-	MaxFileBytes       int64 `mapstructure:"max_file_bytes"`
-	MaxFiles           int   `mapstructure:"max_files"`
+	MaxConcurrentTasks      int   `mapstructure:"max_concurrent_tasks"`
+	MaxQueuedTasks          int   `mapstructure:"max_queued_tasks"`
+	MaxTasksPerClient       int   `mapstructure:"max_tasks_per_client"`
+	MaxMemoryMiB            int64 `mapstructure:"max_memory_mib"`
+	MaxRequestBytes         int64 `mapstructure:"max_request_bytes"`
+	MaxBufferedRequestBytes int64 `mapstructure:"max_buffered_request_bytes"`
+	MaxSourceBytes          int64 `mapstructure:"max_source_bytes"`
+	MaxWorkspaceBytes       int64 `mapstructure:"max_workspace_bytes"`
+	MaxFileBytes            int64 `mapstructure:"max_file_bytes"`
+	MaxFiles                int   `mapstructure:"max_files"`
 }
 
 var defaultWASMLimits = WASMLimits{
-	MaxConcurrentTasks: 1,
-	MaxMemoryMiB:       512,
-	MaxRequestBytes:    4 * 1024 * 1024,
-	MaxSourceBytes:     1024 * 1024,
-	MaxWorkspaceBytes:  64 * 1024 * 1024,
-	MaxFileBytes:       32 * 1024 * 1024,
-	MaxFiles:           256,
+	MaxConcurrentTasks:      1,
+	MaxQueuedTasks:          8,
+	MaxTasksPerClient:       1,
+	MaxMemoryMiB:            512,
+	MaxRequestBytes:         4 * 1024 * 1024,
+	MaxBufferedRequestBytes: 64 * 1024 * 1024,
+	MaxSourceBytes:          1024 * 1024,
+	MaxWorkspaceBytes:       64 * 1024 * 1024,
+	MaxFileBytes:            32 * 1024 * 1024,
+	MaxFiles:                256,
 }
 
 var App = struct {
-	PasswordHash string `mapstructure:"password_hash"`
+	PasswordHash   string         `mapstructure:"password_hash"`
+	TrustedProxies []netip.Prefix `mapstructure:"trusted_proxies"`
 
 	WASMRuntimeDir  string         `mapstructure:"wasm_runtime_dir"`
 	WASMCacheDir    string         `mapstructure:"wasm_cache_dir"`
@@ -68,14 +75,11 @@ func Init(configFilePath string) error {
 		return errors.Wrap(err, "parse app")
 	}
 
-	for i, prefix := range App.WASMDeniedCIDRs {
-		if !prefix.IsValid() {
-			return errors.Errorf("app.wasm_denied_cidrs[%d]: expected a CIDR", i)
-		}
-		if prefix.Addr().Is4In6() {
-			return errors.Errorf("app.wasm_denied_cidrs[%d]: use IPv4 notation for %q", i, prefix)
-		}
-		App.WASMDeniedCIDRs[i] = prefix.Masked()
+	if err := normalizePrefixes("app.wasm_denied_cidrs", App.WASMDeniedCIDRs); err != nil {
+		return err
+	}
+	if err := normalizePrefixes("app.trusted_proxies", App.TrustedProxies); err != nil {
+		return err
 	}
 
 	if err := v.UnmarshalKey("postgres", &Postgres); err != nil {
@@ -89,9 +93,28 @@ func Init(configFilePath string) error {
 	return App.WASMLimits.Validate()
 }
 
+func normalizePrefixes(key string, prefixes []netip.Prefix) error {
+	for i, prefix := range prefixes {
+		if !prefix.IsValid() {
+			return errors.Errorf("%s[%d]: expected a CIDR", key, i)
+		}
+		if prefix.Addr().Is4In6() {
+			return errors.Errorf("%s[%d]: use IPv4 notation for %q", key, i, prefix)
+		}
+		prefixes[i] = prefix.Masked()
+	}
+	return nil
+}
+
 func (l WASMLimits) Validate() error {
-	if l.MaxConcurrentTasks <= 0 || l.MaxFiles <= 0 {
-		return errors.New("app.wasm_limits.max_concurrent_tasks and max_files must be positive")
+	if l.MaxConcurrentTasks <= 0 || l.MaxTasksPerClient <= 0 || l.MaxFiles <= 0 {
+		return errors.New("app.wasm_limits.max_concurrent_tasks, max_tasks_per_client and max_files must be positive")
+	}
+	if l.MaxQueuedTasks < 0 {
+		return errors.New("app.wasm_limits.max_queued_tasks must not be negative")
+	}
+	if l.MaxBufferedRequestBytes < l.MaxRequestBytes {
+		return errors.New("app.wasm_limits.max_buffered_request_bytes must be at least max_request_bytes")
 	}
 	if l.MaxMemoryMiB <= 0 || l.MaxMemoryMiB > 4096 {
 		return errors.New("app.wasm_limits.max_memory_mib must be between 1 and 4096")

@@ -86,7 +86,8 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 // @Success 200 {object} dto.Response[ExecutionResult]
 // @Failure 400 {object} dto.ErrorResponse "Invalid request"
 // @Failure 413 {object} dto.ErrorResponse "Request body or source exceeds configured limits"
-// @Failure 503 {object} dto.ErrorResponse "Global task limit reached"
+// @Failure 429 {object} dto.ErrorResponse "Per-client task limit reached"
+// @Failure 503 {object} dto.ErrorResponse "Global task slots and queue are full, or the request body memory budget is exhausted"
 // @Success 302 "Sandbox not found; redirect to /"
 // @Failure 500 {object} dto.ErrorResponse "Internal server error"
 // @ID executeCode
@@ -103,6 +104,7 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 		Language: selectLanguage(sandbox.Template.Language, ctx.Request().PostForm.Get("lang")),
 		Template: sandbox.Template,
 		Code:     []byte(ctx.Request().PostForm.Get("code")),
+		Client:   clientAddress(ctx.Request().Request),
 	})
 	if err != nil {
 		if errors.Is(err, runtime.ErrSourceLimit) {
@@ -114,6 +116,9 @@ func (h *RunnerHandler) Execute(ctx context.Context, sandbox *db.Sandbox) error 
 
 	output, err := r.Run(ctx.Request().Context())
 	if err != nil {
+		if errors.Is(err, runtime.ErrClientTaskLimit) {
+			return ctx.Error(http.StatusTooManyRequests, "%s", err)
+		}
 		if errors.Is(err, runtime.ErrTaskLimit) {
 			return ctx.Error(http.StatusServiceUnavailable, "%s", err)
 		}

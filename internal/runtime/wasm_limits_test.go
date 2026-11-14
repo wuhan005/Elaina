@@ -20,6 +20,7 @@ import (
 func TestWASMTaskAdmission(t *testing.T) {
 	configureWASMCacheTest(t)
 	config.App.WASMLimits.MaxConcurrentTasks = 2
+	config.App.WASMLimits.MaxQueuedTasks = 0
 	installWASMCacheTestModule(t, "python.wasm", wasmTestModule([]byte{0x03, 0x40, 0x0c, 0, 0x0b}))
 	installWASMCacheTestModule(t, "c/clang.wasm", wasmTestModule([]byte{0x03, 0x40, 0x0c, 0, 0x0b}))
 	installWASMCacheTestModule(t, "javascript.wasm", wasmTestModule([]byte{0x00}))
@@ -51,7 +52,7 @@ func TestWASMTaskAdmission(t *testing.T) {
 		}
 	}()
 	deadline := time.Now().Add(3 * time.Second)
-	for activeWASMTasks.Load() != 2 {
+	for taskAdmission.running() != 2 {
 		if time.Now().After(deadline) {
 			t.Fatal("tasks did not acquire their slots")
 		}
@@ -71,7 +72,7 @@ func TestWASMTaskAdmission(t *testing.T) {
 		}
 	}
 	cancel()
-	for activeWASMTasks.Load() != 0 {
+	for taskAdmission.running() != 0 {
 		if time.Now().After(deadline) {
 			t.Fatal("cancellation leaked a task slot")
 		}
@@ -79,7 +80,7 @@ func TestWASMTaskAdmission(t *testing.T) {
 	}
 	for range 3 {
 		output, err := other.Run(context.Background())
-		if err != nil || output == nil || !strings.Contains(output.Error, "unreachable") || activeWASMTasks.Load() != 0 {
+		if err != nil || output == nil || !strings.Contains(output.Error, "unreachable") || taskAdmission.running() != 0 {
 			t.Fatalf("failed task leaked a slot: %+v, %v", output, err)
 		}
 	}
@@ -133,7 +134,7 @@ func TestWASMSourceLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	task.code = append(task.code, 'x')
-	if _, err := task.Run(context.Background()); !errors.Is(err, ErrSourceLimit) || activeWASMTasks.Load() != 0 {
+	if _, err := task.Run(context.Background()); !errors.Is(err, ErrSourceLimit) || taskAdmission.running() != 0 {
 		t.Fatalf("runtime entry bypassed source limit: %v", err)
 	}
 }

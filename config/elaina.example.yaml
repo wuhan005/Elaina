@@ -6,15 +6,25 @@ app:
   wasm_runtime_dir: .wasm
   # Installed interpreters and compilers are warmed before the server starts listening.
   wasm_cache_dir: .wasm/cache # Must be writable by the server.
+  # Reverse proxies whose X-Forwarded-For header identifies clients, e.g. [127.0.0.1/32, 10.0.0.0/8].
+  # Without it, every request through a proxy counts as the same client for per-client limits.
+  trusted_proxies: []
   # Additional destination CIDRs to deny for all WASM sandboxes, including internally routed public IPs.
   wasm_denied_cidrs: []
   wasm_limits:
-    # Shared by all sandboxes, including compilation; excess tasks receive HTTP 503.
+    # Shared by all sandboxes, including compilation.
     max_concurrent_tasks: 1
+    # FIFO waiting tasks when all slots are busy; tasks beyond it receive HTTP 503. Zero disables queueing.
+    max_queued_tasks: 8
+    # Running plus queued tasks per client (IPv4 address or IPv6 /64); excess tasks receive HTTP 429.
+    max_tasks_per_client: 1
     # Per-stage WASM linear memory ceiling, not total process memory. Zero templates inherit it.
     max_memory_mib: 512
     # HTTP body limit includes form/JSON encoding; source bytes are checked after decoding.
     max_request_bytes: 4194304
+    # Memory reserved for all in-flight request bodies; requests beyond it receive HTTP 503.
+    # Chunked bodies reserve max_request_bytes. Must be at least max_request_bytes.
+    max_buffered_request_bytes: 67108864
     max_source_bytes: 1048576
     # Per-task workspace quotas include source, compiler output and runtime files.
     max_workspace_bytes: 67108864

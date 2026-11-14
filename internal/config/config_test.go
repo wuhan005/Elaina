@@ -62,6 +62,9 @@ func TestWASMLimits(t *testing.T) {
 	for _, test := range []struct{ name, settings string }{
 		{"zero concurrency", "max_concurrent_tasks: 0"},
 		{"negative concurrency", "max_concurrent_tasks: -1"},
+		{"negative queue", "max_queued_tasks: -1"},
+		{"zero per-client tasks", "max_tasks_per_client: 0"},
+		{"buffer below body", "max_buffered_request_bytes: 1024"},
 		{"zero memory", "max_memory_mib: 0"},
 		{"excessive memory", "max_memory_mib: 4097"},
 		{"zero files", "max_files: 0"},
@@ -83,16 +86,20 @@ func TestWASMLimits(t *testing.T) {
 	}
 
 	custom := WASMLimits{
-		MaxConcurrentTasks: 3,
-		MaxMemoryMiB:       128,
-		MaxRequestBytes:    4096,
-		MaxSourceBytes:     1024,
-		MaxWorkspaceBytes:  8192,
-		MaxFileBytes:       2048,
-		MaxFiles:           16,
+		MaxConcurrentTasks:      3,
+		MaxQueuedTasks:          0,
+		MaxTasksPerClient:       2,
+		MaxMemoryMiB:            128,
+		MaxRequestBytes:         4096,
+		MaxBufferedRequestBytes: 4096,
+		MaxSourceBytes:          1024,
+		MaxWorkspaceBytes:       8192,
+		MaxFileBytes:            2048,
+		MaxFiles:                16,
 	}
-	settings := fmt.Sprintf("  wasm_limits:\n    max_concurrent_tasks: %d\n    max_memory_mib: %d\n    max_request_bytes: %d\n    max_source_bytes: %d\n    max_workspace_bytes: %d\n    max_file_bytes: %d\n    max_files: %d\n",
-		custom.MaxConcurrentTasks, custom.MaxMemoryMiB, custom.MaxRequestBytes, custom.MaxSourceBytes, custom.MaxWorkspaceBytes, custom.MaxFileBytes, custom.MaxFiles)
+	settings := fmt.Sprintf("  wasm_limits:\n    max_concurrent_tasks: %d\n    max_queued_tasks: %d\n    max_tasks_per_client: %d\n    max_memory_mib: %d\n    max_request_bytes: %d\n    max_buffered_request_bytes: %d\n    max_source_bytes: %d\n    max_workspace_bytes: %d\n    max_file_bytes: %d\n    max_files: %d\n",
+		custom.MaxConcurrentTasks, custom.MaxQueuedTasks, custom.MaxTasksPerClient, custom.MaxMemoryMiB, custom.MaxRequestBytes, custom.MaxBufferedRequestBytes,
+		custom.MaxSourceBytes, custom.MaxWorkspaceBytes, custom.MaxFileBytes, custom.MaxFiles)
 	if err := Init(writeConfig(t, base+settings)); err != nil || App.WASMLimits != custom {
 		t.Fatalf("custom limits: %+v, %v", App.WASMLimits, err)
 	}
@@ -121,6 +128,21 @@ func TestWASMDeniedCIDRs(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "wasm_denied_cidrs[0]") {
 			t.Fatalf("expected error for %s, got %v", value, err)
 		}
+	}
+}
+
+func TestTrustedProxies(t *testing.T) {
+	app, postgres := App, Postgres
+	t.Cleanup(func() { App, Postgres = app, postgres })
+	base := "app:\n  password_hash: " + testPasswordHash + "\n"
+	if err := Init(writeConfig(t, base+"  trusted_proxies: [10.1.2.3/8, '::1/128']\n")); err != nil {
+		t.Fatal(err)
+	}
+	if got := App.TrustedProxies; len(got) != 2 || got[0] != netip.MustParsePrefix("10.0.0.0/8") || got[1] != netip.MustParsePrefix("::1/128") {
+		t.Fatalf("unexpected trusted proxies: %v", got)
+	}
+	if err := Init(writeConfig(t, base+"  trusted_proxies: [bad-cidr]\n")); err == nil || !strings.Contains(err.Error(), "trusted_proxies[0]") {
+		t.Fatalf("expected trusted proxy error, got %v", err)
 	}
 }
 

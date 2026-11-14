@@ -273,7 +273,8 @@ info:
   contact: {}
   description: Management and WASM code execution API. Successful JSON responses use
     a data envelope; errors contain msg. All HTTP bodies are capped by app.wasm_limits.max_request_bytes;
-    oversized bodies return HTTP 413.
+    oversized bodies return HTTP 413. Buffered bodies share app.wasm_limits.max_buffered_request_bytes;
+    requests that exceed it return HTTP 503.
   title: Elaina API
   version: "1.0"
 paths:
@@ -768,12 +769,17 @@ paths:
           description: Request body or source exceeds configured limits
           schema:
             $ref: '#/definitions/ErrorResponse'
+        "429":
+          description: Per-client task limit reached
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal server error
           schema:
             $ref: '#/definitions/ErrorResponse'
         "503":
-          description: Global task limit reached
+          description: Global task slots and queue are full, or the request body
+            memory budget is exhausted
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Execute code in a sandbox

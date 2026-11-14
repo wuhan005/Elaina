@@ -24,6 +24,26 @@ import (
 	"github.com/wuhan005/Elaina/internal/db"
 )
 
+func TestGoDirectives(t *testing.T) {
+	for _, code := range []string{
+		"package main\n//go:wasmimport wasi_snapshot_preview1 sock_listen\nfunc listen(int32, int32) int32\n",
+		"package main\nfunc main() {}\n  //go:wasmimport wasi_snapshot_preview1 sock_bind\n",
+		"package main\nfunc main() { syntax error\n//go:wasmimport wasi_snapshot_preview1 sock_accept\n",
+	} {
+		if err := checkGoDirectives([]byte(code)); err == nil {
+			t.Fatalf("accepted wasmimport directive: %q", code)
+		}
+	}
+	for _, code := range []string{
+		"package main\nimport \"fmt\"\nfunc main() { fmt.Println(\"//go:wasmimport env evil\") }\n",
+		"package main\n/* //go:wasmimport env evil */\n// go:wasmimport is only a directive without the space\nfunc main() {}\n",
+	} {
+		if err := checkGoDirectives([]byte(code)); err != nil {
+			t.Fatalf("rejected source without directives: %q: %v", code, err)
+		}
+	}
+}
+
 func TestWASMGo(t *testing.T) {
 	dir := os.Getenv("WASM_TEST_DIR")
 	if dir == "" {

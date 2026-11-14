@@ -97,6 +97,54 @@ func TestWASMReadOnlyToolchain(t *testing.T) {
 	}
 }
 
+func TestWASMListenDenied(t *testing.T) {
+	ctx := context.Background()
+	host := &wasmunix.System{}
+	defer func() { _ = host.Close(ctx) }()
+	s := &wasmSystem{
+		System:   host,
+		internet: true,
+	}
+	open := func(kind wasi.SocketType) wasi.FD {
+		t.Helper()
+		fd, errno := s.SockOpen(ctx, wasi.InetFamily, kind, wasi.IPProtocol, wasi.SockListenRights|wasi.SockConnectionRights, wasi.SockConnectionRights)
+		if errno != wasi.ESUCCESS {
+			t.Fatal(errno)
+		}
+		return fd
+	}
+
+	stream := open(wasi.StreamSocket)
+	for _, addr := range []wasi.SocketAddress{&wasi.Inet4Address{}, &wasi.Inet4Address{Addr: [4]byte{127, 0, 0, 1}, Port: 9995}, &wasi.Inet6Address{}} {
+		if _, errno := s.SockBind(ctx, stream, addr); errno != wasi.EPERM {
+			t.Fatalf("TCP bind %v: %v", addr, errno)
+		}
+	}
+	if errno := s.SockListen(ctx, stream, 8); errno != wasi.EPERM {
+		t.Fatalf("listen: %v", errno)
+	}
+	if _, _, _, errno := s.SockAccept(ctx, stream, 0); errno != wasi.EPERM {
+		t.Fatalf("accept: %v", errno)
+	}
+
+	datagram := open(wasi.DatagramSocket)
+	for _, addr := range []wasi.SocketAddress{&wasi.Inet4Address{Port: 9995}, &wasi.Inet6Address{Port: 53}, &wasi.UnixAddress{Name: "socket"}} {
+		if _, errno := s.SockBind(ctx, datagram, addr); errno != wasi.EPERM {
+			t.Fatalf("UDP bind %v: %v", addr, errno)
+		}
+	}
+	local, errno := s.SockBind(ctx, datagram, &wasi.Inet4Address{Addr: [4]byte{127, 0, 0, 1}})
+	if errno != wasi.ESUCCESS || local.(*wasi.Inet4Address).Port == 0 {
+		t.Fatalf("UDP ephemeral bind: %v %v", local, errno)
+	}
+
+	unbound := open(wasi.DatagramSocket)
+	s.internet = false
+	if _, errno := s.SockBind(ctx, unbound, &wasi.Inet4Address{}); errno != wasi.EPERM {
+		t.Fatalf("InternetAccess=false allowed bind: %v", errno)
+	}
+}
+
 func (*wasmReceiveSystem) SockRecv(context.Context, wasi.FD, []wasi.IOVec, wasi.RIFlags) (wasi.Size, wasi.ROFlags, wasi.Errno) {
 	return 122, 0, wasi.ESUCCESS
 }

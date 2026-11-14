@@ -19,7 +19,7 @@ import (
 // New returns a new Flamego router.
 // @Title Elaina API
 // @Version 1.0
-// @Description Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg. All HTTP bodies are capped by app.wasm_limits.max_request_bytes; oversized bodies return HTTP 413.
+// @Description Management and WASM code execution API. Successful JSON responses use a data envelope; errors contain msg. All HTTP bodies are capped by app.wasm_limits.max_request_bytes; oversized bodies return HTTP 413. Buffered bodies share app.wasm_limits.max_buffered_request_bytes; requests that exceed it return HTTP 503.
 // @BasePath /
 // @SecurityDefinitions.apikey SessionAuth
 // @In header

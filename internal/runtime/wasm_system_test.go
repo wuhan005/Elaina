@@ -51,6 +51,15 @@ func TestWASMCapabilities(t *testing.T) {
 	if _, errno := s.SockAddressInfo(ctx, "localhost", "80", wasi.AddressInfo{}, nil); errno != wasi.EPERM {
 		t.Fatal("InternetAccess=false allowed DNS")
 	}
+	if _, errno := s.SockBind(ctx, 3, &wasi.Inet4Address{}); errno != wasi.EPERM {
+		t.Fatal("InternetAccess=false allowed bind")
+	}
+	if s.SockListen(ctx, 3, 1) != wasi.EPERM {
+		t.Fatal("guest sockets must not listen on host interfaces")
+	}
+	if _, _, _, errno := s.SockAccept(ctx, 3, 0); errno != wasi.EPERM {
+		t.Fatal("guest sockets must not accept host connections")
+	}
 
 	s.internet = true
 	if _, errno := s.SockOpen(ctx, wasi.UnixFamily, wasi.StreamSocket, wasi.IPProtocol, 0, 0); errno != wasi.EPERM {

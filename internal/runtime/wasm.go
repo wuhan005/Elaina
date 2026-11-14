@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -24,11 +23,7 @@ import (
 
 const wasmOutputLimit = 1024 * 1024
 
-var (
-	ErrTaskLimit    = errors.New("WASM task limit reached; try again later")
-	ErrSourceLimit  = errors.New("source code exceeds the configured size limit")
-	activeWASMTasks atomic.Int64
-)
+var ErrSourceLimit = errors.New("source code exceeds the configured size limit")
 
 var _ ExecRuntime = (*WASMTask)(nil)
 
@@ -36,6 +31,7 @@ type WASMTask struct {
 	runner   *languages.Runner
 	template *db.Tpl
 	code     []byte
+	client   string
 }
 
 // NewWASMTask creates a wazero task inside the Go backend.
@@ -65,6 +61,7 @@ func NewWASMTask(_ context.Context, options NewTaskOptions) (*WASMTask, error) {
 		runner:   runner,
 		template: options.Template,
 		code:     options.Code,
+		client:   options.Client,
 	}, nil
 }
 
@@ -76,16 +73,11 @@ func (t *WASMTask) Run(ctx context.Context) (*ExecOutput, error) {
 		return nil, ErrSourceLimit
 	}
 
-	for {
-		active := activeWASMTasks.Load()
-		if active >= int64(config.App.WASMLimits.MaxConcurrentTasks) {
-			return nil, ErrTaskLimit
-		}
-		if activeWASMTasks.CompareAndSwap(active, active+1) {
-			break
-		}
+	release, err := taskAdmission.acquire(ctx, t.client)
+	if err != nil {
+		return nil, err
 	}
-	defer activeWASMTasks.Add(-1)
+	defer release()
 
 	timeout := t.template.Timeout
 	if timeout == 0 {

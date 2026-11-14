@@ -26,6 +26,7 @@ type NewTaskOptions struct {
 	Language string
 	Template *db.Tpl
 	Code     []byte
+	Client   string
 }
 
 // NewTask creates a WASM task for the selected language.

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -68,6 +69,90 @@ func TestRequestBodyLimit(t *testing.T) {
 	}
 }
 
+func TestRequestBodyBudget(t *testing.T) {
+	previous := config.App
+	t.Cleanup(func() { config.App = previous })
+	config.App.WASMLimits.MaxRequestBytes = 32
+	config.App.WASMLimits.MaxBufferedRequestBytes = 48
+
+	entered, unblock := make(chan struct{}), make(chan struct{})
+	f := flamego.New()
+	f.Use(limitRequestBody)
+	f.Post("/", func(ctx flamego.Context) {
+		if ctx.Request().Header.Get("X-Block") != "" {
+			entered <- struct{}{}
+			<-unblock
+		}
+		ctx.ResponseWriter().WriteHeader(http.StatusOK)
+	})
+	send := func(size int, chunked, block bool) int {
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(strings.Repeat("x", size)))
+		if chunked {
+			r.ContentLength = -1
+			r.TransferEncoding = []string{"chunked"}
+		}
+		if block {
+			r.Header.Set("X-Block", "1")
+		}
+		w := httptest.NewRecorder()
+		f.ServeHTTP(w, r)
+		return w.Code
+	}
+
+	done := make(chan int)
+	go func() { done <- send(32, false, true) }()
+	<-entered
+	for _, test := range []struct {
+		size    int
+		chunked bool
+		status  int
+	}{
+		{17, false, http.StatusServiceUnavailable},
+		{16, false, http.StatusOK},
+		{1, true, http.StatusServiceUnavailable},
+		{0, false, http.StatusOK},
+	} {
+		if status := send(test.size, test.chunked, false); status != test.status {
+			t.Fatalf("size=%d chunked=%v: status=%d, want %d", test.size, test.chunked, status, test.status)
+		}
+	}
+	close(unblock)
+	if status := <-done; status != http.StatusOK {
+		t.Fatalf("blocked request: %d", status)
+	}
+	if used := bufferedRequestBytes.Load(); used != 0 {
+		t.Fatalf("request memory budget leaked %d bytes", used)
+	}
+	if status := send(32, true, false); status != http.StatusOK {
+		t.Fatalf("budget was not released: %d", status)
+	}
+}
+
+func TestClientAddress(t *testing.T) {
+	previous := config.App
+	t.Cleanup(func() { config.App = previous })
+	config.App.TrustedProxies = []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
+	for _, test := range []struct{ remote, forwarded, want string }{
+		{"203.0.113.7:1234", "198.51.100.9", "203.0.113.7"},
+		{"10.0.0.2:1234", "", "10.0.0.2"},
+		{"10.0.0.2:1234", "1.2.3.4, 198.51.100.9", "198.51.100.9"},
+		{"10.0.0.2:1234", "198.51.100.9, 10.0.0.3", "198.51.100.9"},
+		{"10.0.0.2:1234", "invalid, 10.0.0.3", "10.0.0.3"},
+		{"[2001:db8:1:2:3:4:5:6]:1234", "", "2001:db8:1:2::/64"},
+		{"[::ffff:192.0.2.1]:1234", "", "192.0.2.1"},
+		{"invalid", "", "unknown"},
+	} {
+		r := httptest.NewRequest(http.MethodPost, "/", nil)
+		r.RemoteAddr = test.remote
+		if test.forwarded != "" {
+			r.Header.Set("X-Forwarded-For", test.forwarded)
+		}
+		if got := clientAddress(r); got != test.want {
+			t.Fatalf("remote=%s forwarded=%q: got %s, want %s", test.remote, test.forwarded, got, test.want)
+		}
+	}
+}
+
 func TestRunnerLimits(t *testing.T) {
 	previous := config.App
 	t.Cleanup(func() {
@@ -77,6 +162,8 @@ func TestRunnerLimits(t *testing.T) {
 	config.App.WASMRuntimeDir = t.TempDir()
 	config.App.WASMCacheDir = t.TempDir()
 	config.App.WASMLimits.MaxConcurrentTasks = 1
+	config.App.WASMLimits.MaxQueuedTasks = 0
+	config.App.WASMLimits.MaxTasksPerClient = 1
 	config.App.WASMLimits.MaxRequestBytes = 128
 	config.App.WASMLimits.MaxSourceBytes = 6
 	// An empty function for accepted requests, and a loop for holding one task slot.
@@ -105,9 +192,11 @@ func TestRunnerLimits(t *testing.T) {
 		})
 	})
 	f.Post("/", NewRunnerHandler().Execute)
-	request := func(ctx context.Context, language, code string) *httptest.ResponseRecorder {
+	const holder, other = "198.51.100.1:1000", "198.51.100.2:1000"
+	request := func(ctx context.Context, remote, language, code string) *httptest.ResponseRecorder {
 		body := url.Values{"lang": {language}, "code": {code}}.Encode()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)).WithContext(ctx)
+		r.RemoteAddr = remote
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 		f.ServeHTTP(w, r)
@@ -122,7 +211,7 @@ func TestRunnerLimits(t *testing.T) {
 		{"1234567", http.StatusRequestEntityTooLarge},
 		{"中文a", http.StatusRequestEntityTooLarge},
 	} {
-		w := request(context.Background(), "python", test.code)
+		w := request(context.Background(), other, "python", test.code)
 		if w.Code != test.status {
 			t.Fatalf("source %q: status=%d body=%s", test.code, w.Code, w.Body.String())
 		}
@@ -133,7 +222,7 @@ func TestRunnerLimits(t *testing.T) {
 	go func() {
 		defer close(done)
 		for ctx.Err() == nil {
-			if request(ctx, "javascript", "loop").Code != http.StatusServiceUnavailable {
+			if request(ctx, holder, "javascript", "loop").Code != http.StatusServiceUnavailable {
 				return
 			}
 			time.Sleep(time.Millisecond)
@@ -142,7 +231,7 @@ func TestRunnerLimits(t *testing.T) {
 	defer func() { cancel(); <-done }()
 	deadline := time.Now().Add(3 * time.Second)
 	for {
-		w := request(context.Background(), "python", "ok")
+		w := request(context.Background(), other, "python", "ok")
 		if w.Code == http.StatusServiceUnavailable {
 			break
 		}
@@ -151,9 +240,12 @@ func TestRunnerLimits(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
+	if w := request(context.Background(), holder, "python", "ok"); w.Code != http.StatusTooManyRequests {
+		t.Fatalf("client holding a task slot was not limited: %d %s", w.Code, w.Body.String())
+	}
 	cancel()
 	<-done
-	if w := request(context.Background(), "python", "ok"); w.Code != http.StatusOK {
+	if w := request(context.Background(), holder, "python", "ok"); w.Code != http.StatusOK {
 		t.Fatalf("cancelled request retained task slot: %d %s", w.Code, w.Body.String())
 	}
 }
