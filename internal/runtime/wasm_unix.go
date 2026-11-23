@@ -8,6 +8,7 @@ package runtime
 
 import (
 	"context"
+	"math"
 	"os"
 	"path/filepath"
 
@@ -121,7 +122,7 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 		WithArgs(options.args[1:]...).WithEnv(append([]string{"PWD=/"}, options.env...)...).WithDirs(dirs...).
 		WithStdio(int(null.Fd()), int(null.Fd()), int(null.Fd())).
 		WithMaxOpenFiles(256).WithMaxOpenDirs(64).WithSocketsExtension("auto", module).
-		WithDecorators(wazergo.DecoratorFunc(wasmSocketABI)).
+		WithDecorators(wazergo.DecoratorFunc(wasmWASIABI)).
 		WithWrappers(func(system wasi.System) wasi.System {
 			host = system.(*wasmunix.System)
 			quota.host = host
@@ -162,8 +163,20 @@ func (t *WASMTask) runWASMModule(ctx context.Context, cache wazero.CompilationCa
 	return err
 }
 
-func wasmSocketABI(_ string, fn wazergo.Function[*preview1.Module]) wazergo.Function[*preview1.Module] {
-	if fn.Name == "sock_getaddrinfo" {
+func wasmWASIABI(_ string, fn wazergo.Function[*preview1.Module]) wazergo.Function[*preview1.Module] {
+	switch fn.Name {
+	case "poll_oneoff":
+		// wazergo narrows the byte length to uint32 before checking guest memory.
+		maxSubscriptions := min(math.MaxInt, math.MaxUint32) / max(wasi.Subscription{}.ObjectSize(), wasi.Event{}.ObjectSize())
+		return fn.WithFunc(func(m *preview1.Module, ctx context.Context, module api.Module, stack []uint64) {
+			if int(int32(stack[2])) > maxSubscriptions {
+				stack[0] = uint64(wasi.EFAULT)
+				return
+			}
+
+			fn.Func(m, ctx, module, stack)
+		})
+	case "sock_getaddrinfo":
 		return fn.WithFunc(func(m *preview1.Module, ctx context.Context, module api.Module, stack []uint64) {
 			// wasi-go allocates host memory from this guest-controlled result count.
 			if uint32(stack[6]) > 256 {
@@ -173,9 +186,7 @@ func wasmSocketABI(_ string, fn wazergo.Function[*preview1.Module]) wazergo.Func
 
 			fn.Func(m, ctx, module, stack)
 		})
-	}
-
-	if fn.Name == "sock_recv" {
+	case "sock_recv":
 		// wasi-go v0.8.0 writes four bytes for WASI's two-byte roflags value.
 		fixed := wazergo.F5(wasmSocketReceive)
 		fixed.Name = fn.Name

@@ -8,6 +8,7 @@ package runtime
 
 import (
 	"context"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,10 +25,35 @@ import (
 
 type wasmReceiveSystem struct{ wasi.System }
 
+func TestWASIPollOneOffLength(t *testing.T) {
+	host := preview1.NewHostModule()
+	// Use a stub so this test can detect forwarding without constructing any guest slices.
+	poll := host.Functions()["poll_oneoff"].WithFunc(func(_ *preview1.Module, _ context.Context, _ api.Module, stack []uint64) {
+		stack[0] = uint64(wasi.ESUCCESS)
+	})
+	poll = wasmWASIABI(host.Name(), poll)
+
+	const maxCount = min(math.MaxInt, math.MaxUint32) / 48 // WASI subscription size in bytes.
+	for _, test := range []struct {
+		count uint64
+		want  wasi.Errno
+	}{
+		{1, wasi.ESUCCESS},
+		{maxCount, wasi.ESUCCESS},
+		{maxCount + 1, wasi.EFAULT},
+	} {
+		stack := []uint64{64, 0, test.count, 0}
+		poll.Func(nil, context.Background(), nil, stack)
+		if got := wasi.Errno(stack[0]); got != test.want {
+			t.Errorf("poll_oneoff with count %d: got %v, want %v", test.count, got, test.want)
+		}
+	}
+}
+
 func TestWASMDNSResultLimit(t *testing.T) {
 	for _, count := range []uint64{16, 256, 257, 0xffffffff} {
 		called := false
-		fn := wasmSocketABI("", wazergo.Function[*preview1.Module]{
+		fn := wasmWASIABI("", wazergo.Function[*preview1.Module]{
 			Name: "sock_getaddrinfo",
 			Func: func(*preview1.Module, context.Context, api.Module, []uint64) { called = true },
 		})
