@@ -15,6 +15,13 @@ app:
   trusted_proxies: []
   # Header containing a client IP or a comma-separated chain of IPs, set or sanitized by trusted proxies.
   client_ip_header: X-Forwarded-For
+  # CodeMirror 5.65.16 assets loaded by the browser from a trusted CDN or same-origin mirror.
+  codemirror:
+    base_url: https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/
+    layout: cdnjs # Root-level codemirror.min.js, codemirror.min.css and minified mode files.
+    # For jsDelivr, use https://cdn.jsdelivr.net/npm/codemirror@5.65.16 with layout: npm.
+    # The npm layout uses lib/codemirror.js, lib/codemirror.css and unminified mode files.
+    # For a same-origin mirror, serve the files under a path such as /vendor/codemirror/5.65.16/.
   # Additional destination CIDRs to deny for all WASM sandboxes, including internally routed public IPs.
   wasm_denied_cidrs: []
   wasm_limits:

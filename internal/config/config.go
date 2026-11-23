@@ -7,6 +7,8 @@ package config
 import (
 	"math"
 	"net/netip"
+	"net/url"
+	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/pkg/errors"
@@ -40,10 +42,21 @@ var defaultWASMLimits = WASMLimits{
 	MaxFiles:                256,
 }
 
+const (
+	CodeMirrorLayoutCDNJS = "cdnjs"
+	CodeMirrorLayoutNPM   = "npm"
+)
+
+type CodeMirrorOptions struct {
+	BaseURL string `mapstructure:"base_url"`
+	Layout  string `mapstructure:"layout"`
+}
+
 var App = struct {
-	PasswordHash   string         `mapstructure:"password_hash"`
-	TrustedProxies []netip.Prefix `mapstructure:"trusted_proxies"`
-	ClientIPHeader string         `mapstructure:"client_ip_header"`
+	PasswordHash   string            `mapstructure:"password_hash"`
+	TrustedProxies []netip.Prefix    `mapstructure:"trusted_proxies"`
+	ClientIPHeader string            `mapstructure:"client_ip_header"`
+	CodeMirror     CodeMirrorOptions `mapstructure:"codemirror"`
 
 	WASMRuntimeDir           string         `mapstructure:"wasm_runtime_dir"`
 	WASMCacheDir             string         `mapstructure:"wasm_cache_dir"`
@@ -54,7 +67,11 @@ var App = struct {
 	// ExecutionRetentionDays is how long execution records are kept. Zero keeps them forever.
 	ExecutionRetentionDays int `mapstructure:"execution_retention_days"`
 }{
-	ClientIPHeader:         "X-Forwarded-For",
+	ClientIPHeader: "X-Forwarded-For",
+	CodeMirror: CodeMirrorOptions{
+		BaseURL: "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/",
+		Layout:  CodeMirrorLayoutCDNJS,
+	},
 	WASMRuntimeDir:         ".wasm",
 	WASMCacheDir:           ".wasm/cache",
 	WASMLimits:             defaultWASMLimits,
@@ -89,6 +106,13 @@ func Init(configFilePath string) error {
 		return err
 	}
 
+	if App.CodeMirror.Layout == CodeMirrorLayoutNPM && !v.IsSet("app.codemirror.base_url") {
+		return errors.New("app.codemirror.base_url is required with the npm layout")
+	}
+	if err := App.CodeMirror.normalize(); err != nil {
+		return err
+	}
+
 	if err := v.UnmarshalKey("postgres", &Postgres); err != nil {
 		return errors.Wrap(err, "parse postgres")
 	}
@@ -101,6 +125,28 @@ func Init(configFilePath string) error {
 	}
 
 	return App.WASMLimits.Validate()
+}
+
+func (c *CodeMirrorOptions) normalize() error {
+	if c.Layout != CodeMirrorLayoutCDNJS && c.Layout != CodeMirrorLayoutNPM {
+		return errors.New("app.codemirror.layout must be cdnjs or npm")
+	}
+
+	const invalidBase = "app.codemirror.base_url must be an HTTP(S) URL or a path starting with one slash, without credentials, query or fragment"
+	base := strings.TrimSpace(c.BaseURL)
+	u, err := url.Parse(base)
+	if err != nil || u.User != nil || strings.ContainsAny(base, "?#\\") {
+		return errors.New(invalidBase)
+	}
+
+	absolute := (u.Scheme == "http" || u.Scheme == "https") && u.Hostname() != ""
+	local := strings.HasPrefix(base, "/") && !strings.HasPrefix(base, "//")
+	if !absolute && !local {
+		return errors.New(invalidBase)
+	}
+
+	c.BaseURL = strings.TrimRight(u.String(), "/") + "/"
+	return nil
 }
 
 func normalizePrefixes(key string, prefixes []netip.Prefix) error {

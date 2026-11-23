@@ -61,6 +61,59 @@ postgres:
 	}
 }
 
+func TestCodeMirrorConfig(t *testing.T) {
+	app, postgres := App, Postgres
+	t.Cleanup(func() { App, Postgres = app, postgres })
+	base := "app:\n  password_hash: " + testPasswordHash + "\n"
+
+	for _, test := range []struct {
+		name, settings string
+		want           CodeMirrorOptions
+	}{
+		{"default", "", CodeMirrorOptions{"https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/", "cdnjs"}},
+		{"cdnjs mirror", "    base_url: https://assets.example.com/codemirror/5.65.16\n", CodeMirrorOptions{"https://assets.example.com/codemirror/5.65.16/", "cdnjs"}},
+		{"npm CDN", "    base_url: ' https://cdn.jsdelivr.net/npm/codemirror@5.65.16// '\n    layout: npm\n", CodeMirrorOptions{"https://cdn.jsdelivr.net/npm/codemirror@5.65.16/", "npm"}},
+		{"same origin", "    base_url: /vendor/codemirror/5.65.16\n", CodeMirrorOptions{"/vendor/codemirror/5.65.16/", "cdnjs"}},
+		{"root", "    base_url: /\n", CodeMirrorOptions{"/", "cdnjs"}},
+		{"HTTP mirror", "    base_url: http://localhost:8081/codemirror\n    layout: npm\n", CodeMirrorOptions{"http://localhost:8081/codemirror/", "npm"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			content := base
+			if test.settings != "" {
+				content += "  codemirror:\n" + test.settings
+			}
+			if err := Init(writeConfig(t, content)); err != nil {
+				t.Fatal(err)
+			}
+			if got := App.CodeMirror; got != test.want {
+				t.Fatalf("expected %+v, got %+v", test.want, got)
+			}
+		})
+	}
+
+	for _, test := range []struct{ setting, key string }{
+		{"base_url: ''", "base_url"},
+		{"base_url: vendor/codemirror", "base_url"},
+		{"base_url: '//cdn.example.com/codemirror'", "base_url"},
+		{"base_url: '/\\cdn.example.com'", "base_url"},
+		{"base_url: 'https:///codemirror'", "base_url"},
+		{"base_url: 'https://cdn.example.com/%z0'", "base_url"},
+		{"base_url: 'javascript:alert(1)'", "base_url"},
+		{"base_url: 'https://user:pass@cdn.example.com/codemirror'", "base_url"},
+		{"base_url: 'https://cdn.example.com/codemirror?'", "base_url"},
+		{"base_url: '/vendor/codemirror#'", "base_url"},
+		{"layout: npm", "base_url"},
+		{"layout: unknown", "layout"},
+	} {
+		t.Run(test.setting, func(t *testing.T) {
+			err := Init(writeConfig(t, base+"  codemirror:\n    "+test.setting+"\n"))
+			if err == nil || !strings.Contains(err.Error(), "app.codemirror."+test.key) {
+				t.Fatalf("expected validation error for %s, got %v", test.key, err)
+			}
+		})
+	}
+}
+
 func TestWASMLimits(t *testing.T) {
 	previous := App
 	t.Cleanup(func() { App = previous })

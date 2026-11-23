@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/db"
 	"github.com/wuhan005/Elaina/public"
 )
@@ -29,24 +30,44 @@ func (s runnerPageStore) GetByUID(_ context.Context, uid string) (*db.Sandbox, e
 
 func TestMinifiedRunnerPage(t *testing.T) {
 	const placeholder = "if True:\n    print('中文')\n"
-	previous := db.Sandboxes
+	previous, defaultCodeMirror := db.Sandboxes, config.App.CodeMirror
 	db.Sandboxes = runnerPageStore{sandbox: &db.Sandbox{
 		UID:         "example",
 		Name:        `Example "sandbox"`,
 		Placeholder: placeholder,
 		Template:    &db.Tpl{Language: []string{"python", "javascript"}},
 	}}
-	t.Cleanup(func() { db.Sandboxes = previous })
-
-	router := newTestClient(t).router
+	t.Cleanup(func() { db.Sandboxes, config.App.CodeMirror = previous, defaultCodeMirror })
 
 	for _, tc := range []struct {
-		method, code, language string
+		name, method, code, language string
+		source                       config.CodeMirrorOptions
+		base, core, suffix           string
 	}{
-		{http.MethodGet, placeholder, "python"},
-		{http.MethodPost, "function f() {\n\treturn '  </textarea> & {{ .Code }}  ';\n}\n", "javascript"},
+		{
+			name: "cdnjs", method: http.MethodGet, code: placeholder, language: "python",
+			source: defaultCodeMirror,
+			base:   "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/",
+			core:   "codemirror", suffix: ".min",
+		},
+		{
+			name: "npm", method: http.MethodPost, language: "javascript",
+			code:   "function f() {\n\treturn '  </textarea> & {{ .Code }}  ';\n}\n",
+			source: config.CodeMirrorOptions{BaseURL: "https://cdn.jsdelivr.net/npm/codemirror@5.65.16/", Layout: config.CodeMirrorLayoutNPM},
+			base:   "https://cdn.jsdelivr.net/npm/codemirror@5.65.16/",
+			core:   "lib/codemirror",
+		},
+		{
+			name: "same origin", method: http.MethodGet, code: placeholder, language: "python",
+			source: config.CodeMirrorOptions{BaseURL: "/vendor/codemirror/5.65.16/", Layout: config.CodeMirrorLayoutCDNJS},
+			base:   "/vendor/codemirror/5.65.16/",
+			core:   "codemirror", suffix: ".min",
+		},
 	} {
-		t.Run(tc.method, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
+			config.App.CodeMirror = tc.source
+			router := newTestClient(t).router
+
 			var form string
 			if tc.method == http.MethodPost {
 				form = url.Values{"c": {tc.code}}.Encode()
@@ -74,6 +95,28 @@ func TestMinifiedRunnerPage(t *testing.T) {
 
 			if strings.Contains(body, "// Pick the theme") || strings.Contains(body, "\n  <meta") {
 				t.Fatal("page template was not minified")
+			}
+
+			if css := tc.base + tc.core + tc.suffix + ".css"; !strings.Contains(body, `href="`+css+`"`) {
+				t.Fatalf("missing stylesheet %q", css)
+			}
+
+			paths := []string{tc.core, "mode/xml/xml", "mode/htmlmixed/htmlmixed", "mode/clike/clike", "mode/php/php", "mode/python/python", "mode/go/go", "mode/javascript/javascript"}
+			if count := strings.Count(body, `<script src="`); count != len(paths)+1 {
+				t.Fatalf("expected %d external scripts, got %d", len(paths)+1, count)
+			}
+
+			remaining := body
+			for _, path := range paths {
+				script := tc.base + path + tc.suffix + ".js"
+				_, tail, found := strings.Cut(remaining, `src="`+script+`"`)
+				if !found {
+					t.Fatalf("missing or misplaced script %q", script)
+				}
+				remaining = tail
+			}
+			if !strings.Contains(remaining, `src="/static/js/sandbox.js"`) {
+				t.Fatal("sandbox.js must load after CodeMirror and its modes")
 			}
 		})
 	}

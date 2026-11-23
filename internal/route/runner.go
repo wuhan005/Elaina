@@ -33,8 +33,9 @@ import (
 const sandboxScriptPath = "js/sandbox.js"
 
 type RunnerHandler struct {
-	page   *template.Template
-	script []byte
+	page       *template.Template
+	script     []byte
+	codeMirror codeMirrorAssets
 }
 
 type ExecutionResult struct {
@@ -80,7 +81,34 @@ func NewRunnerHandler() (*RunnerHandler, error) {
 		return nil, errors.Wrap(err, "minify sandbox script")
 	}
 
-	return &RunnerHandler{page: page, script: script}, nil
+	return &RunnerHandler{
+		page:       page,
+		script:     script,
+		codeMirror: newCodeMirrorAssets(config.App.CodeMirror),
+	}, nil
+}
+
+type codeMirrorAssets struct {
+	CSS     string
+	Scripts []string
+}
+
+func newCodeMirrorAssets(source config.CodeMirrorOptions) codeMirrorAssets {
+	core, suffix := source.BaseURL, ".min"
+	if source.Layout == config.CodeMirrorLayoutNPM {
+		core += "lib/"
+		suffix = ""
+	}
+
+	assets := codeMirrorAssets{
+		CSS:     core + "codemirror" + suffix + ".css",
+		Scripts: []string{core + "codemirror" + suffix + ".js"},
+	}
+	for _, mode := range []string{"xml", "htmlmixed", "clike", "php", "python", "go", "javascript"} {
+		assets.Scripts = append(assets.Scripts, source.BaseURL+"mode/"+mode+"/"+mode+suffix+".js")
+	}
+
+	return assets
 }
 
 func (h *RunnerHandler) serveScript(ctx flamego.Context) {
@@ -186,6 +214,7 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox) error {
 		"Editable":        sandbox.Editable,
 		"Code":            code,
 		"Text":            text,
+		"CodeMirror":      h.codeMirror,
 		"Config": map[string]any{
 			"language": language,
 			"editable": sandbox.Editable,
