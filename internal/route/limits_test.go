@@ -217,7 +217,7 @@ func TestRunnerLimits(t *testing.T) {
 			},
 		})
 	})
-	f.Post("/", NewRunnerHandler().Execute)
+	f.Post("/", (&RunnerHandler{}).Execute)
 	const holder, other = "198.51.100.1", "198.51.100.2"
 	request := func(ctx context.Context, client, language, code string) *httptest.ResponseRecorder {
 		body := url.Values{"lang": {language}, "code": {code}}.Encode()

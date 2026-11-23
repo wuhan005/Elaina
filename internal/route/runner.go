@@ -5,14 +5,20 @@
 package route
 
 import (
+	"bytes"
 	gocontext "context"
+	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/flamego/template"
+	"github.com/flamego/flamego"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/html"
+	"github.com/tdewolff/minify/v2/js"
 
 	"github.com/wuhan005/Elaina/internal/config"
 	"github.com/wuhan005/Elaina/internal/context"
@@ -20,9 +26,16 @@ import (
 	"github.com/wuhan005/Elaina/internal/dto"
 	"github.com/wuhan005/Elaina/internal/languages"
 	"github.com/wuhan005/Elaina/internal/runtime"
+	"github.com/wuhan005/Elaina/public"
+	"github.com/wuhan005/Elaina/templates"
 )
 
-type RunnerHandler struct{}
+const sandboxScriptPath = "js/sandbox.js"
+
+type RunnerHandler struct {
+	page   *template.Template
+	script []byte
+}
 
 type ExecutionResult struct {
 	Result  *runtime.ExecOutput `json:"result"`
@@ -30,8 +43,56 @@ type ExecutionResult struct {
 	EndAt   int64               `json:"end_at"`
 } // @name ExecutionResult
 
-func NewRunnerHandler() *RunnerHandler {
-	return &RunnerHandler{}
+func NewRunnerHandler() (*RunnerHandler, error) {
+	m := minify.New()
+	m.AddFunc("application/javascript", js.Minify)
+	m.Add("text/html", &html.Minifier{
+		KeepDocumentTags: true,
+		KeepEndTags:      true,
+		KeepQuotes:       true,
+		TemplateDelims:   html.GoTemplateDelims,
+	})
+
+	// Minify the template before rendering so source code entered by users is never minified.
+	const pageName = "sandbox.tmpl"
+	pageSource, err := templates.FS.ReadFile(pageName)
+	if err != nil {
+		return nil, errors.Wrap(err, "read sandbox template")
+	}
+
+	pageSource, err = m.Bytes("text/html", pageSource)
+	if err != nil {
+		return nil, errors.Wrap(err, "minify sandbox template")
+	}
+
+	page, err := template.New(pageName).Parse(string(pageSource))
+	if err != nil {
+		return nil, errors.Wrap(err, "parse sandbox template")
+	}
+
+	script, err := public.FS.ReadFile(sandboxScriptPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "read sandbox script")
+	}
+
+	script, err = m.Bytes("application/javascript", script)
+	if err != nil {
+		return nil, errors.Wrap(err, "minify sandbox script")
+	}
+
+	return &RunnerHandler{page: page, script: script}, nil
+}
+
+func (h *RunnerHandler) serveScript(ctx flamego.Context) {
+	r := ctx.Request().Request
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return
+	}
+	if strings.TrimRight(r.URL.Path, "/") != "/static/"+sandboxScriptPath {
+		return
+	}
+
+	http.ServeContent(ctx.ResponseWriter(), r, sandboxScriptPath, time.Time{}, bytes.NewReader(h.script))
 }
 
 func (h *RunnerHandler) Runner(ctx context.Context) error {
@@ -92,10 +153,11 @@ func selectLanguage(languages []string, language string) string {
 	return languages[0]
 }
 
-func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t template.Template, data template.Data) error {
+func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox) error {
 	if err := ctx.Request().ParseForm(); err != nil {
 		return ctx.Error(http.StatusBadRequest, "runner::parse_form")
 	}
+
 	code := ctx.Request().PostForm.Get("c")
 	if code == "" {
 		code = sandbox.Placeholder
@@ -114,22 +176,35 @@ func (h *RunnerHandler) View(ctx context.Context, sandbox *db.Sandbox, t templat
 		}
 		options = append(options, languageOption{Value: name, Label: label})
 	}
-	text := runnerPageText(ctx)
 
-	data["Lang"] = ctx.Tr("runner_page::html_lang")
-	data["Sandbox"] = dto.ToSandbox(sandbox)
-	data["Language"] = language
-	data["LanguageOptions"] = options
-	data["Editable"] = sandbox.Editable
-	data["Code"] = code
-	data["Text"] = text
-	data["Config"] = map[string]any{
-		"language": language,
-		"editable": sandbox.Editable,
-		"text":     text,
+	text := runnerPageText(ctx)
+	data := map[string]any{
+		"Lang":            ctx.Tr("runner_page::html_lang"),
+		"Sandbox":         dto.ToSandbox(sandbox),
+		"Language":        language,
+		"LanguageOptions": options,
+		"Editable":        sandbox.Editable,
+		"Code":            code,
+		"Text":            text,
+		"Config": map[string]any{
+			"language": language,
+			"editable": sandbox.Editable,
+			"text":     text,
+		},
 	}
 
-	t.HTML(http.StatusOK, "sandbox")
+	var page bytes.Buffer
+	w := ctx.ResponseWriter()
+	if err := h.page.Execute(&page, data); err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to render sandbox page")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return nil
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if _, err := page.WriteTo(w); err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to write sandbox page")
+	}
 	return nil
 }
 

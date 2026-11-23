@@ -6,14 +6,12 @@ import (
 
 	"github.com/flamego/flamego"
 	"github.com/flamego/session"
-	"github.com/flamego/template"
 	"github.com/pkg/errors"
 
 	"github.com/wuhan005/Elaina/internal/context"
 	"github.com/wuhan005/Elaina/internal/form"
 	"github.com/wuhan005/Elaina/internal/i18n"
 	"github.com/wuhan005/Elaina/public"
-	"github.com/wuhan005/Elaina/templates"
 	"github.com/wuhan005/Elaina/web"
 )
 
@@ -34,9 +32,9 @@ func New() (*flamego.Flame, error) {
 		return nil, errors.Wrap(err, "fs sub")
 	}
 
-	templatesFS, err := template.EmbedFS(templates.FS, ".", []string{".tmpl"})
+	runnerHandler, err := NewRunnerHandler()
 	if err != nil {
-		return nil, errors.Wrap(err, "embed templates fs")
+		return nil, err
 	}
 
 	f.Use(
@@ -49,22 +47,21 @@ func New() (*flamego.Flame, error) {
 		}),
 
 		// Public static files.
+		runnerHandler.serveScript,
 		flamego.Static(flamego.StaticOptions{
 			FileSystem: http.FS(public.FS),
 			Prefix:     "static",
 		}),
+
 		// Frontend static files.
 		flamego.Static(flamego.StaticOptions{
 			FileSystem: http.FS(frontendFS),
 		}),
-		template.Templater(template.Options{
-			FileSystem: templatesFS,
-		}),
+
 		i18n.I18n(),
 		context.Contexter(),
 	)
 
-	runnerHandler := NewRunnerHandler()
 	f.Group("/r/{uid}", func() {
 		f.Combo("").Get(runnerHandler.View).Post(runnerHandler.View)
 		f.Post("/execute", runnerHandler.Execute)
